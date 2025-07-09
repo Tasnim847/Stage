@@ -436,3 +436,109 @@ html, body, #root {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+
+
+/* Ajoutez ceci à votre fichier AuthForm.css */
+.ai-error-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 90%;
+  z-index: 1000;
+  animation: aiPopupFadeIn 0.4s ease-out;
+  border-left: 5px solid var(--error-color);
+}
+
+.ai-error-popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ai-error-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ai-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #f72585, #4361ee);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+}
+
+.ai-error-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--dark-color);
+}
+
+.ai-error-message {
+  color: var(--dark-color);
+  line-height: 1.6;
+  padding: 0.5rem 0;
+}
+
+.ai-error-solution {
+  background: rgba(76, 201, 240, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  border-left: 3px solid var(--success-color);
+}
+
+.ai-error-solution-title {
+  font-weight: 600;
+  color: var(--success-color);
+  margin-bottom: 0.5rem;
+}
+
+.ai-error-close {
+  align-self: flex-end;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+  margin-top: 1rem;
+}
+
+.ai-error-close:hover {
+  background: var(--primary-dark);
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+@keyframes aiPopupFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}

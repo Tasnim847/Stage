@@ -20,6 +20,13 @@ const AuthForm = ({ onLogin, error: propError }) => {
   const [rememberMe, setRememberMe] = useState(false);
   const [animation, setAnimation] = useState('enter');
 
+  const [showAIErrorPopup, setShowAIErrorPopup] = useState(false);
+  const [aiErrorDetails, setAiErrorDetails] = useState({
+    title: '',
+    message: '',
+    solution: ''
+  });
+
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -31,6 +38,54 @@ const AuthForm = ({ onLogin, error: propError }) => {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
     }
+  };
+
+  
+
+  // Fonction pour gérer les erreurs avec IA
+  const handleAIError = (errorMessage) => {
+  let title = "Oops! Something went wrong";
+  let message = errorMessage;
+  let solution = "Please try again later.";
+
+  // Analyse intelligente des erreurs
+  if (errorMessage.includes('password') && errorMessage.includes('incorrect')) {
+    title = "Password Issue Detected";
+    message = "The password you entered doesn't match our records.";
+    solution = "Try resetting your password or check for typos. Passwords are case-sensitive.";
+  } else if (errorMessage.includes('email')) {
+    title = "Email Problem";
+    message = "There's an issue with your email address.";
+    solution = "Make sure you're using a valid email format (e.g., user@example.com).";
+  } else if (errorMessage.includes('401')) {
+    title = "Authentication Failed";
+    message = "Your credentials couldn't be verified.";
+    solution = "Double-check your email and password. If you've forgotten your password, use the reset option.";
+  } else if (errorMessage.includes('reset') || errorMessage.includes('Password reset')) {
+    title = "Password Reset Issue";
+    message = "We couldn't reset your password.";
+    solution = "Make sure your email is correct and your new password meets the requirements (min 6 characters). Try again or contact support if the problem persists.";
+  } else if (errorMessage.includes('Registration') || errorMessage.includes('register')) {
+  title = "Registration Problem";
+  message = "We couldn't complete your registration.";
+  solution = "Check that all fields are filled correctly, your email is valid, and your password meets the requirements. If the problem persists, the email might already be in use.";
+} else if (errorMessage.includes('username')) {
+  title = "Username Issue";
+  message = "There's a problem with your chosen username.";
+  solution = "Username might already be taken. Try a different one or add numbers/special characters.";
+} else if (errorMessage.includes('passwords you entered do not match')) {
+  title = "Password Mismatch";
+  message = "The new password and confirmation password don't match.";
+  solution = "Please type the same password in both fields. Make sure there are no extra spaces and check that caps lock isn't accidentally on.";
+}
+
+  setAiErrorDetails({ title, message, solution });
+  setShowAIErrorPopup(true);
+};
+
+  // Fermer le popup
+  const closeAIErrorPopup = () => {
+    setShowAIErrorPopup(false);
   };
 
   // API Functions
@@ -184,78 +239,109 @@ const AuthForm = ({ onLogin, error: propError }) => {
     }
 
   } catch (error) {
-    setErrors({ 
-      submit: error.message.includes('401') 
-        ? 'Incorrect email or password' 
-        : error.message || 'Technical error'
-    });
+    handleAIError(error.message.includes('401') 
+      ? 'Incorrect email or password' 
+      : error.message || 'Technical error');
   }
 };
 
   const handleRegisterSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateRegister()) return;
+  e.preventDefault();
+  if (!validateRegister()) return;
 
-    try {
-      const response = await registerAPI(formData);
+  try {
+    const response = await registerAPI(formData);
+    
+    if (response.token && response.user) {
+      setSuccessMessage('Registration successful!');
       
-      if (response.token && response.user) {
-        setSuccessMessage('Registration successful!');
+      setTimeout(() => {
+        const storage = rememberMe ? localStorage : sessionStorage;
+        storage.setItem('authToken', response.token);
+        storage.setItem('userData', JSON.stringify(response.user));
         
-        setTimeout(() => {
-          const storage = rememberMe ? localStorage : sessionStorage;
-          storage.setItem('authToken', response.token);
-          storage.setItem('userData', JSON.stringify(response.user));
-          
-          onLogin({
-            token: response.token,
-            user: response.user,
-            rememberMe
-          });
-        }, 1000);
-      } else {
-        throw new Error('Unexpected server response');
-      }
-    } catch (error) {
-      setErrors({ 
-        submit: error.message || 'Registration error. Please try again.'
-      });
+        onLogin({
+          token: response.token,
+          user: response.user,
+          rememberMe
+        });
+      }, 1000);
+    } else {
+      throw new Error('Unexpected server response');
     }
-  };
+  } catch (error) {
+    handleAIError(error.message || 'Registration error. Please try again.');
+    // Retirez l'ancienne gestion d'erreur
+    // setErrors({ 
+    //   submit: error.message || 'Registration error. Please try again.'
+    // });
+  }
+};
 
   const handleResetSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateLogin()) return;
+  e.preventDefault();
+  
+  try {
+    await resetPasswordAPI(formData.email, formData.password);
+    setSuccessMessage('Password reset! Redirecting...');
 
-    try {
-      await resetPasswordAPI(formData.email, formData.password);
-      setSuccessMessage('Password reset! Redirecting...');
+    setTimeout(() => {
+      setType('login');
+      setFormData(prev => ({
+        ...prev,
+        password: '',
+        confirmPassword: ''
+      }));
+      setSuccessMessage('');
+    }, 1500);
+  } catch (error) {
+    handleAIError(error.message || 'Password reset failed. Please try again.');
+  }
+};
 
-      setTimeout(() => {
-        setType('login');
-        setFormData(prev => ({
-          ...prev,
-          password: '',
-          confirmPassword: ''
-        }));
-        setSuccessMessage('');
-      }, 1500);
-    } catch (error) {
-      setErrors({
-        submit: error.message || 'Password reset failed. Please try again.'
-      });
+const validateForgotPassword = () => {
+  const newErrors = {};
+  
+  if (!formData.email.trim()) {
+    newErrors.email = 'Email required';
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    newErrors.email = 'Invalid email format';
+  }
+
+  if (!formData.password) {
+    newErrors.password = 'Password required';
+  } else if (formData.password.length < 6) {
+    newErrors.password = 'Minimum 6 characters';
+  }
+
+  if (!formData.confirmPassword) {
+    newErrors.confirmPassword = 'Confirmation required';
+  } else if (formData.password !== formData.confirmPassword) {
+    newErrors.confirmPassword = 'Passwords do not match';
+    // Ajout pour déclencher le popup IA
+    handleAIError('The passwords you entered do not match. Please make sure both fields contain the same password.');
+    return false;
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (type === 'login') {
+    await handleLoginSubmit(e);
+  } else if (type === 'signup') {
+    await handleRegisterSubmit(e);
+  } else if (type === 'forgot') {
+    if (!validateForgotPassword()) {
+      // La validation a échoué et le popup a déjà été affiché
+      return;
     }
-  };
-
-  const handleSubmit = async (e) => {
-    if (type === 'login') {
-      await handleLoginSubmit(e);
-    } else if (type === 'signup') {
-      await handleRegisterSubmit(e);
-    } else if (type === 'forgot') {
-      await handleResetSubmit(e);
-    }
-  };
+    await handleResetSubmit(e);
+  }
+};
 
   const changeFormType = (newType) => {
     setAnimation('exit');
@@ -440,10 +526,36 @@ const AuthForm = ({ onLogin, error: propError }) => {
           <p>Join our community</p>
         </div>
       </div>
+    {/* Popup d'erreur IA */}
+      {showAIErrorPopup && (
+        <>
+          <div className="overlay" onClick={closeAIErrorPopup} />
+          <div className="ai-error-popup">
+            <div className="ai-error-popup-content">
+              <div className="ai-error-header">
+                <div className="ai-icon">AI</div>
+                <h3 className="ai-error-title">{aiErrorDetails.title}</h3>
+              </div>
+              <p className="ai-error-message">{aiErrorDetails.message}</p>
+              
+              <div className="ai-error-solution">
+                <div className="ai-error-solution-title">AI Suggestion:</div>
+                <p>{aiErrorDetails.solution}</p>
+              </div>
+              
+              <button 
+                className="ai-error-close" 
+                onClick={closeAIErrorPopup}
+              >
+                Got it!
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
-
 AuthForm.propTypes = {
   onLogin: PropTypes.func.isRequired,
   error: PropTypes.string,

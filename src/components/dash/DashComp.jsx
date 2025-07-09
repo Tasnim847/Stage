@@ -16,6 +16,7 @@ import {
   FiMenu,
   FiX
 } from 'react-icons/fi';
+import defaultAvatar from '../../assets/default-avatar.png'; // Importez une image par défaut
 import './Dashboard.css';
 
 const DashComp = ({ setIsAuthenticated }) => {
@@ -30,7 +31,6 @@ const DashComp = ({ setIsAuthenticated }) => {
   const sidebarRef = useRef(null);
   const profileDropdownRef = useRef(null);
   const notificationsDropdownRef = useRef(null);
-
   // Gestion du redimensionnement et fermeture des menus en desktop
   useEffect(() => {
     const handleResize = () => {
@@ -232,20 +232,17 @@ const DashComp = ({ setIsAuthenticated }) => {
                 aria-label="Menu utilisateur"
               >
                 <div className="user-avatar-mini">
-                  {userData?.avatar ? (
-                    <img 
-                      src={userData.avatar} 
-                      alt={`Avatar de ${userData.name || userData.username || 'utilisateur'}`} 
-                      className="user-avatar-img" 
-                    />
-                  ) : (
-                    <div className="default-avatar-mini">
-                      {userData?.name?.charAt(0)?.toUpperCase() || 
-                       userData?.username?.charAt(0)?.toUpperCase() || 
-                       'U'}
-                    </div>
-                  )}
+                  <img 
+                    src={userData?.avatar || defaultAvatar} 
+                    alt={`Avatar de ${userData.name || userData.username || 'utilisateur'}`} 
+                    className="user-avatar-img"
+                    onError={(e) => {
+                      e.target.onerror = null; 
+                      e.target.src = defaultAvatar;
+                    }}
+                  />
                 </div>
+                
                 {showProfileDropdown ? <FiChevronUp /> : <FiChevronDown />}
               </div>
               
@@ -270,7 +267,7 @@ const DashComp = ({ setIsAuthenticated }) => {
                     onClick={handleLogout}
                   >
                     <FiLogOut className="icon" /> 
-                    <span>Déconnexion</span>
+                    <span>Logout</span>
                   </div>
                 </div>
               )}
@@ -278,7 +275,7 @@ const DashComp = ({ setIsAuthenticated }) => {
           </div>
         </header>
 
-        {/* Contenu */}
+        {/* Contenu (inchangé) */}
         <div className="ai-content">
           <Outlet context={{ userData }} />
         </div>
