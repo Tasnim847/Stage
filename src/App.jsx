@@ -6,8 +6,9 @@ import DashEntr from './components/dash/DashEntr';
 import EntrepriseList from './components/Comptable/EntrepriseList';
 import DashboardHome from './components/dash/DashboardHome';
 import Profile from './components/dash/Profile';
-import './App.css';
 import Devis from './components/Entreprise/Devis';
+import Facture from './components/Entreprise/Facture';
+import './App.css';
 
 function App() {
   const [authState, setAuthState] = useState({
@@ -114,6 +115,7 @@ function App() {
   <Route index element={<DashboardHome />} />
   <Route path="dashboard" element={<DashboardHome />} />
   <Route path="devis" element={<Devis />} />
+  <Route path="factures" element={<Facture />} />
   <Route path="profile" element={<Profile handleLogout={handleLogout} />} />
 </Route>
 

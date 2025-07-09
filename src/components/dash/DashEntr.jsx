@@ -151,12 +151,12 @@ const DashEntr = ({ setIsAuthenticated }) => {
                 <span>Clients</span>
               </li>
               <li 
-                className={location.pathname.includes('/dash-entr/invoices') ? 'active' : ''} 
-                onClick={() => handleNavigation('/dash-entr/invoices')}
-              >
-                <FiFileText className="icon" /> 
-                <span>Factures</span>
-              </li>
+  className={location.pathname.includes('/dash-entr/factures') ? 'active' : ''} 
+  onClick={() => handleNavigation('/dash-entr/factures')}
+>
+  <FiFileText className="icon" /> 
+  <span>Factures</span>
+</li>
             </ul>
           </div>
         )}

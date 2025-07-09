@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiPlus, FiX, FiEdit2, FiTrash2, FiPrinter, FiEye, FiDownload } from 'react-icons/fi';
+import { FiPlus, FiX, FiEdit2, FiTrash2, FiPrinter, FiEye, FiDownload, FiFileText } from 'react-icons/fi';
 import './Entreprise.css';
 
 const Devis = () => {
@@ -13,7 +13,7 @@ const Devis = () => {
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [currentDevis, setCurrentDevis] = useState(null);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
- const [currentPdfDevis, setCurrentPdfDevis] = useState(null);
+  const [currentPdfDevis, setCurrentPdfDevis] = useState(null);
   const [formData, setFormData] = useState({
     numero: '',
     date_creation: new Date().toISOString().split('T')[0],
@@ -242,17 +242,17 @@ const Devis = () => {
   };
 
   const calculateTotal = () => {
-    const totalHT = formData.lignes.reduce((sum, ligne) => sum + (ligne.prix_unitaire_ht * ligne.quantite), 0);
-    const remiseAmount = totalHT * (formData.remise / 100);
-    const totalAfterRemise = totalHT - remiseAmount;
-    const tvaAmount = totalAfterRemise * (formData.tva / 100);
-    const totalTTC = totalAfterRemise + tvaAmount;
-    return {
-      totalHT: totalHT.toFixed(2),
-      tvaAmount: tvaAmount.toFixed(2),
-      totalTTC: totalTTC.toFixed(2)
-    };
+  const totalHT = formData.lignes.reduce((sum, ligne) => sum + (ligne.prix_unitaire_ht * ligne.quantite), 0);
+  const remiseAmount = totalHT * (formData.remise / 100); // Correction ici (remise au lieu de remise)
+  const totalAfterRemise = totalHT - remiseAmount;
+  const tvaAmount = totalAfterRemise * (formData.tva / 100);
+  const totalTTC = totalAfterRemise + tvaAmount;
+  return {
+    totalHT: totalHT.toFixed(2),
+    tvaAmount: tvaAmount.toFixed(2),
+    totalTTC: totalTTC.toFixed(2)
   };
+};
 
   // Fonction pour générer des suggestions IA
   const generateAISuggestion = () => {
@@ -428,6 +428,38 @@ const Devis = () => {
     }
   };
 
+  const handleGenerateFacture = async (devis) => {
+  // Vérifier que le devis est dans un statut valide
+  if (devis.statut !== 'accepté') {
+    alert('Seuls les devis avec le statut "accepté" peuvent être convertis en facture');
+    return;
+  }
+
+  if (!window.confirm(`Voulez-vous convertir le devis ${devis.numero} en facture ?`)) return;
+  
+  try {
+    const token = getToken();
+    const response = await axios.post(
+      'http://localhost:5000/api/factures', 
+      { devis_id: devis.id },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    if (response.data.success) {
+      alert(`Facture ${response.data.data.numero} générée avec succès !`);
+      // Rafraîchir la liste des devis
+      await fetchDevis();
+      // Rediriger vers la page des factures
+      navigate('/factures');
+    } else {
+      throw new Error(response.data.message || 'Erreur lors de la génération');
+    }
+  } catch (error) {
+    console.error('Erreur génération facture:', error);
+    setError(error.response?.data?.message || error.message);
+  }
+};
+
   const { totalHT, tvaAmount, totalTTC } = calculateTotal();
 
   if (loading) return <div>Chargement...</div>;
@@ -474,9 +506,11 @@ const Devis = () => {
                 <button onClick={() => handleViewDevis(item)} className="btn-icon">
                   <FiEye />
                 </button>
-                <button onClick={() => handlePrintDevis(item)} className="btn-icon">
-                  <FiPrinter />
-                </button>
+                {item.statut === 'accepté' && (
+    <button onClick={() => handleGenerateFacture(item)} className="btn-icon">
+      <FiFileText />
+    </button>
+  )}
                 <button onClick={() => handleEditDevis(item)} className="btn-icon">
                   <FiEdit2 />
                 </button>
