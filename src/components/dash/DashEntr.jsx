@@ -1,4 +1,3 @@
-// components/dash/DashEntr.js
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { 
@@ -14,11 +13,10 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiTrendingUp,
-  FiGlobe,
-  FiStar,
   FiMenu,
   FiX
 } from 'react-icons/fi';
+import defaultAvatar from '../../assets/default-avatar.png';
 import DashboardHome from './DashboardHome';
 import './Dashboard.css';
 
@@ -70,11 +68,7 @@ const DashEntr = ({ setIsAuthenticated }) => {
       sessionStorage.clear();
       
       if (setIsAuthenticated) {
-        setIsAuthenticated({
-          isAuthenticated: false,
-          userRole: null,
-          isLoading: false
-        });
+        setIsAuthenticated(false);
       }
       
       window.location.href = '/login';
@@ -99,11 +93,16 @@ const DashEntr = ({ setIsAuthenticated }) => {
     setShowNotifications(false);
   };
 
-  const unreadNotifications = notifications.filter(n => !n.read).length;
+  const markAllAsRead = () => {
+    // Logique pour marquer toutes les notifications comme lues
+    setShowNotifications(false);
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <div className={`ai-dashboard ${mobileMenuOpen ? 'mobile-menu-open' : ''}`}>
-      {/* Sidebar Entreprise */}
+      {/* Sidebar Entreprise - Style similaire à DashComp */}
       <div className="ai-sidebar" ref={sidebarRef}>
         <div className="sidebar-header">
           <h1>E-Commerce</h1>
@@ -163,7 +162,7 @@ const DashEntr = ({ setIsAuthenticated }) => {
         )}
       </div>
 
-      {/* Contenu principal */}
+      {/* Contenu principal - Style unifié */}
       <div className="ai-main">
         <header className="ai-header">
           <div className="ai-search">
@@ -176,18 +175,18 @@ const DashEntr = ({ setIsAuthenticated }) => {
           </div>
           
           <div className="header-right">
-            {/* Notifications */}
+            {/* Notifications - Style identique à DashComp */}
             <div className="notification-container">
               <button 
                 className="notification-btn" 
                 onClick={() => setShowNotifications(!showNotifications)}
-                aria-label={`Notifications ${unreadNotifications > 0 ? `(${unreadNotifications} non lues)` : ''}`}
+                aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} non lues)` : ''}`}
                 aria-expanded={showNotifications}
               >
                 <FiBell className="icon" />
-                {unreadNotifications > 0 && (
+                {unreadCount > 0 && (
                   <span className="notification-badge">
-                    {unreadNotifications}
+                    {unreadCount}
                   </span>
                 )}
               </button>
@@ -198,9 +197,10 @@ const DashEntr = ({ setIsAuthenticated }) => {
                     <h4>Notifications</h4>
                     <button 
                       className="mark-all-read" 
-                      onClick={() => setShowNotifications(false)}
+                      onClick={markAllAsRead}
+                      aria-label="Marquer toutes les notifications comme lues"
                     >
-                      Marquer comme lues
+                      Tout marquer comme lu
                     </button>
                   </div>
                   <div className="notifications-list">
@@ -218,11 +218,18 @@ const DashEntr = ({ setIsAuthenticated }) => {
                       </div>
                     ))}
                   </div>
+                  <button 
+                    className="view-all"
+                    onClick={() => handleNavigation('/dash-entr/notifications')}
+                    aria-label="Voir toutes les notifications"
+                  >
+                    Voir toutes les notifications
+                  </button>
                 </div>
               )}
             </div>
 
-            {/* Profil utilisateur */}
+            {/* Profil utilisateur - Style identique à DashComp */}
             <div className="user-mini-profile-container">
               <div 
                 className="user-mini-profile" 
@@ -231,19 +238,15 @@ const DashEntr = ({ setIsAuthenticated }) => {
                 aria-label="Menu utilisateur"
               >
                 <div className="user-avatar-mini">
-                  {userData?.avatar ? (
-                    <img 
-                      src={userData.avatar} 
-                      alt={`Avatar de ${userData.name || userData.username || 'utilisateur'}`} 
-                      className="user-avatar-img" 
-                    />
-                  ) : (
-                    <div className="default-avatar-mini">
-                      {userData?.name?.charAt(0)?.toUpperCase() || 
-                       userData?.username?.charAt(0)?.toUpperCase() || 
-                       'E'}
-                    </div>
-                  )}
+                  <img 
+                    src={userData?.avatar || defaultAvatar} 
+                    alt={`Avatar de ${userData.name || userData.username || 'utilisateur'}`}
+                    className="user-avatar-img"
+                    onError={(e) => {
+                      e.target.onerror = null; 
+                      e.target.src = defaultAvatar;
+                    }}
+                  />
                 </div>
                 {showProfileDropdown ? <FiChevronUp /> : <FiChevronDown />}
               </div>
@@ -280,7 +283,6 @@ const DashEntr = ({ setIsAuthenticated }) => {
         {/* Contenu */}
         <div className="ai-content">
           <Outlet context={{ userData }} />
-          {location.pathname === '/dash-entr' && <DashboardHome />}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiEdit2, FiTrash2, FiPlus, FiLoader } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiPlus, FiLoader, FiSearch, FiExternalLink, FiX } from 'react-icons/fi';
 import './comptable.css';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -11,6 +11,7 @@ const EntrepriseList = () => {
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingEntreprise, setEditingEntreprise] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [newEntreprise, setNewEntreprise] = useState({
     nom: '',
     email: '',
@@ -21,6 +22,8 @@ const EntrepriseList = () => {
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedEntreprise, setSelectedEntreprise] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -65,6 +68,12 @@ const EntrepriseList = () => {
 
     fetchEntreprises();
   }, [navigate]);
+
+  const filteredEntreprises = entreprises.filter(entreprise =>
+    Object.values(entreprise).some(
+      value => typeof value === 'string' && 
+      value.toLowerCase().includes(searchTerm.toLowerCase())
+  ));
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -111,98 +120,78 @@ const EntrepriseList = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  if (!validateForm()) return;
+    e.preventDefault();
+    if (!validateForm()) return;
+    setIsSubmitting(true);
 
-  setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      if (!token) {
+        toast.error('Session expirée, veuillez vous reconnecter');
+        navigate('/login');
+        return;
+      }
 
-  try {
-    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-    if (!token) {
-      toast.error('Session expirée, veuillez vous reconnecter');
-      navigate('/login');
-      return;
+      const url = editingEntreprise 
+        ? `http://localhost:5000/api/entreprises/${editingEntreprise.id}`
+        : 'http://localhost:5000/api/entreprises';
+
+      const method = editingEntreprise ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token.trim()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nom: newEntreprise.nom,
+          email: newEntreprise.email,
+          adresse: newEntreprise.adresse,
+          telephone: newEntreprise.telephone || null,
+          numeroIdentificationFiscale: newEntreprise.numeroIdentificationFiscale,
+          ...(newEntreprise.motDePasse && { motDePasse: newEntreprise.motDePasse })
+        })
+      });
+
+      if (response.status === 404) {
+        throw new Error('Entreprise non trouvée (404) - Actualisez la liste');
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `Erreur ${response.status}`);
+      }
+
+      setEntreprises(prev => 
+        editingEntreprise 
+          ? prev.map(e => e.id === editingEntreprise.id ? data.entreprise : e)
+          : [...prev, data.entreprise]
+      );
+
+      toast.success(
+        editingEntreprise 
+          ? 'Entreprise modifiée avec succès!' 
+          : 'Entreprise créée avec succès!',
+        { position: "top-center", autoClose: 3000 }
+      );
+
+      setShowAddModal(false);
+      resetForm();
+    } catch (error) {
+      console.error("Erreur:", error);
+      toast.error(
+        error.message.includes('404') 
+          ? 'Entreprise introuvable - Actualisez la liste et réessayez'
+          : error.message || 'Erreur lors de la requête',
+        { position: "top-center" }
+      );
+    } finally {
+      setIsSubmitting(false);
+      setEditingEntreprise(null);
     }
-
-    // Vérification que l'ID existe bien en mode édition
-    if (editingEntreprise && !editingEntreprise.id) {
-      throw new Error('ID entreprise manquant pour la modification');
-    }
-
-    const url = editingEntreprise 
-      ? `http://localhost:5000/api/entreprises/${editingEntreprise.id}`
-      : 'http://localhost:5000/api/entreprises';
-
-    const method = editingEntreprise ? 'PUT' : 'POST';
-
-    console.log('Envoi requête:', { 
-      url, 
-      method, 
-      editingId: editingEntreprise?.id,
-      body: {
-        ...newEntreprise,
-        telephone: newEntreprise.telephone || null
-      } 
-    });
-
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Authorization': `Bearer ${token.trim()}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        nom: newEntreprise.nom,
-        email: newEntreprise.email,
-        adresse: newEntreprise.adresse,
-        telephone: newEntreprise.telephone || null,
-        numeroIdentificationFiscale: newEntreprise.numeroIdentificationFiscale,
-        ...(newEntreprise.motDePasse && { motDePasse: newEntreprise.motDePasse })
-      })
-    });
-
-    // Gestion spécifique des erreurs 404
-    if (response.status === 404) {
-      throw new Error('Entreprise non trouvée (404) - Actualisez la liste');
-    }
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || `Erreur ${response.status}`);
-    }
-
-    // Mise à jour de l'état
-    setEntreprises(prev => 
-      editingEntreprise 
-        ? prev.map(e => e.id === editingEntreprise.id ? data.entreprise : e)
-        : [...prev, data.entreprise]
-    );
-
-    toast.success(
-      editingEntreprise 
-        ? 'Entreprise modifiée avec succès!' 
-        : 'Entreprise créée avec succès!',
-      { position: "top-center", autoClose: 3000 }
-    );
-
-    setShowAddModal(false);
-    resetForm();
-
-  } catch (error) {
-    console.error("Erreur détaillée:", error);
-    toast.error(
-      error.message.includes('404') 
-        ? 'Entreprise introuvable - Actualisez la liste et réessayez'
-        : error.message || 'Erreur lors de la requête',
-      { position: "top-center" }
-    );
-  } finally {
-    setIsSubmitting(false);
-    setEditingEntreprise(null);
-  }
-};
+  };
 
   const resetForm = () => {
     setNewEntreprise({
@@ -218,7 +207,6 @@ const EntrepriseList = () => {
   };
 
   const handleEdit = (entreprise) => {
-    console.log('Modification entreprise:', entreprise);
     setEditingEntreprise(entreprise);
     setNewEntreprise({
       nom: entreprise.nom,
@@ -258,6 +246,11 @@ const EntrepriseList = () => {
         position: "top-center",
       });
     }
+  };
+
+  const openDetailModal = (entreprise) => {
+    setSelectedEntreprise(entreprise);
+    setShowDetailModal(true);
   };
 
   if (loading) {
@@ -303,142 +296,251 @@ const EntrepriseList = () => {
       
       <div className="header-section">
         <h2>Gestion des Entreprises</h2>
-        <button 
-          className="add-button"
-          onClick={() => setShowAddModal(true)}
-          disabled={loading}
-        >
-          <FiPlus /> Ajouter
-        </button>
+        <div className="header-actions">
+          <div className="search-container">
+            <FiSearch className="search-icon" />
+            <input
+              type="text"
+              placeholder="Rechercher une entreprise..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button 
+            className="add-button"
+            onClick={() => setShowAddModal(true)}
+            disabled={loading}
+          >
+            <FiPlus /> Ajouter
+          </button>
+        </div>
       </div>
 
       {showAddModal && (
-        <div className="modal-overlay" onClick={() => {
-          if (!isSubmitting) {
-            setShowAddModal(false);
-            setEditingEntreprise(null);
-            resetForm();
-          }
-        }}>
+        <div className="modal-overlay" onClick={() => !isSubmitting && setShowAddModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingEntreprise ? 'Modifier Entreprise' : 'Nouvelle Entreprise'}</h3>
               <button
-                className="close-button"
-                onClick={() => {
-                  if (!isSubmitting) {
-                    setShowAddModal(false);
-                    setEditingEntreprise(null);
-                    resetForm();
-                  }
-                }}
+                className="modal-close-btn"
+                onClick={() => !isSubmitting && setShowAddModal(false)}
                 disabled={isSubmitting}
               >
-                &times;
+                <FiX />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit}>
-              {['nom', 'email', 'adresse', 'telephone', 'numeroIdentificationFiscale', 'motDePasse'].map((field) => (
-                <div className="form-group" key={field}>
-                  <label>
-                    {field === 'motDePasse' ? 'Mot de passe *' : 
-                     field === 'numeroIdentificationFiscale' ? 'NIF *' :
-                     field.charAt(0).toUpperCase() + field.slice(1) + (['nom', 'email', 'adresse'].includes(field) ? ' *' : '')}
-                  </label>
-                  <input
-                    type={field === 'motDePasse' ? 'password' : 
-                          field === 'email' ? 'email' : 
-                          field === 'telephone' ? 'tel' : 'text'}
-                    name={field}
-                    value={newEntreprise[field]}
-                    onChange={handleInputChange}
-                    className={formErrors[field] ? 'error' : ''}
-                    disabled={isSubmitting}
-                  />
-                  {formErrors[field] && <span className="error-message">{formErrors[field]}</span>}
-                </div>
-              ))}
+            <div className="modal-body">
+              <form onSubmit={handleSubmit}>
+                {['nom', 'email', 'adresse', 'telephone', 'numeroIdentificationFiscale', 'motDePasse'].map((field) => (
+                  <div className="form-group" key={field}>
+                    <label>
+                      {field === 'motDePasse' ? 'Mot de passe' : 
+                       field === 'numeroIdentificationFiscale' ? 'NIF' :
+                       field.charAt(0).toUpperCase() + field.slice(1)}
+                      {['nom', 'email', 'adresse', 'numeroIdentificationFiscale'].includes(field) && ' *'}
+                    </label>
+                    <input
+                      type={field === 'motDePasse' ? 'password' : 
+                            field === 'email' ? 'email' : 
+                            field === 'telephone' ? 'tel' : 'text'}
+                      name={field}
+                      value={newEntreprise[field]}
+                      onChange={handleInputChange}
+                      className={formErrors[field] ? 'error' : ''}
+                      disabled={isSubmitting}
+                      placeholder={
+                        field === 'motDePasse' ? 'Laisser vide pour ne pas modifier' :
+                        field === 'telephone' ? 'Optionnel' : ''
+                      }
+                    />
+                    {formErrors[field] && <span className="error-message">{formErrors[field]}</span>}
+                  </div>
+                ))}
+              </form>
+            </div>
 
-              <div className="form-actions">
-                <button 
-                  type="button" 
-                  className="cancel-btn"
-                  onClick={() => {
-                    setShowAddModal(false);
-                    setEditingEntreprise(null);
-                    resetForm();
-                  }}
-                  disabled={isSubmitting}
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="submit-btn"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <FiLoader className="spinner" />
-                      {editingEntreprise ? 'Modification...' : 'Création...'}
-                    </>
-                  ) : editingEntreprise ? 'Modifier' : 'Enregistrer'}
-                </button>
-              </div>
-            </form>
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                className="btn btn-cancel"
+                onClick={() => setShowAddModal(false)}
+                disabled={isSubmitting}
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                className="btn btn-submit"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <FiLoader className="spinner" size={16} />
+                    {editingEntreprise ? 'Enregistrement...' : 'Création...'}
+                  </>
+                ) : editingEntreprise ? 'Enregistrer' : 'Créer'}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {entreprises.length === 0 ? (
+      {showDetailModal && selectedEntreprise && (
+        <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Détails de l'entreprise</h3>
+              <button
+                className="modal-close-btn"
+                onClick={() => setShowDetailModal(false)}
+              >
+                <FiX />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="detail-container">
+                <div className="detail-logo">
+                  {selectedEntreprise.nom.charAt(0).toUpperCase()}
+                </div>
+                <h4>{selectedEntreprise.nom}</h4>
+                <div className="detail-info">
+                  <div className="detail-row">
+                    <span className="detail-label">Email:</span>
+                    <span className="detail-value">{selectedEntreprise.email}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Adresse:</span>
+                    <span className="detail-value">{selectedEntreprise.adresse}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Téléphone:</span>
+                    <span className="detail-value">{selectedEntreprise.telephone || '-'}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">NIF:</span>
+                    <span className="detail-value">{selectedEntreprise.numeroIdentificationFiscale}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Statut:</span>
+                    <span className="detail-value status-active">Actif</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Date de création:</span>
+                    <span className="detail-value">
+                      {new Date(selectedEntreprise.createdAt).toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                className="btn btn-cancel"
+                onClick={() => setShowDetailModal(false)}
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {filteredEntreprises.length === 0 ? (
         <div className="empty-state">
-          <p>Aucune entreprise enregistrée</p>
-          <button className="add-button" onClick={() => setShowAddModal(true)}>
-            <FiPlus /> Ajouter une entreprise
-          </button>
+          {searchTerm ? (
+            <>
+              <p>Aucune entreprise trouvée pour "{searchTerm}"</p>
+              <button className="clear-search" onClick={() => setSearchTerm('')}>
+                Effacer la recherche
+              </button>
+            </>
+          ) : (
+            <>
+              <p>Aucune entreprise enregistrée</p>
+              <button className="add-button" onClick={() => setShowAddModal(true)}>
+                <FiPlus /> Ajouter une entreprise
+              </button>
+            </>
+          )}
         </div>
       ) : (
-        <div className="table-responsive">
-          <table className="entreprise-table">
-            <thead>
-              <tr>
-                <th>Nom</th>
-                <th>Email</th>
-                <th>Adresse</th>
-                <th>Téléphone</th>
-                <th>NIF</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entreprises.map(entreprise => (
-                <tr key={entreprise.id}>
-                  <td>{entreprise.nom}</td>
-                  <td>{entreprise.email}</td>
-                  <td>{entreprise.adresse}</td>
-                  <td>{entreprise.telephone || '-'}</td>
-                  <td>{entreprise.numeroIdentificationFiscale}</td>
-                  <td className="actions">
-                    <button 
-                      className="edit-btn" 
-                      title="Modifier"
-                      onClick={() => handleEdit(entreprise)}
-                    >
-                      <FiEdit2 />
-                    </button>
-                    <button 
-                      className="delete-btn" 
-                      title="Supprimer"
-                      onClick={() => handleDelete(entreprise.id)}
-                    >
-                      <FiTrash2 />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="entreprise-cards">
+          {filteredEntreprises.map(entreprise => (
+            <div className="entreprise-card" key={entreprise.id}>
+              <div className="card-gradient"></div>
+              <div className="card-header">
+                <div className="company-logo">
+                  {entreprise.nom.charAt(0).toUpperCase()}
+                </div>
+                <div className="company-info">
+                  <h3>{entreprise.nom}</h3>
+                  <span className="company-id">ID: {entreprise.numeroIdentificationFiscale}</span>
+                </div>
+                <div className="card-actions">
+                  <button 
+                    className="edit-btn" 
+                    title="Modifier"
+                    onClick={() => handleEdit(entreprise)}
+                  >
+                    <FiEdit2 />
+                  </button>
+                  <button 
+                    className="delete-btn" 
+                    title="Supprimer"
+                    onClick={() => handleDelete(entreprise.id)}
+                  >
+                    <FiTrash2 />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="card-body">
+                <div className="info-grid">
+                  <div className="info-item">
+                    <span className="info-label">Email</span>
+                    <span className="info-value">{entreprise.email}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Adresse</span>
+                    <span className="info-value">{entreprise.adresse}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Téléphone</span>
+                    <span className="info-value">{entreprise.telephone || '-'}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Statut</span>
+                    <span className="info-value status-active">Actif</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="card-footer">
+                <span className="last-update">
+                  Créé le: {new Date(entreprise.createdAt).toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                  })}
+                </span>
+                <button 
+                  className="details-btn"
+                  onClick={() => openDetailModal(entreprise)}
+                >
+                  <FiExternalLink /> Détails
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

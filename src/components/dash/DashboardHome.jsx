@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const DashboardHome = () => {
+const DashboardHome = ({ user }) => {
   const [currentTime, setCurrentTime] = useState('');
   const [greeting, setGreeting] = useState('');
   const [temperature, setTemperature] = useState(20);
@@ -14,6 +14,7 @@ const DashboardHome = () => {
   const [robotMessage, setRobotMessage] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [username, setUsername] = useState('');
 
   // Function to get time-based greeting
   const getGreeting = () => {
@@ -22,6 +23,31 @@ const DashboardHome = () => {
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
   };
+
+  // Function to get username based on user data
+  const getUsername = () => {
+    try {
+      // If user has direct name property
+      if (user?.name) return user.name;
+      
+      // If user has email, use the part before @
+      if (user?.email) return user.email.split('@')[0];
+      
+      // Role-based fallbacks
+      if (user?.role === 'comptable') return 'Comptable';
+      if (user?.role === 'entreprise') return 'Entreprise';
+      
+      return 'User';
+    } catch (error) {
+      console.error("Error determining username:", error);
+      return 'User';
+    }
+  };
+
+  useEffect(() => {
+    // Set username when component mounts or user changes
+    setUsername(getUsername());
+  }, [user]);
 
   // Function to generate random assistant messages
   const generateRobotMessage = () => {
@@ -73,12 +99,11 @@ const DashboardHome = () => {
     
     // Simulate KPI data loading
     const loadData = () => {
-      // In reality, you would make an API call here
       setTimeout(() => {
         setKpiData({
-          activeClients: Math.floor(Math.random() * 50) + 20, // 20-70
-          monthlyInvoices: Math.floor(Math.random() * 100) + 30, // 30-130
-          companies: Math.floor(Math.random() * 20) + 5 // 5-25
+          activeClients: Math.floor(Math.random() * 50) + 20,
+          monthlyInvoices: Math.floor(Math.random() * 100) + 30,
+          companies: Math.floor(Math.random() * 20) + 5
         });
         
         setActivities([
@@ -93,12 +118,12 @@ const DashboardHome = () => {
         // Simulate weather data
         const weatherTypes = ['sunny', 'cloudy', 'rainy'];
         setWeather(weatherTypes[Math.floor(Math.random() * weatherTypes.length)]);
-        setTemperature(Math.floor(Math.random() * 10) + 18); // 18-28°C
+        setTemperature(Math.floor(Math.random() * 10) + 18);
       }, 1000);
     };
     
     loadData();
-    const dataInterval = setInterval(loadData, 300000); // Refresh every 5 minutes
+    const dataInterval = setInterval(loadData, 300000);
     
     return () => {
       clearInterval(timeInterval);
@@ -125,7 +150,8 @@ const DashboardHome = () => {
     }
   };
 
-  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const monthNames = ["January", "February", "March", "April", "May", "June", 
+                     "July", "August", "September", "October", "November", "December"];
   const days = generateCalendarDays();
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -144,8 +170,9 @@ const DashboardHome = () => {
           </div>
           
           <div className="ai-welcome-message">
-            <h1>{greeting}, Jennifer</h1>
+            <h1>{greeting}, {username}</h1>
             <p>Current time is {currentTime}. {robotMessage}</p>
+            {user?.role && <p className="user-role">Role: {user.role}</p>}
           </div>
         </div>
 
