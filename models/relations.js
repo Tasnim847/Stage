@@ -3,7 +3,8 @@ import Comptable from './Comptable.js';
 import Entreprise from './Entreprise.js';
 import Devis   from './Devis.js';
 import LigneDevis from './lignesDevis.js';
-import Facture from "./Facture.js";
+import Facture from './Facture.js';
+import LigneFacture from "./LigneFacture.js";
 
 export default function setupRelations() {
     try {
@@ -60,10 +61,24 @@ export default function setupRelations() {
         Devis.hasOne(Facture, { foreignKey: 'devis_id' });
         Facture.belongsTo(Devis, { foreignKey: 'devis_id' });
 
+
 // La relation avec Entreprise se fait via Devis
         Facture.belongsTo(Entreprise, {
             through: Devis,
             foreignKey: 'entreprise_id'
+        });
+
+        // Association Facture -> LigneFacture (une facture a plusieurs lignes)
+        Facture.hasMany(LigneFacture, {
+            foreignKey: 'facture_id',
+            as: 'lignes',
+            onDelete: 'CASCADE'
+        });
+
+// Association LigneFacture -> Facture (une ligne appartient à une facture)
+        LigneFacture.belongsTo(Facture, {
+            foreignKey: 'facture_id',
+            as: 'facture'
         });
 
         console.log('✅ Relations configurées avec succès');

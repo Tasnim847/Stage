@@ -9,6 +9,7 @@ import setupRelations from './models/relations.js';
 import { authenticateToken } from './middleware/auth.js'; // Importez le middleware
 import profileRoutes from './routes/profileRoutes.js';
 import devisRoutes from './routes/devisRoutes.js';
+import factureRoutes from "./routes/factureRoutes.js";
 import fs from 'fs';
 import path from 'path';
 
@@ -68,6 +69,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/entreprises', authenticateToken, entrepriseRoutes);
 app.use('/api/profile', authenticateToken, profileRoutes); // Nouvelle route
 app.use('/api/devis', authenticateToken, devisRoutes);
+app.use('/api/factures', authenticateToken, factureRoutes);
 
 // Route de santé
 app.get('/api/health', (req, res) => {

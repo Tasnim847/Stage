@@ -31,11 +31,11 @@ const Facture = sequelize.define('Facture', {
     },
     montant_ht: {
         type: DataTypes.DECIMAL(10, 2),
-        allowNull: false,
+        allowNull: true, // Changed from false to true
     },
     montant_ttc: {
         type: DataTypes.DECIMAL(10, 2),
-        allowNull: false,
+        allowNull: true, // Changed from false to true
     },
     statut_paiement: {
         type: DataTypes.ENUM('impayé', 'partiel', 'payé'),
@@ -45,6 +45,11 @@ const Facture = sequelize.define('Facture', {
         type: DataTypes.STRING(50),
         allowNull: true,
     },
+    createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW
+    }
 }, {
     tableName: 'factures',
     freezeTableName: true,

@@ -5,6 +5,7 @@ import Entreprise from '../models/Entreprise.js';
 import Devis from "../models/Devis.js";
 import LigneDevis from "../models/lignesDevis.js";
 import Facture from "../models/Facture.js";
+import LigneFacture from "../models/LigneFacture.js";
 
 /*
 export default async function syncDatabase() {
@@ -63,7 +64,8 @@ export default async function syncDatabase() {
             { model: Entreprise, tableName: 'entreprises' },
             { model: Devis, tableName: 'devis' },
             { model: LigneDevis, tableName: 'lignes_devis' },
-            { model: Facture, tableName: 'factures' }
+            { model: Facture, tableName: 'factures' },
+            { model: LigneFacture, tableName: 'ligne_facture' }
         ];
 
         for (const { model, tableName } of models) {
