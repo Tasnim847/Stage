@@ -76,6 +76,11 @@ const Entreprise = sequelize.define('Entreprise', {
         allowNull: false,
         defaultValue: true,
         field: 'is_active' // Spécifie explicitement le nom de la colonne
+    },
+    createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW
     }
 }, {
     tableName: 'entreprises',

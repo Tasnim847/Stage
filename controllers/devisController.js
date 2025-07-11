@@ -113,6 +113,8 @@ export const createDevis = async (req, res) => {
             remise = 0,
             tva = 20,
             client_name,
+            montant_ttc,
+            montant_ht,
             lignes = [],
             statut = 'brouillon'
         } = req.body;
@@ -242,20 +244,23 @@ export const updateDevis = async (req, res) => {
             // Calcul des nouveaux montants
             const lignes = req.body.lignes || [];
             const montantHT = lignes.reduce((sum, ligne) =>
-                sum + ((parseFloat(ligne.prix_unitaire_ht) || 0) * (parseFloat(ligne.quantite) || 0), 0));
+                sum + (parseFloat(ligne.prix_unitaire_ht || 0) * parseFloat(ligne.quantite || 0)), 0);
 
-            const montantApresRemise = montantHT - (montantHT * (req.body.remise / 100));
-            const montantTTC = montantApresRemise * (1 + (req.body.tva / 100));
+            const remise = parseFloat(req.body.remise || 0);
+            const tva = parseFloat(req.body.tva || 20);
+
+            const montantApresRemise = montantHT - (montantHT * (remise / 100));
+            const montantTTC = montantApresRemise * (1 + (tva / 100));
 
             // Mise à jour du devis
             await devis.update({
                 date_validite: req.body.date_validite,
-                client_name: req.body.client_name,  // Ajouté ici
-                remise: req.body.remise,
-                tva: req.body.tva,
+                client_name: req.body.client_name,
+                remise: remise,
+                tva: tva,
                 statut: req.body.statut,
-                montant_ht: montantHT,
-                montant_ttc: montantTTC
+                montant_ht: parseFloat(montantHT.toFixed(2)),
+                montant_ttc: parseFloat(montantTTC.toFixed(2))
             }, { transaction });
 
             // Suppression des anciennes lignes

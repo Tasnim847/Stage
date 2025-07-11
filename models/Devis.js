@@ -27,7 +27,7 @@ const Devis = sequelize.define('Devis', {
             key: 'id',
         },
     },
-    client_name: {  // Nouveau champ pour le nom du client
+    client_name: {
         type: DataTypes.STRING(100),
         allowNull: false,
     },
@@ -39,6 +39,16 @@ const Devis = sequelize.define('Devis', {
         type: DataTypes.DECIMAL(5, 2),
         defaultValue: 20.00,
     },
+    montant_ht: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0.00,
+    },
+    montant_ttc: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0.00,
+    },
     statut: {
         type: DataTypes.STRING(50),
         defaultValue: 'brouillon',
@@ -48,10 +58,10 @@ const Devis = sequelize.define('Devis', {
         allowNull: true,
     },
 }, {
-    tableName: 'devis', // Force le nom en minuscules
-    freezeTableName: true, // Empêche Sequelize de modifier le nom
+    tableName: 'devis',
+    freezeTableName: true,
     timestamps: false,
-    underscored: true // Active uniquement si tu veux createdAt et updatedAt
+    underscored: true
 });
 
 export default Devis;

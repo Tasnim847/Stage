@@ -35,10 +35,9 @@ const User = sequelize.define('User', {
 }, {
     tableName: 'users',
     timestamps: true, // Génère created_at et updated_at
-    paranoid: true,   // Ajoute deleted_at
+    paranoid: false,   // Ajoute deleted_at
     createdAt: 'created_at', // Nom de colonne personnalisé
-    updatedAt: 'updated_at',
-    deletedAt: 'deleted_at',
+    updatedAt: 'updated_at'
 });
 
 export default User;

@@ -14,7 +14,7 @@ export const getEntreprisesForComptable = async (req, res) => {
 
         const entreprises = await Entreprise.findAll({
             where: { comptableId: req.user.id },
-            attributes: ['id', 'nom', 'email', 'adresse', 'telephone', 'numeroIdentificationFiscale']
+            attributes: ['id', 'nom', 'email', 'adresse', 'telephone', 'numeroIdentificationFiscale', 'createdAt'] // Ajoutez createdAt ici
         });
 
         res.json(entreprises);
@@ -126,7 +126,10 @@ export const deleteEntreprise = async (req, res) => {
     const transaction = await sequelize.transaction();
 
     try {
-        const entreprise = await Entreprise.findByPk(req.params.id, { transaction });
+        const entreprise = await Entreprise.findByPk(req.params.id, {
+            include: [{ model: User }],
+            transaction
+        });
 
         if (!entreprise) {
             await transaction.rollback();
@@ -136,6 +139,7 @@ export const deleteEntreprise = async (req, res) => {
             });
         }
 
+        // Vérification des permissions
         if (entreprise.comptableId !== req.user.id) {
             await transaction.rollback();
             return res.status(403).json({
@@ -144,26 +148,41 @@ export const deleteEntreprise = async (req, res) => {
             });
         }
 
-        await User.destroy({
-            where: { id: entreprise.userId },
+        // Hard delete de l'utilisateur associé
+        if (entreprise.User) {
+            await User.destroy({
+                where: { id: entreprise.User.id },
+                force: true, // Force le hard delete
+                transaction
+            });
+        }
+
+        // Hard delete de l'entreprise
+        await entreprise.destroy({
+            force: true, // Force le hard delete si Entreprise utilise aussi paranoid
             transaction
         });
-
-        await entreprise.destroy({ transaction });
 
         await transaction.commit();
 
         res.json({
             success: true,
-            message: 'Entreprise supprimée'
+            message: 'Entreprise et utilisateur associé supprimés définitivement'
         });
 
     } catch (error) {
         await transaction.rollback();
-        console.error("Erreur:", error);
+        console.error("Erreur lors de la suppression:", error);
+
+        let errorMessage = 'Erreur lors de la suppression';
+        if (error.name === 'SequelizeForeignKeyConstraintError') {
+            errorMessage = 'Impossible de supprimer cette entreprise car elle est référencée ailleurs';
+        }
+
         res.status(500).json({
             success: false,
-            message: 'Erreur lors de la suppression'
+            message: errorMessage,
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };

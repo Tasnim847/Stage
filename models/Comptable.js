@@ -69,7 +69,7 @@ const Comptable = sequelize.define('Comptable', {
 }, {
     tableName: 'comptables',
     timestamps: true,
-    paranoid: true,
+    paranoid: false,
 });
 
 export default Comptable;
