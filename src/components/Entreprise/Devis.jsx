@@ -22,11 +22,13 @@ const Devis = () => {
     tva: 20,
     statut: 'brouillon',
     client_name: '',
+    montant_ht: 0, // Ajouté
+    montant_ttc: 0, // Ajouté
     lignes: [{
-      description: '',
-      prix_unitaire_ht: 0,
-      quantite: 1,
-      unite: 'unité'
+        description: '',
+        prix_unitaire_ht: 0,
+        quantite: 1,
+        unite: 'unité'
     }]
   });
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -135,14 +137,21 @@ const Devis = () => {
       }
 
       const response = await axios.get('http://localhost:5000/api/devis', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-      setDevis(response.data.data || []);
-      setError(null);
+    // Transformez les données pour s'assurer que les montants sont des nombres
+    const formattedDevis = response.data.data.map(devis => ({
+      ...devis,
+      montant_ht: parseFloat(devis.montant_ht) || 0,
+      montant_ttc: parseFloat(devis.montant_ttc) || 0
+    }));
+
+    setDevis(formattedDevis || []);
+
     } catch (error) {
       console.error('Erreur lors fetchDevis:', error.response || error);
       if (error.response?.status === 401) {
@@ -192,22 +201,24 @@ const Devis = () => {
     checkAuth();
     setCurrentDevis(devis);
     setFormData({
-      numero: devis.numero,
-      date_creation: devis.date_creation.split('T')[0],
-      date_validite: devis.date_validite?.split('T')[0] || '',
-      remise: devis.remise,
-      tva: devis.tva,
-      statut: devis.statut,
-      client_name: devis.client_name,
-      lignes: devis.lignes?.length > 0 ? devis.lignes : [{
-        description: '',
-        prix_unitaire_ht: 0,
-        quantite: 1,
-        unite: 'unité'
-      }]
+        numero: devis.numero,
+        date_creation: devis.date_creation.split('T')[0],
+        date_validite: devis.date_validite?.split('T')[0] || '',
+        remise: devis.remise,
+        tva: devis.tva,
+        statut: devis.statut,
+        client_name: devis.client_name,
+        montant_ht: parseFloat(devis.montant_ht) || 0,
+        montant_ttc: parseFloat(devis.montant_ttc) || 0,
+        lignes: devis.lignes?.length > 0 ? devis.lignes : [{
+            description: '',
+            prix_unitaire_ht: 0,
+            quantite: 1,
+            unite: 'unité'
+        }]
     });
     setShowModal(true);
-  };
+};
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -242,15 +253,20 @@ const Devis = () => {
   };
 
   const calculateTotal = () => {
-  const totalHT = formData.lignes.reduce((sum, ligne) => sum + (ligne.prix_unitaire_ht * ligne.quantite), 0);
-  const remiseAmount = totalHT * (formData.remise / 100); // Correction ici (remise au lieu de remise)
+  const totalHT = formData.lignes.reduce((sum, ligne) => 
+    sum + (parseFloat(ligne.prix_unitaire_ht || 0) * parseInt(ligne.quantite || 1)), 0);
+  
+  const remiseAmount = totalHT * (parseFloat(formData.remise || 0) / 100);
   const totalAfterRemise = totalHT - remiseAmount;
-  const tvaAmount = totalAfterRemise * (formData.tva / 100);
+  const tvaAmount = totalAfterRemise * (parseFloat(formData.tva || 20) / 100);
   const totalTTC = totalAfterRemise + tvaAmount;
+  
   return {
     totalHT: totalHT.toFixed(2),
     tvaAmount: tvaAmount.toFixed(2),
-    totalTTC: totalTTC.toFixed(2)
+    totalTTC: totalTTC.toFixed(2),
+    montant_ht: totalHT,
+    montant_ttc: totalTTC
   };
 };
 
@@ -296,17 +312,20 @@ const Devis = () => {
 
   // Fonction pour soumettre le devis
   const submitDevis = async () => {
+    const totals = calculateTotal();
     const token = getToken();
     const dataToSend = {
-      ...formData,
-      remise: parseFloat(formData.remise) || 0,
-      tva: parseFloat(formData.tva) || 20,
-      lignes: formData.lignes.map(l => ({
-        description: l.description,
-        prix_unitaire_ht: parseFloat(l.prix_unitaire_ht) || 0,
-        quantite: parseInt(l.quantite) || 1,
-        unite: l.unite || 'unité'
-      }))
+        ...formData,
+        remise: parseFloat(formData.remise) || 0,
+        tva: parseFloat(formData.tva) || 20,
+        montant_ht: totals.montant_ht, // Ajouté
+        montant_ttc: totals.montant_ttc, // Ajouté
+        lignes: formData.lignes.map(l => ({
+            description: l.description,
+            prix_unitaire_ht: parseFloat(l.prix_unitaire_ht) || 0,
+            quantite: parseInt(l.quantite) || 1,
+            unite: l.unite || 'unité'
+        }))
     };
 
     const url = currentDevis 
@@ -348,15 +367,25 @@ const Devis = () => {
         setShowAIModal(true);
       } else {
         // Sinon, soumettre directement
-        const response = await submitDevis();
-        if (response.data?.success) {
-          await fetchDevis();
-          setShowModal(false);
-        } else {
-          throw new Error(response.data?.message || 'Erreur lors de la soumission');
+          const response = await submitDevis();
+          if (response.data?.success) {
+            await fetchDevis();
+            setShowModal(false);
+            setAlert({
+              show: true,
+              message: currentDevis 
+              ? 'Devis mis à jour avec succès' 
+              : 'Devis créé avec succès',
+              type: 'success'
+            });
+          }
         }
-      }
     } catch (error) {
+      setAlert({
+        show: true,
+        message: error.response?.data?.message || error.message,
+        type: 'error'
+      });
       console.error('Erreur soumission devis:', error);
       setError(error.response?.data?.message || error.message);
     }
@@ -380,17 +409,26 @@ const Devis = () => {
   };
 
   const handleDeleteDevis = async (id) => {
-    if (!window.confirm('Confirmez la suppression ?')) return;
-    try {
-      const token = getToken();
-      await axios.delete(`http://localhost:5000/api/devis/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      await fetchDevis();
-    } catch (error) {
-      setError(error.response?.data?.message || error.message);
-    }
-  };
+  if (!window.confirm('Confirmez la suppression ?')) return;
+  try {
+    const token = getToken();
+    await axios.delete(`http://localhost:5000/api/devis/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    await fetchDevis();
+    setAlert({
+      show: true,
+      message: 'Devis supprimé avec succès',
+      type: 'success'
+    });
+  } catch (error) {
+    setAlert({
+      show: true,
+      message: error.response?.data?.message || error.message,
+      type: 'error'
+    });
+  }
+};
 
   const handlePrintDevis = (devis) => {
     console.log('Impression:', devis);
@@ -431,13 +469,19 @@ const Devis = () => {
   const handleGenerateFacture = async (devis) => {
   // Vérifier que le devis est dans un statut valide
   if (devis.statut !== 'accepté') {
-    alert('Seuls les devis avec le statut "accepté" peuvent être convertis en facture');
+    setAlert({
+      show: true,
+      message: 'Seuls les devis avec le statut "accepté" peuvent être convertis en facture',
+      type: 'error'
+    });
     return;
   }
 
-  if (!window.confirm(`Voulez-vous convertir le devis ${devis.numero} en facture ?`)) return;
-  
   try {
+    // Confirmation stylisée (vous pourriez aussi créer un modal de confirmation personnalisé)
+    const isConfirmed = window.confirm(`Voulez-vous convertir le devis ${devis.numero} en facture ?`);
+    if (!isConfirmed) return;
+    
     const token = getToken();
     const response = await axios.post(
       'http://localhost:5000/api/factures', 
@@ -446,19 +490,56 @@ const Devis = () => {
     );
 
     if (response.data.success) {
-      alert(`Facture ${response.data.data.numero} générée avec succès !`);
+      setAlert({
+        show: true,
+        message: `Facture ${response.data.data.numero} générée avec succès !`,
+        type: 'success'
+      });
+      
       // Rafraîchir la liste des devis
       await fetchDevis();
-      // Rediriger vers la page des factures
-      navigate('/factures');
+      
+      // Rediriger vers la page des factures après un délai pour voir l'alerte
+      setTimeout(() => {
+        navigate('/factures');
+      }, 1500); // 1.5 secondes avant la redirection
     } else {
       throw new Error(response.data.message || 'Erreur lors de la génération');
     }
   } catch (error) {
-    console.error('Erreur génération facture:', error);
-    setError(error.response?.data?.message || error.message);
+    setAlert({
+      show: true,
+      message: error.response?.data?.message || error.message,
+      type: 'error'
+    });
   }
 };
+
+
+  const Alert = ({ message, type, onClose }) => {
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+      <div className={`alert alert-${type}`}>
+        <span className="alert-icon">
+          {type === 'success' ? '✓' : '⚠'}
+        </span>
+        <span>{message}</span>
+        <span className="alert-close" onClick={onClose}>×</span>
+      </div>
+    );
+  };
+
+  const [alert, setAlert] = useState({
+    show: false,
+    message: '',
+    type: '' // 'success' ou 'error'
+  });
 
   const { totalHT, tvaAmount, totalTTC } = calculateTotal();
 
@@ -494,23 +575,23 @@ const Devis = () => {
               <td>{item.client_name || '----'}</td>
               <td>{new Date(item.date_creation).toLocaleDateString()}</td>
               <td>{item.date_validite ? new Date(item.date_validite).toLocaleDateString() : 'N/A'}</td>
-              <td>{item.montant_ht?.toFixed(2)} €</td>
+              <td>{typeof item.montant_ht === 'number' ? item.montant_ht.toFixed(2) : '0.00'} €</td>
               <td>{item.tva} %</td>
-              <td>{item.montant_ttc?.toFixed(2)} €</td>
+              <td>{typeof item.montant_ttc === 'number' ? item.montant_ttc.toFixed(2) : '0.00'} €</td>
               <td>
                 <span className={`status-badge ${getStatusColor(item.statut)}`}>
-  {item.statut} {/* Correction ici */}
-</span>
+                  {item.statut} {/* Correction ici */}
+                </span>
               </td>
               <td className="actions">
                 <button onClick={() => handleViewDevis(item)} className="btn-icon">
                   <FiEye />
                 </button>
                 {item.statut === 'accepté' && (
-    <button onClick={() => handleGenerateFacture(item)} className="btn-icon">
-      <FiFileText />
-    </button>
-  )}
+                  <button onClick={() => handleGenerateFacture(item)} className="btn-icon">
+                    <FiFileText />
+                  </button>
+                )}
                 <button onClick={() => handleEditDevis(item)} className="btn-icon">
                   <FiEdit2 />
                 </button>
@@ -714,23 +795,23 @@ const Devis = () => {
               </div>
               
               <div className="totals-section">
-                <div className="total-item">
-                  <span>Total HT:</span>
-                  <span>{totalHT} €</span>
-                </div>
-                <div className="total-item">
-                  <span>Remise ({formData.remise}%):</span>
-                  <span>-{(totalHT * formData.remise / 100).toFixed(2)} €</span>
-                </div>
-                <div className="total-item">
-                  <span>TVA ({formData.tva}%):</span>
-                  <span>{tvaAmount} €</span>
-                </div>
-                <div className="total-item total-ttc">
-                  <span>Total TTC:</span>
-                  <span>{totalTTC} €</span>
-                </div>
-              </div>
+    <div className="total-item">
+        <span>Total HT:</span>
+        <span>{totalHT} €</span>
+    </div>
+    <div className="total-item">
+        <span>Remise ({formData.remise}%):</span>
+        <span>-{(totalHT * formData.remise / 100).toFixed(2)} €</span>
+    </div>
+    <div className="total-item">
+        <span>TVA ({formData.tva}%):</span>
+        <span>{tvaAmount} €</span>
+    </div>
+    <div className="total-item total-ttc">
+        <span>Total TTC:</span>
+        <span>{totalTTC} €</span>
+    </div>
+</div>
               
               <div className="form-actions">
                 <button type="button" className="cancel-btn" onClick={() => setShowModal(false)}>
@@ -830,6 +911,15 @@ const Devis = () => {
           </div>
         </div>
       )}
+
+      {/* Ajoutez ceci juste avant la fermeture de la div principale */}
+    {alert.show && (
+      <Alert 
+        message={alert.message} 
+        type={alert.type} 
+        onClose={() => setAlert({...alert, show: false})} 
+      />
+    )}
     </div>
   );
 };

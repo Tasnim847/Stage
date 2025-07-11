@@ -1,8 +1,9 @@
 /* Base Styles with Modern Design */
 :root {
-  --primary-color: #4361ee;
-  --secondary-color: #3f37c9;
-  --accent-color: #4cc9f0;
+  --primary-color: #72ac8d;
+  --secondary-color: #92bfa7;
+  --accent-color: #b2d2c1;
+  --light-accent: #d2e5db;
   --danger-color: #f72585;
   --success-color: #4ad66d;
   --warning-color: #f8961e;
@@ -62,13 +63,13 @@
   width: 280px;
   font-size: 0.95rem;
   transition: var(--transition);
-  background-color: #f8f9fa;
+  background-color: var(--light-color);
 }
 
 .search-container input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+  box-shadow: 0 0 0 3px rgba(114, 172, 141, 0.2);
   background-color: white;
 }
 
@@ -91,13 +92,13 @@
   font-size: 0.95rem;
   font-weight: 500;
   transition: var(--transition);
-  box-shadow: 0 4px 6px rgba(67, 97, 238, 0.2);
+  box-shadow: 0 4px 6px rgba(114, 172, 141, 0.2);
 }
 
 .add-button:hover {
   background-color: var(--secondary-color);
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(67, 97, 238, 0.25);
+  box-shadow: 0 6px 12px rgba(114, 172, 141, 0.25);
 }
 
 .add-button:disabled {
@@ -174,7 +175,7 @@
 .company-id {
   font-size: 0.8rem;
   color: #6c757d;
-  background: #f8f9fa;
+  background: var(--light-color);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   display: inline-block;
@@ -201,7 +202,7 @@
 }
 
 .edit-btn:hover {
-  background-color: rgba(67, 97, 238, 0.1);
+  background-color: rgba(114, 172, 141, 0.1);
   color: var(--primary-color);
 }
 
@@ -280,14 +281,14 @@
 }
 
 .details-btn:hover {
-  background-color: rgba(67, 97, 238, 0.1);
+  background-color: rgba(114, 172, 141, 0.1);
 }
 
 /* Empty State */
 .empty-state {
   text-align: center;
   padding: 3rem 2rem;
-  background-color: #f8f9fa;
+  background-color: var(--light-color);
   border-radius: var(--border-radius);
   margin-top: 2rem;
   border: 1px dashed #dee2e6;
@@ -410,7 +411,7 @@
 .form-group input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+  box-shadow: 0 0 0 3px rgba(114, 172, 141, 0.1);
 }
 
 .form-group input.error {
@@ -448,7 +449,7 @@
 }
 
 .btn-cancel {
-  background-color: #f8f9fa;
+  background-color: var(--light-color);
   border: 1px solid #ddd;
   color: var(--text-color);
 }

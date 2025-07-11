@@ -1,4 +1,4 @@
-/* Modern Auth Form CSS - Version Finale Sans Défilement */
+/* Modern Auth Form CSS - Version Finale */
 :root {
   --primary-color: #4361ee;
   --primary-dark: #3a56d4;
@@ -23,66 +23,111 @@
 html, body, #root {
   height: 100%;
   width: 100%;
-  overflow: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background-color: #fff;
 }
 
-/* Conteneur principal - Bloque tout défilement */
+/* Conteneur principal */
 .auth-container {
   display: flex;
-  height: 100vh;
-  width: 100vw;
+  min-height: 100vh;
+  position: relative;
   overflow: hidden;
-  position: fixed;
-  top: 0;
-  left: 0;
 }
 
-/* Partie formulaire */
+/* Image de fond */
+.auth-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('../../assets/Login.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: -1;
+}
+
+/* Partie formulaire - Fond transparent avec flou */
 .form-side {
-  flex: 1;
+  width: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
-  background-color: #fff;
-  overflow: hidden;
+  padding: 2rem;
+  background-color: rgba(255, 255, 255, 0.7); /* Transparence augmentée */
+  backdrop-filter: blur(8px); /* Effet de flou plus prononcé */
+  -webkit-backdrop-filter: blur(8px); /* Pour Safari */
 }
 
-/* Carte d'authentification - Pas de défilement */
+/* Carte d'authentification - Légèrement transparente */
 .auth-card {
   width: 100%;
-  max-width: 500px; /* Augmenté à 500px */
+  max-width: 500px;
   padding: 2.5rem;
   border-radius: var(--border-radius);
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.85); /* Transparence légère */
   box-shadow: var(--box-shadow);
-  overflow: hidden;
+  transition: var(--transition);
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Bordure subtile */
+}
+
+/* Partie bienvenue */
+.welcome-side {
+  width: 50%;
+  padding: 4rem;
   display: flex;
   flex-direction: column;
-  max-height: 90vh;
+  justify-content: center;
+  color: white;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-side::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: -1;
+}
+
+.welcome-side h1 {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+}
+
+.welcome-side p {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  max-width: 80%;
 }
 
 /* Animations */
 @keyframes fadeIn {
   from { 
-    opacity: 0; 
+    opacity: 0;
     transform: translateY(20px);
   }
   to { 
-    opacity: 1; 
+    opacity: 1;
     transform: translateY(0);
   }
 }
 
 @keyframes fadeOut {
   from { 
-    opacity: 1; 
+    opacity: 1;
     transform: translateY(0);
   }
   to { 
-    opacity: 0; 
+    opacity: 0;
     transform: translateY(-20px);
   }
 }
@@ -120,28 +165,27 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  overflow: hidden;
-  flex: 1;
 }
 
 .form-group {
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem; /* Augmentez légèrement l'espace entre les groupes */
+  position: relative; /* Ajoutez ceci pour positionner les messages d'erreur */
 }
 
 .form-group input {
   width: 100%;
   padding: 1rem 1.25rem;
   font-size: 1rem;
-  border: 1px solid #e9ecef;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--border-radius);
-  background-color: #f8f9fa;
+  background-color: rgba(255, 255, 255, 0.8);
   transition: var(--transition);
 }
 
 .form-group input:focus {
   outline: none;
   border-color: var(--primary-color);
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.95);
   box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
 }
 
@@ -167,11 +211,17 @@ html, body, #root {
 
 .error-message {
   display: block;
-  margin-top: 0.5rem;
+  min-height: 1.125rem; /* Hauteur fixe équivalente à 0.75rem (taille du texte) + marge */
   font-size: 0.75rem;
   color: var(--error-color);
+  margin-top: 0.5rem;
+  line-height: 1.5; /* Améliore la lisibilité */
+  visibility: hidden; /* Cache par défaut */
 }
 
+.error-message:not(:empty) {
+  visibility: visible; /* Affiche seulement quand il y a du contenu */
+}
 .auth-message {
   padding: 0.75rem 1rem;
   margin-bottom: 1rem;
@@ -183,11 +233,13 @@ html, body, #root {
 .auth-message.error {
   background-color: rgba(247, 37, 133, 0.1);
   color: var(--error-color);
+  border: 1px solid rgba(247, 37, 133, 0.2);
 }
 
 .auth-message.success {
   background-color: rgba(76, 201, 240, 0.1);
   color: var(--success-color);
+  border: 1px solid rgba(76, 201, 240, 0.2);
 }
 
 /* Options du formulaire */
@@ -246,7 +298,7 @@ html, body, #root {
 /* Boutons avec séparateur */
 .button-container {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 1rem;
   margin-top: 1.5rem;
 }
@@ -254,13 +306,31 @@ html, body, #root {
 .button-separator {
   color: var(--gray-color);
   font-size: 0.8rem;
-  padding: 0 0.5rem;
-  flex-shrink: 0;
+  text-align: center;
+  position: relative;
+  margin: 0.5rem 0;
+}
+
+.button-separator::before,
+.button-separator::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 45%;
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.button-separator::before {
+  left: 0;
+}
+
+.button-separator::after {
+  right: 0;
 }
 
 .primary-button, .secondary-button {
-  flex: 1;
-  min-width: 160px; /* Largeur minimale augmentée */
+  width: 100%;
   padding: 1rem;
   font-size: 1rem;
   font-weight: 600;
@@ -268,7 +338,6 @@ html, body, #root {
   border-radius: var(--border-radius);
   cursor: pointer;
   transition: var(--transition);
-  text-align: center;
 }
 
 .primary-button {
@@ -293,153 +362,7 @@ html, body, #root {
   background-color: rgba(67, 97, 238, 0.05);
 }
 
-/* Partie image */
-.image-side {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-}
-
-.auth-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.9;
-}
-
-.image-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.4));
-}
-
-.image-caption {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 3rem 2rem 2.5rem;
-  color: white;
-  text-align: center;
-  z-index: 2;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
-}
-
-.image-caption h2 {
-  font-size: 2.2rem;
-  margin-bottom: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
-.image-caption p {
-  font-size: 1.1rem;
-  opacity: 0.9;
-  letter-spacing: 0.3px;
-}
-
-/* Responsive Design */
-@media (max-width: 992px) {
-  .image-side {
-    display: none;
-  }
-  
-  .auth-container {
-    background-color: #f8f9fa;
-  }
-  
-  .auth-card {
-    max-height: 95vh;
-  }
-}
-
-@media (max-width: 768px) {
-  .auth-card {
-    padding: 2rem;
-    max-width: 450px;
-  }
-}
-
-@media (max-width: 576px) {
-  .auth-card {
-    padding: 1.5rem;
-    max-height: 85vh;
-    max-width: 380px;
-  }
-  
-  .form-group-inline {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .button-container {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .button-separator {
-    padding: 0.5rem 0;
-  }
-  
-  .primary-button, .secondary-button {
-    width: 100%;
-  }
-  
-  .image-caption {
-    padding: 2rem 1.5rem 1.5rem;
-  }
-  
-  .image-caption h2 {
-    font-size: 1.8rem;
-  }
-  
-  .image-caption p {
-    font-size: 1rem;
-  }
-  
-  .form-group input {
-    padding: 0.875rem 1rem;
-  }
-  
-  .primary-button, .secondary-button {
-    padding: 0.875rem;
-  }
-}
-
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.8);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.loading-spinner {
-  border: 5px solid #f3f3f3;
-  border-top: 5px solid #3498db;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-
-
-/* Ajoutez ceci à votre fichier AuthForm.css */
+/* Popup d'erreur IA */
 .ai-error-popup {
   position: fixed;
   top: 50%;
@@ -541,4 +464,72 @@ html, body, #root {
     opacity: 1;
     transform: translate(-50%, -50%);
   }
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .welcome-side {
+    display: none;
+  }
+  
+  .form-side {
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.85);
+  }
+  
+  .auth-card {
+    max-width: 450px;
+  }
+}
+
+@media (max-width: 768px) {
+  .auth-card {
+    padding: 2rem;
+  }
+  
+  .form-side {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .auth-card {
+    padding: 1.5rem;
+    max-width: 100%;
+  }
+  
+  .form-group-inline {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .form-group input {
+    padding: 0.875rem 1rem;
+  }
+  
+  .primary-button, .secondary-button {
+    padding: 0.875rem;
+  }
+}
+
+/* Ajoutez ceci à votre CSS */
+.ai-error-popup {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate(-50%, -50%) translateX(-1px); }
+  20%, 80% { transform: translate(-50%, -50%) translateX(2px); }
+  30%, 50%, 70% { transform: translate(-50%, -50%) translateX(-4px); }
+  40%, 60% { transform: translate(-50%, -50%) translateX(4px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.error-message:not(:empty) {
+  opacity: 1;
+  animation: fadeIn 0.2s ease-out;
 }

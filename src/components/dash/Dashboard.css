@@ -1,13 +1,12 @@
-/* Dashboard.css - Thème Violet Clair Élégant avec Optimisation Scroll */
-
 :root {
-  /* Palette violet clair raffinée */
-  --primary: #7c3aed;         /* Violet principal */
-  --primary-light: #8b5cf6;   /* Violet clair pour sidebar */
-  --primary-lighter: #a78bfa; /* Violet très clair */
-  --primary-dark: #6d28d9;    /* Violet foncé */
-  --secondary: #ec4899;       /* Rose pour accents */
-  --secondary-light: #f472b6; /* Rose clair */
+  /* Palette verte naturelle */
+  --primary: #44745c;         /* Vert principal */
+  --primary-light: #72ac8f;   /* Vert clair pour sidebar */
+  --primary-lighter: #92bfa8; /* Vert très clair */
+  --primary-dark: #315442;    /* Vert foncé */
+  --primary-darker: #1e3528; /* Vert très foncé */
+  --secondary: #569375;       /* Vert secondaire */
+  --secondary-light: #b2d2c2; /* Vert secondaire clair */
   --dark: #1f2937;           /* Texte foncé */
   --dark-light: #374151;      /* Texte gris foncé */
   --light: #f9fafb;          /* Fond clair */
@@ -57,7 +56,7 @@ body {
   flex-direction: column;
   position: relative;
   z-index: 20;
-  box-shadow: 4px 0 30px rgba(123, 59, 237, 0.3);
+  box-shadow: 4px 0 30px rgba(68, 116, 92, 0.3);
   transition: var(--transition);
   overflow-y: auto;
   height: 100vh;
@@ -92,7 +91,7 @@ body {
   border-radius: 3px;
 }
 
-/* Effet de lumière IA */
+/* Effet de lumière naturelle */
 .sidebar-header::before {
   content: '';
   position: absolute;
@@ -100,7 +99,7 @@ body {
   left: -50px;
   width: 200px;
   height: 200px;
-  background: radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, rgba(123, 59, 237, 0) 70%);
+  background: radial-gradient(circle, rgba(86, 147, 117, 0.2) 0%, rgba(68, 116, 92, 0) 70%);
   z-index: -1;
 }
 
@@ -156,7 +155,7 @@ body {
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
   color: white;
   font-weight: 500;
-  box-shadow: 0 5px 20px rgba(123, 59, 237, 0.3);
+  box-shadow: 0 5px 20px rgba(68, 116, 92, 0.3);
   border-left: 3px solid var(--secondary);
 }
 
@@ -200,7 +199,7 @@ body {
   margin-left: auto;
   font-weight: 600;
   padding: 0 6px;
-  box-shadow: 0 2px 5px rgba(236, 72, 153, 0.3);
+  box-shadow: 0 2px 5px rgba(86, 147, 117, 0.3);
 }
 
 @keyframes floatIn {
@@ -256,7 +255,7 @@ body {
 .ai-search input:focus {
   outline: none;
   border-color: var(--primary-light);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  box-shadow: 0 0 0 3px rgba(114, 172, 143, 0.1);
 }
 
 .search-icon {
@@ -875,7 +874,7 @@ body {
 
 .comptable-info {
   grid-column: span 2;
-  background: rgba(139, 92, 246, 0.05);
+  background: rgba(114, 172, 143, 0.05);
   padding: 1.5rem;
   border-radius: var(--border-radius-sm);
   border-left: 3px solid var(--primary-light);
@@ -1055,7 +1054,7 @@ body {
 
 /* Thème sombre optionnel */
 [data-theme="dark"] .ai-sidebar {
-  background: linear-gradient(135deg, #4c1d95 0%, #2e1065 100%);
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-darker) 100%);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -1063,19 +1062,6 @@ body {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.02);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* Animation pour le modal */
 @keyframes fadeIn {
@@ -1103,15 +1089,13 @@ button:hover, a:hover {
 
 /* Bouton primaire au survol */
 button.primary:hover, a.primary:hover {
-  background-color: #2563eb;
+  background-color: var(--primary-dark);
 }
 
 /* Bouton secondaire au survol */
 button.secondary:hover, a.secondary:hover {
-  background-color: #cbd5e1;
+  background-color: var(--secondary-light);
 }
-
-
 
 /* Dashboard Home Specific Styles */
 .ai-main-section {
@@ -1249,7 +1233,7 @@ button.secondary:hover, a.secondary:hover {
 }
 
 .calendar-nav-button:hover {
-  background: rgba(123, 59, 237, 0.1);
+  background: rgba(114, 172, 143, 0.1);
 }
 
 .calendar-table {
@@ -1279,7 +1263,7 @@ button.secondary:hover, a.secondary:hover {
 }
 
 .calendar-day:hover:not(.empty) {
-  background: rgba(123, 59, 237, 0.1);
+  background: rgba(114, 172, 143, 0.1);
 }
 
 .calendar-day.today {
@@ -1291,8 +1275,6 @@ button.secondary:hover, a.secondary:hover {
   color: transparent;
   pointer-events: none;
 }
-
-
 
 /* Nouveaux styles pour l'image IA */
 .welcome-container {

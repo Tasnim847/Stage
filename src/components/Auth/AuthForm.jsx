@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import authImage from '../../assets/home.jpg';
+import authImage from '../../assets/LOG.jpg';
 import './AuthForm.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -44,40 +44,24 @@ const AuthForm = ({ onLogin, error: propError }) => {
 
   // Fonction pour gérer les erreurs avec IA
   const handleAIError = (errorMessage) => {
-  let title = "Oops! Something went wrong";
+  let title = "Form Validation Error";
   let message = errorMessage;
-  let solution = "Please try again later.";
+  let solution = "Please check all fields and try again.";
 
-  // Analyse intelligente des erreurs
-  if (errorMessage.includes('password') && errorMessage.includes('incorrect')) {
-    title = "Password Issue Detected";
-    message = "The password you entered doesn't match our records.";
-    solution = "Try resetting your password or check for typos. Passwords are case-sensitive.";
+  // Analyse des erreurs de validation
+  if (errorMessage.includes('required')) {
+    title = "Missing Information";
+    message = "Some required fields are empty.";
+    solution = "Please fill in all fields marked with an asterisk (*).";
   } else if (errorMessage.includes('email')) {
     title = "Email Problem";
     message = "There's an issue with your email address.";
     solution = "Make sure you're using a valid email format (e.g., user@example.com).";
-  } else if (errorMessage.includes('401')) {
-    title = "Authentication Failed";
-    message = "Your credentials couldn't be verified.";
-    solution = "Double-check your email and password. If you've forgotten your password, use the reset option.";
-  } else if (errorMessage.includes('reset') || errorMessage.includes('Password reset')) {
-    title = "Password Reset Issue";
-    message = "We couldn't reset your password.";
-    solution = "Make sure your email is correct and your new password meets the requirements (min 6 characters). Try again or contact support if the problem persists.";
-  } else if (errorMessage.includes('Registration') || errorMessage.includes('register')) {
-  title = "Registration Problem";
-  message = "We couldn't complete your registration.";
-  solution = "Check that all fields are filled correctly, your email is valid, and your password meets the requirements. If the problem persists, the email might already be in use.";
-} else if (errorMessage.includes('username')) {
-  title = "Username Issue";
-  message = "There's a problem with your chosen username.";
-  solution = "Username might already be taken. Try a different one or add numbers/special characters.";
-} else if (errorMessage.includes('passwords you entered do not match')) {
-  title = "Password Mismatch";
-  message = "The new password and confirmation password don't match.";
-  solution = "Please type the same password in both fields. Make sure there are no extra spaces and check that caps lock isn't accidentally on.";
-}
+  } else if (errorMessage.includes('password')) {
+    title = "Password Issue";
+    message = "There's a problem with your password.";
+    solution = "Password must be at least 6 characters long. Make sure both passwords match if confirming.";
+  }
 
   setAiErrorDetails({ title, message, solution });
   setShowAIErrorPopup(true);
@@ -161,50 +145,85 @@ const AuthForm = ({ onLogin, error: propError }) => {
 
   // Validation Functions
   const validateLogin = () => {
-    const newErrors = {};
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
-    }
+  const newErrors = {};
+  let hasError = false;
+  
+  if (!formData.email.trim()) {
+    newErrors.email = 'Email required';
+    hasError = true;
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    newErrors.email = 'Invalid email format';
+    hasError = true;
+  }
 
-    if (!formData.password) {
-      newErrors.password = 'Password required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Minimum 6 characters';
-    }
+  if (!formData.password) {
+    newErrors.password = 'Password required';
+    hasError = true;
+  } else if (formData.password.length < 6) {
+    newErrors.password = 'Minimum 6 characters';
+    hasError = true;
+  }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  setErrors(newErrors);
+  
+  if (hasError) {
+    handleAIError('Please fill in all required fields correctly');
+    return false;
+  }
+  
+  return true;
+};
 
-  const validateRegister = () => {
-    const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'First name required';
-    if (!formData.lastname.trim()) newErrors.lastname = 'Last name required';
-    if (!formData.username.trim()) newErrors.username = 'Username required';
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
-    }
+const validateRegister = () => {
+  const newErrors = {};
+  let hasError = false;
+  
+  if (!formData.name.trim()) {
+    newErrors.name = 'First name required';
+    hasError = true;
+  }
+  if (!formData.lastname.trim()) {
+    newErrors.lastname = 'Last name required';
+    hasError = true;
+  }
+  if (!formData.username.trim()) {
+    newErrors.username = 'Username required';
+    hasError = true;
+  }
+  
+  if (!formData.email.trim()) {
+    newErrors.email = 'Email required';
+    hasError = true;
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    newErrors.email = 'Invalid email format';
+    hasError = true;
+  }
 
-    if (!formData.password) {
-      newErrors.password = 'Password required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Minimum 6 characters';
-    }
+  if (!formData.password) {
+    newErrors.password = 'Password required';
+    hasError = true;
+  } else if (formData.password.length < 6) {
+    newErrors.password = 'Minimum 6 characters';
+    hasError = true;
+  }
 
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Confirmation required';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
+  if (!formData.confirmPassword) {
+    newErrors.confirmPassword = 'Confirmation required';
+    hasError = true;
+  } else if (formData.password !== formData.confirmPassword) {
+    newErrors.confirmPassword = 'Passwords do not match';
+    hasError = true;
+  }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  setErrors(newErrors);
+  
+  if (hasError) {
+    handleAIError('Please complete all fields with valid information');
+    return false;
+  }
+  
+  return true;
+};
 
   // Submit Handlers
   const handleLoginSubmit = async (e) => {
@@ -330,16 +349,30 @@ const validateForgotPassword = () => {
 const handleSubmit = async (e) => {
   e.preventDefault();
   
+  // Valide en fonction du type de formulaire
+  let isValid;
   if (type === 'login') {
-    await handleLoginSubmit(e);
+    isValid = validateLogin();
   } else if (type === 'signup') {
-    await handleRegisterSubmit(e);
+    isValid = validateRegister();
   } else if (type === 'forgot') {
-    if (!validateForgotPassword()) {
-      // La validation a échoué et le popup a déjà été affiché
-      return;
+    isValid = validateForgotPassword();
+  }
+
+  // Si la validation échoue, ne pas continuer
+  if (!isValid) return;
+
+  // Si la validation réussit, procéder à la soumission
+  try {
+    if (type === 'login') {
+      await handleLoginSubmit(e);
+    } else if (type === 'signup') {
+      await handleRegisterSubmit(e);
+    } else if (type === 'forgot') {
+      await handleResetSubmit(e);
     }
-    await handleResetSubmit(e);
+  } catch (error) {
+    handleAIError(error.message || 'An error occurred. Please try again.');
   }
 };
 
@@ -362,9 +395,30 @@ const handleSubmit = async (e) => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="form-side">
-        <div className={`auth-card ${animation}`}>
+    <div className="auth-container" style={{ 
+      backgroundImage: `url(${authImage})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      minHeight: '100vh',
+      display: 'flex'
+    }}>
+      <div className="form-side" style={{
+        backgroundColor: 'rgba(255, 255, 255, 0.85)',
+        width: '50%',
+        padding: '2rem',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <div className={`auth-card ${animation}`} style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          borderRadius: '10px',
+          padding: '2rem',
+          width: '100%',
+          maxWidth: '500px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+        }}>
           <div className="auth-header">
             <h2 className="logo">
               {type === 'login' ? 'Welcome' :
@@ -383,7 +437,7 @@ const handleSubmit = async (e) => {
           {errors.submit && <div className="auth-message error">{errors.submit}</div>}
           {successMessage && <div className="auth-message success">{successMessage}</div>}
 
-           <form onSubmit={handleSubmit} className="auth-form">
+          <form onSubmit={handleSubmit} className="auth-form">
             {type === 'signup' && (
               <>
                 <div className="form-group-inline">
@@ -396,7 +450,9 @@ const handleSubmit = async (e) => {
                       placeholder="First name"
                       className={errors.name ? 'error' : ''}
                     />
-                    {errors.name && <span className="error-message">{errors.name}</span>}
+                    <div className="error-message-container">
+                      {errors.name && <span className="error-message">{errors.name}</span>}
+                    </div>
                   </div>
                   <div className="form-group">
                     <input
@@ -407,7 +463,9 @@ const handleSubmit = async (e) => {
                       placeholder="Last name"
                       className={errors.lastname ? 'error' : ''}
                     />
-                    {errors.lastname && <span className="error-message">{errors.lastname}</span>}
+                    <div className="error-message-container">
+                      {errors.lastname && <span className="error-message">{errors.lastname}</span>}
+                    </div>
                   </div>
                 </div>
 
@@ -420,7 +478,9 @@ const handleSubmit = async (e) => {
                     placeholder="Username"
                     className={errors.username ? 'error' : ''}
                   />
-                  {errors.username && <span className="error-message">{errors.username}</span>}
+                  <div className="error-message-container">
+                    {errors.username && <span className="error-message">{errors.username}</span>}
+                  </div>
                 </div>
               </>
             )}
@@ -434,7 +494,9 @@ const handleSubmit = async (e) => {
                 placeholder="Email"
                 className={errors.email ? 'error' : ''}
               />
-              {errors.email && <span className="error-message">{errors.email}</span>}
+              <div className="error-message-container">
+                {errors.email && <span className="error-message">{errors.email}</span>}
+              </div>
             </div>
 
             {(type === 'signup' || type === 'forgot') && (
@@ -448,7 +510,9 @@ const handleSubmit = async (e) => {
                     placeholder={type === 'forgot' ? 'New password' : 'Password'}
                     className={errors.password ? 'error' : ''}
                   />
-                  {errors.password && <span className="error-message">{errors.password}</span>}
+                  <div className="error-message-container">
+                    {errors.password && <span className="error-message">{errors.password}</span>}
+                  </div>
                 </div>
                 <div className="form-group">
                   <input
@@ -459,7 +523,9 @@ const handleSubmit = async (e) => {
                     placeholder="Confirm password"
                     className={errors.confirmPassword ? 'error' : ''}
                   />
-                  {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
+                  <div className="error-message-container">
+                    {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
+                  </div>
                 </div>
               </div>
             )}
@@ -475,7 +541,9 @@ const handleSubmit = async (e) => {
                     placeholder="Password"
                     className={errors.password ? 'error' : ''}
                   />
-                  {errors.password && <span className="error-message">{errors.password}</span>}
+                  <div className="error-message-container">
+                    {errors.password && <span className="error-message">{errors.password}</span>}
+                  </div>
                 </div>
                 <div className="form-options">
                   <label className="checkbox-container">
@@ -519,14 +587,21 @@ const handleSubmit = async (e) => {
         </div>
       </div>
 
-      <div className="image-side">
-        <img src={authImage} alt="Authentication" className="auth-image" />
-        <div className="image-caption">
-          <h2>Welcome to our platform</h2>
-          <p>Join our community</p>
-        </div>
+      <div className="welcome-side" style={{
+        width: '50%',
+        padding: '2rem',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        color: 'white',
+        textShadow: '1px 1px 3px rgba(0,0,0,0.5)'
+      }}>
+        <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>Hello!</h1>
+        <p style={{ fontSize: '1.2rem', lineHeight: '1.6' }}>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed pharetra magna nisi, at posuere sem dapibus sed.
+        </p>
       </div>
-    {/* Popup d'erreur IA */}
+
       {showAIErrorPopup && (
         <>
           <div className="overlay" onClick={closeAIErrorPopup} />
@@ -556,6 +631,7 @@ const handleSubmit = async (e) => {
     </div>
   );
 };
+
 AuthForm.propTypes = {
   onLogin: PropTypes.func.isRequired,
   error: PropTypes.string,
