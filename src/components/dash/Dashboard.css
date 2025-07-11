@@ -21,7 +21,15 @@
   --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   --box-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --dark-bg: #1a1a1a;
+  --dark-text: #f0f0f0;
+  --dark-text-light: #b0b0b0;
+  --dark-border: #333;
+  --dark-card-bg: #2d2d2d;
+  --dark-input-bg: #333;
+  --dark-table-header: #252525;
 }
+
 
 /* Reset et Base */
 * {
@@ -1429,4 +1437,273 @@ button.secondary:hover, a.secondary:hover {
   .ai-image-container {
     margin-bottom: 1rem;
   }
+}
+
+
+
+/* Ajoutez ces styles à la fin de votre fichier CSS */
+
+/* Bouton de bascule jour/nuit */
+.theme-toggle-container {
+  display: flex;
+  align-items: center;
+}
+
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--light);
+  border: 1px solid var(--light-gray);
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--dark);
+  font-size: 0.9rem;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--primary-light);
+  color: white;
+  border-color: var(--primary-light);
+}
+
+.theme-toggle-btn .icon {
+  font-size: 1.1rem;
+}
+
+/* Styles spécifiques pour le mode sombre */
+[data-theme="dark"] {
+  --light: #1a1a1a;
+  --dark: #f0f0f0;
+  --dark-light: #b0b0b0;
+  --light-gray: #333;
+}
+
+[data-theme="dark"] .ai-main {
+  background-color: #3c3c3c;
+}
+
+[data-theme="dark"] .ai-header {
+  background-color: #444444;
+  border-bottom-color: #4e4d4d;
+}
+
+[data-theme="dark"] .theme-toggle-btn {
+  background: #585858;
+  color: #f0f0f0;
+  border-color: #444;
+}
+
+[data-theme="dark"] .theme-toggle-btn:hover {
+  background: var(--primary-dark);
+}
+
+[data-theme="dark"] .ai-content {
+  background-color: #4a4a4a;
+  color: #f0f0f0;
+}
+
+[data-theme="dark"] .ai-sidebar-menu li {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="dark"] .notifications-dropdown,
+[data-theme="dark"] .profile-dropdown {
+  background: #787676;
+  border: 1px solid #333;
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: #f0f0f0;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+  background-color: #787676;
+}
+
+[data-theme="dark"] .notification-item {
+  border-bottom-color: #333;
+}
+
+[data-theme="dark"] .notification-text {
+  color: #f0f0f0;
+}
+
+[data-theme="dark"] .notification-time {
+  color: #b0b0b0;
+}
+
+/* Ajoutez ces styles à la section [data-theme="dark"] de votre CSS */
+
+/* Styles spécifiques pour le calendrier en mode sombre */
+[data-theme="dark"] .calendar-container {
+  background: #2d2d2d;
+  border: 1px solid #444;
+}
+
+[data-theme="dark"] .calendar-header {
+  border-bottom: 1px solid #444;
+}
+
+[data-theme="dark"] .calendar-header h3 {
+  color: #f0f0f0;
+}
+
+[data-theme="dark"] .calendar-nav-button {
+  color: #f0f0f0;
+  background: transparent;
+}
+
+[data-theme="dark"] .calendar-nav-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .calendar-table {
+  color: #f0f0f0;
+}
+
+[data-theme="dark"] .calendar-table th {
+  color: #b0b0b0;
+  border-bottom: 1px solid #444;
+}
+
+[data-theme="dark"] .calendar-day {
+  color: #f0f0f0;
+}
+
+[data-theme="dark"] .calendar-day:hover:not(.empty) {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--primary-light);
+}
+
+[data-theme="dark"] .calendar-day.today {
+  background: var(--primary);
+  color: white;
+  font-weight: bold;
+}
+
+[data-theme="dark"] .calendar-day.empty {
+  background: transparent;
+}
+
+[data-theme="dark"] .calendar-table tr {
+  border-bottom: 1px solid #444;
+}
+
+[data-theme="dark"] .calendar-table tr:last-child {
+  border-bottom: none;
+}
+
+[data-theme="dark"] .calendar-table td {
+  border-right: 1px solid #444;
+}
+
+[data-theme="dark"] .calendar-table td:last-child {
+  border-right: none;
+}
+
+/* Styles pour les autres éléments du dashboard en mode sombre */
+[data-theme="dark"] .ai-assistant-container {
+  background: #2d2d2d;
+  border: 1px solid #444;
+}
+
+[data-theme="dark"] .ai-welcome-message h1 {
+  color: var(--primary-light);
+}
+
+[data-theme="dark"] .ai-welcome-message p {
+  color: #b0b0b0;
+}
+
+[data-theme="dark"] .user-role {
+  color: #b0b0b0;
+}
+
+[data-theme="dark"] .weather-card {
+  background: #2d2d2d;
+  border: 1px solid #444;
+}
+
+[data-theme="dark"] .weather-info h3 {
+  color: var(--primary-light);
+}
+
+[data-theme="dark"] .temperature-value {
+  color: #f0f0f0;
+}
+
+[data-theme="dark"] .weather-condition {
+  color: #b0b0b0;
+}
+
+[data-theme="dark"] .weather-icon {
+  color: var(--warning);
+}
+
+[data-theme="dark"] .music-info {
+  background: #2d2d2d;
+  border: 1px solid #444;
+}
+
+[data-theme="dark"] .music-info h3 {
+  color: var(--primary-light);
+}
+
+[data-theme="dark"] .music-info p {
+  color: #b0b0b0;
+}
+
+/* Amélioration des contrastes pour une meilleure accessibilité */
+[data-theme="dark"] ::selection {
+  background: var(--primary);
+  color: white;
+}
+
+[data-theme="dark"] ::-moz-selection {
+  background: var(--primary);
+  color: white;
+}
+
+/* Styles pour le robot assistant en mode sombre */
+[data-theme="dark"] .ai-robot {
+  background: var(--primary-dark);
+}
+
+[data-theme="dark"] .ai-robot-eye {
+  background: #f0f0f0;
+}
+
+[data-theme="dark"] .ai-robot-mouth {
+  background: #f0f0f0;
+}
+
+.calendar-container,
+.ai-assistant-container,
+.weather-card,
+.music-info {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.calendar-day,
+.calendar-header h3,
+.calendar-nav-button,
+.ai-welcome-message h1,
+.ai-welcome-message p,
+.weather-info h3,
+.temperature-value,
+.weather-condition,
+.music-info h3,
+.music-info p {
+  transition: color 0.3s ease;
+}
+
+
+
+[data-theme="dark"] .devis-container,
+[data-theme="dark"] .facture-container {
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
 }

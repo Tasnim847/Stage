@@ -14,7 +14,9 @@ import {
   FiChevronUp,
   FiTrendingUp,
   FiMenu,
-  FiX
+  FiX,
+  FiSun,
+  FiMoon
 } from 'react-icons/fi';
 import defaultAvatar from '../../assets/default-avatar.png';
 import DashboardHome from './DashboardHome';
@@ -28,12 +30,20 @@ const DashEntr = ({ setIsAuthenticated }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [darkMode, setDarkMode] = useState(false);
 
   const profileDropdownRef = useRef(null);
   const notificationsDropdownRef = useRef(null);
   const sidebarRef = useRef(null);
 
   useEffect(() => {
+    // Vérifier le thème au chargement
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      setDarkMode(true);
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
       if (window.innerWidth > 768) {
@@ -60,6 +70,19 @@ const DashEntr = ({ setIsAuthenticated }) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    
+    if (newDarkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   const handleLogout = () => {
     try {
@@ -102,7 +125,7 @@ const DashEntr = ({ setIsAuthenticated }) => {
 
   return (
     <div className={`ai-dashboard ${mobileMenuOpen ? 'mobile-menu-open' : ''}`}>
-      {/* Sidebar Entreprise - Style similaire à DashComp */}
+      {/* Sidebar Entreprise */}
       <div className="ai-sidebar" ref={sidebarRef}>
         <div className="sidebar-header">
           <h1>E-Commerce</h1>
@@ -151,31 +174,34 @@ const DashEntr = ({ setIsAuthenticated }) => {
                 <span>Clients</span>
               </li>
               <li 
-  className={location.pathname.includes('/dash-entr/factures') ? 'active' : ''} 
-  onClick={() => handleNavigation('/dash-entr/factures')}
->
-  <FiFileText className="icon" /> 
-  <span>Factures</span>
-</li>
+                className={location.pathname.includes('/dash-entr/factures') ? 'active' : ''} 
+                onClick={() => handleNavigation('/dash-entr/factures')}
+              >
+                <FiFileText className="icon" /> 
+                <span>Factures</span>
+              </li>
             </ul>
           </div>
         )}
       </div>
 
-      {/* Contenu principal - Style unifié */}
+      {/* Contenu principal */}
       <div className="ai-main">
         <header className="ai-header">
-          <div className="ai-search">
-            <FiSearch className="search-icon" />
-            <input 
-              type="text" 
-              placeholder="Rechercher clients, factures..." 
-              aria-label="Rechercher"
-            />
+          {/* Remplacement de la recherche par le bouton jour/nuit */}
+          <div className="theme-toggle-container">
+            <button 
+              className="theme-toggle-btn" 
+              onClick={toggleDarkMode}
+              aria-label={darkMode ? "Passer en mode clair" : "Passer en mode sombre"}
+            >
+              {darkMode ? <FiSun className="icon" /> : <FiMoon className="icon" />}
+              <span>{darkMode ? 'Mode Jour' : 'Mode Nuit'}</span>
+            </button>
           </div>
           
           <div className="header-right">
-            {/* Notifications - Style identique à DashComp */}
+            {/* Notifications */}
             <div className="notification-container">
               <button 
                 className="notification-btn" 
@@ -209,7 +235,6 @@ const DashEntr = ({ setIsAuthenticated }) => {
                         key={notification.id} 
                         className={`notification-item ${notification.read ? '' : 'unread'}`}
                         onClick={() => {
-                          // Logique pour gérer le clic sur une notification
                           setShowNotifications(false);
                         }}
                       >
@@ -229,7 +254,7 @@ const DashEntr = ({ setIsAuthenticated }) => {
               )}
             </div>
 
-            {/* Profil utilisateur - Style identique à DashComp */}
+            {/* Profil utilisateur */}
             <div className="user-mini-profile-container">
               <div 
                 className="user-mini-profile" 

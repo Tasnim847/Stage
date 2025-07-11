@@ -1,4 +1,3 @@
-// components/dash/DashComp.js
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { 
@@ -7,16 +6,17 @@ import {
   FiLogOut, 
   FiUser, 
   FiFileText, 
-  FiSearch,
   FiAlertTriangle,
   FiSettings,
   FiBell,
   FiChevronDown,
   FiChevronUp,
   FiMenu,
-  FiX
+  FiX,
+  FiSun,
+  FiMoon
 } from 'react-icons/fi';
-import defaultAvatar from '../../assets/default-avatar.png'; // Importez une image par défaut
+import defaultAvatar from '../../assets/default-avatar.png';
 import './Dashboard.css';
 
 const DashComp = ({ setIsAuthenticated }) => {
@@ -27,10 +27,21 @@ const DashComp = ({ setIsAuthenticated }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [darkMode, setDarkMode] = useState(false);
   
   const sidebarRef = useRef(null);
   const profileDropdownRef = useRef(null);
   const notificationsDropdownRef = useRef(null);
+
+  // Gestion du thème sombre
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, [darkMode]);
+
   // Gestion du redimensionnement et fermeture des menus en desktop
   useEffect(() => {
     const handleResize = () => {
@@ -60,6 +71,10 @@ const DashComp = ({ setIsAuthenticated }) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
 
   const handleLogout = () => {
     try {
@@ -159,13 +174,15 @@ const DashComp = ({ setIsAuthenticated }) => {
       <div className="ai-main">
         {/* Header */}
         <header className="ai-header">
-          <div className="ai-search">
-            <FiSearch className="search-icon" />
-            <input 
-              type="text" 
-              placeholder="Rechercher..." 
-              aria-label="Rechercher"
-            />
+          <div className="theme-toggle-container">
+            <button 
+              className="theme-toggle-btn" 
+              onClick={toggleDarkMode}
+              aria-label={darkMode ? "Passer en mode clair" : "Passer en mode sombre"}
+            >
+              {darkMode ? <FiSun className="icon" /> : <FiMoon className="icon" />}
+              <span>{darkMode ? 'Mode Jour' : 'Mode Nuit'}</span>
+            </button>
           </div>
           
           <div className="header-right">

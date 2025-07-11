@@ -19,10 +19,11 @@ const Facture = () => {
 
   // Récupération du contexte
   const context = useOutletContext();
+  const { darkMode } = context || {};
   
   if (!context || !context.userData) {
     return (
-      <div className="loading-container">
+      <div className={`loading-container ${darkMode ? 'dark' : ''}`}>
         <div className="spinner"></div>
         <p>Chargement des données utilisateur...</p>
       </div>
@@ -111,7 +112,7 @@ const Facture = () => {
 
   if (loading) {
     return (
-      <div className="loading-container">
+      <div className={`loading-container ${darkMode ? 'dark' : ''}`}>
         <div className="spinner"></div>
         <p>Chargement des factures...</p>
       </div>
@@ -120,11 +121,11 @@ const Facture = () => {
 
   if (error) {
     return (
-      <div className="error-container">
+      <div className={`error-container ${darkMode ? 'dark' : ''}`}>
         <div className="error-alert">
           <p>Erreur: {error}</p>
           <button 
-            className="btn-retry"
+            className={`btn-retry ${darkMode ? 'dark' : ''}`}
             onClick={() => fetchFactures()}
           >
             <FiRefreshCw /> Réessayer
@@ -135,27 +136,28 @@ const Facture = () => {
   }
 
   return (
-    <div className="facture-container">
+    <div className={`facture-container ${darkMode ? 'dark' : ''}`}>
       <div className="facture-header">
         <h2>Gestion des Factures</h2>
         <button 
-          className="btn-primary"
-          onClick={() => navigate('/dash-entr/factures/nouvelle')}
+          className={`btn-add ${darkMode ? 'dark' : ''}`}
+          onClick={() => navigate('/dash-entr/factures/nouveau')}
         >
-          <FiPlusCircle /> Nouvelle Facture
+          <FiPlusCircle /> Nouvelle facture
         </button>
       </div>
 
-      <div className="facture-filters">
+      <div className={`facture-filters ${darkMode ? 'dark' : ''}`}>
         <div className="search-box">
           <input 
             type="text" 
             placeholder="Rechercher par client, numéro..." 
+            className={darkMode ? 'dark' : ''}
           />
-          <button className="btn-search">Rechercher</button>
+          <button className={`btn-search ${darkMode ? 'dark' : ''}`}>Rechercher</button>
         </div>
         <div className="filter-options">
-          <select>
+          <select className={darkMode ? 'dark' : ''}>
             <option value="">Tous les statuts</option>
             <option value="payé">Payé</option>
             <option value="impayé">Impayé</option>
@@ -165,10 +167,10 @@ const Facture = () => {
       </div>
 
       {factures.length === 0 ? (
-        <div className="no-data">
+        <div className={`no-data ${darkMode ? 'dark' : ''}`}>
           <p>Aucune facture trouvée</p>
           <button 
-            className="btn-refresh"
+            className={`btn-refresh ${darkMode ? 'dark' : ''}`}
             onClick={() => fetchFactures()}
           >
             <FiRefreshCw /> Actualiser
@@ -177,7 +179,7 @@ const Facture = () => {
       ) : (
         <>
           <div className="table-responsive">
-            <table className="facture-table">
+            <table className={`facture-table ${darkMode ? 'dark' : ''}`}>
               <thead>
                 <tr>
                   <th>Numéro</th>
@@ -198,20 +200,20 @@ const Facture = () => {
                     <td className="due-date">{formatDate(facture.date_echeance)}</td>
                     <td className="amount">{formatCurrency(facture.montant_ttc)}</td>
                     <td>
-                      <span className={`status-badge ${getStatusClass(facture.statut_paiement)}`}>
+                      <span className={`status-badge ${getStatusClass(facture.statut_paiement)} ${darkMode ? 'dark' : ''}`}>
                         {facture.statut_paiement}
                       </span>
                     </td>
                     <td className="actions">
                       <button
-                        className="btn-action btn-view"
+                        className={`btn-action btn-view ${darkMode ? 'dark' : ''}`}
                         onClick={() => navigate(`/dash-entr/factures/${facture.id}`)}
                         title="Voir détails"
                       >
                         Détails
                       </button>
                       <button
-                        className="btn-action btn-pdf"
+                        className={`btn-action btn-pdf ${darkMode ? 'dark' : ''}`}
                         onClick={() => navigate(`/dash-entr/factures/${facture.id}/pdf`)}
                         title="Télécharger PDF"
                       >
@@ -224,7 +226,7 @@ const Facture = () => {
             </table>
           </div>
 
-          <div className="pagination-container">
+          <div className={`pagination-container ${darkMode ? 'dark' : ''}`}>
             <div className="pagination-info">
               Affichage de {(pagination.currentPage - 1) * pagination.itemsPerPage + 1} à{' '}
               {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} sur{' '}
@@ -233,7 +235,7 @@ const Facture = () => {
             
             <div className="pagination-controls">
               <button
-                className="btn-pagination"
+                className={`btn-pagination ${darkMode ? 'dark' : ''}`}
                 disabled={pagination.currentPage === 1}
                 onClick={() => fetchFactures(pagination.currentPage - 1)}
                 aria-label="Page précédente"
@@ -257,7 +259,7 @@ const Facture = () => {
                   return (
                     <button
                       key={pageNum}
-                      className={`btn-page ${pagination.currentPage === pageNum ? 'active' : ''}`}
+                      className={`btn-page ${pagination.currentPage === pageNum ? 'active' : ''} ${darkMode ? 'dark' : ''}`}
                       onClick={() => fetchFactures(pageNum)}
                     >
                       {pageNum}
@@ -267,7 +269,7 @@ const Facture = () => {
               </div>
               
               <button
-                className="btn-pagination"
+                className={`btn-pagination ${darkMode ? 'dark' : ''}`}
                 disabled={pagination.currentPage === pagination.totalPages}
                 onClick={() => fetchFactures(pagination.currentPage + 1)}
                 aria-label="Page suivante"
