@@ -5,8 +5,7 @@ import { FiPlus, FiX, FiEdit2, FiTrash2, FiPrinter, FiEye, FiDownload, FiFileTex
 import './Entreprise.css';
 
 const Devis = () => {
-  const context = useOutletContext();
-  const { userData, darkMode } = context || {};
+  const { userData } = useOutletContext();
   const [devis, setDevis] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -15,6 +14,11 @@ const Devis = () => {
   const [currentDevis, setCurrentDevis] = useState(null);
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [currentPdfDevis, setCurrentPdfDevis] = useState(null);
+  const [darkMode, setDarkMode] = useState(() => {
+  // Vérifie la préférence utilisateur ou le localStorage
+    return localStorage.getItem('darkMode') === 'true' || 
+         window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
   const [formData, setFormData] = useState({
     numero: '',
     date_creation: new Date().toISOString().split('T')[0],
@@ -23,13 +27,13 @@ const Devis = () => {
     tva: 20,
     statut: 'brouillon',
     client_name: '',
-    montant_ht: 0,
-    montant_ttc: 0,
+    montant_ht: 0, // Ajouté
+    montant_ttc: 0, // Ajouté
     lignes: [{
-      description: '',
-      prix_unitaire_ht: 0,
-      quantite: 1,
-      unite: 'unité'
+        description: '',
+        prix_unitaire_ht: 0,
+        quantite: 1,
+        unite: 'unité'
     }]
   });
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -50,7 +54,7 @@ const Devis = () => {
       zIndex: 1000,
     },
     content: {
-      backgroundColor: darkMode ? '#2d3748' : 'white',
+      backgroundColor: 'white',
       borderRadius: '0.5rem',
       width: '90%',
       maxWidth: '900px',
@@ -63,11 +67,11 @@ const Devis = () => {
     },
     header: {
       padding: '1rem',
-      borderBottom: `1px solid ${darkMode ? '#4a5568' : '#e2e8f0'}`,
+      borderBottom: '1px solid #e2e8f0',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      backgroundColor: darkMode ? '#4a5568' : '#f8fafc',
+      backgroundColor: '#f8fafc',
     },
     body: {
       flex: 1,
@@ -76,7 +80,7 @@ const Devis = () => {
     },
     footer: {
       padding: '0.75rem 1rem',
-      borderTop: `1px solid ${darkMode ? '#4a5568' : '#e2e8f0'}`,
+      borderTop: '1px solid #e2e8f0',
       display: 'flex',
       justifyContent: 'flex-end',
       gap: '0.75rem',
@@ -92,13 +96,13 @@ const Devis = () => {
       transition: 'all 0.2s',
     },
     primaryButton: {
-      backgroundColor: darkMode ? '#4299e1' : '#3b82f6',
+      backgroundColor: '#3b82f6',
       color: 'white',
       border: 'none',
     },
     secondaryButton: {
-      backgroundColor: darkMode ? '#4a5568' : '#e2e8f0',
-      color: darkMode ? '#e2e8f0' : '#1e293b',
+      backgroundColor: '#e2e8f0',
+      color: '#1e293b',
       border: 'none',
     },
     loading: {
@@ -110,20 +114,32 @@ const Devis = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: darkMode ? 'rgba(45, 55, 72, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+      backgroundColor: 'rgba(255, 255, 255, 0.8)',
     },
   };
 
+  useEffect(() => {
+    localStorage.setItem('darkMode', darkMode);
+    if (darkMode) {
+      document.documentElement.classList.add('dark-mode');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+    }
+  }, [darkMode]);
+
+  // Fonction pour récupérer le token
   const getToken = () => {
     return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
   };
 
+  // Redirige vers login si pas de token valide
   const handleSessionExpired = () => {
     localStorage.removeItem('authToken');
     sessionStorage.removeItem('authToken');
     navigate('/login', { state: { sessionExpired: true } });
   };
 
+  // Chargement des devis
   const fetchDevis = async () => {
     try {
       setLoading(true);
@@ -135,19 +151,20 @@ const Devis = () => {
       }
 
       const response = await axios.get('http://localhost:5000/api/devis', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-      const formattedDevis = response.data.data.map(devis => ({
-        ...devis,
-        montant_ht: parseFloat(devis.montant_ht) || 0,
-        montant_ttc: parseFloat(devis.montant_ttc) || 0
-      }));
+    // Transformez les données pour s'assurer que les montants sont des nombres
+    const formattedDevis = response.data.data.map(devis => ({
+      ...devis,
+      montant_ht: parseFloat(devis.montant_ht) || 0,
+      montant_ttc: parseFloat(devis.montant_ttc) || 0
+    }));
 
-      setDevis(formattedDevis || []);
+    setDevis(formattedDevis || []);
 
     } catch (error) {
       console.error('Erreur lors fetchDevis:', error.response || error);
@@ -161,11 +178,13 @@ const Devis = () => {
     }
   };
 
+  // Vérifie l'authentification avant action
   const checkAuth = () => {
     const token = getToken();
     if (!token) handleSessionExpired();
   };
 
+  // useEffect pour charger les devis une fois au montage
   useEffect(() => {
     checkAuth();
     fetchDevis();
@@ -196,24 +215,24 @@ const Devis = () => {
     checkAuth();
     setCurrentDevis(devis);
     setFormData({
-      numero: devis.numero,
-      date_creation: devis.date_creation.split('T')[0],
-      date_validite: devis.date_validite?.split('T')[0] || '',
-      remise: devis.remise,
-      tva: devis.tva,
-      statut: devis.statut,
-      client_name: devis.client_name,
-      montant_ht: parseFloat(devis.montant_ht) || 0,
-      montant_ttc: parseFloat(devis.montant_ttc) || 0,
-      lignes: devis.lignes?.length > 0 ? devis.lignes : [{
-        description: '',
-        prix_unitaire_ht: 0,
-        quantite: 1,
-        unite: 'unité'
-      }]
+        numero: devis.numero,
+        date_creation: devis.date_creation.split('T')[0],
+        date_validite: devis.date_validite?.split('T')[0] || '',
+        remise: devis.remise,
+        tva: devis.tva,
+        statut: devis.statut,
+        client_name: devis.client_name,
+        montant_ht: parseFloat(devis.montant_ht) || 0,
+        montant_ttc: parseFloat(devis.montant_ttc) || 0,
+        lignes: devis.lignes?.length > 0 ? devis.lignes : [{
+            description: '',
+            prix_unitaire_ht: 0,
+            quantite: 1,
+            unite: 'unité'
+        }]
     });
     setShowModal(true);
-  };
+};
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -248,23 +267,24 @@ const Devis = () => {
   };
 
   const calculateTotal = () => {
-    const totalHT = formData.lignes.reduce((sum, ligne) => 
-      sum + (parseFloat(ligne.prix_unitaire_ht || 0) * parseInt(ligne.quantite || 1)), 0);
-    
-    const remiseAmount = totalHT * (parseFloat(formData.remise || 0) / 100);
-    const totalAfterRemise = totalHT - remiseAmount;
-    const tvaAmount = totalAfterRemise * (parseFloat(formData.tva || 20) / 100);
-    const totalTTC = totalAfterRemise + tvaAmount;
-    
-    return {
-      totalHT: totalHT.toFixed(2),
-      tvaAmount: tvaAmount.toFixed(2),
-      totalTTC: totalTTC.toFixed(2),
-      montant_ht: totalHT,
-      montant_ttc: totalTTC
-    };
+  const totalHT = formData.lignes.reduce((sum, ligne) => 
+    sum + (parseFloat(ligne.prix_unitaire_ht || 0) * parseInt(ligne.quantite || 1)), 0);
+  
+  const remiseAmount = totalHT * (parseFloat(formData.remise || 0) / 100);
+  const totalAfterRemise = totalHT - remiseAmount;
+  const tvaAmount = totalAfterRemise * (parseFloat(formData.tva || 20) / 100);
+  const totalTTC = totalAfterRemise + tvaAmount;
+  
+  return {
+    totalHT: totalHT.toFixed(2),
+    tvaAmount: tvaAmount.toFixed(2),
+    totalTTC: totalTTC.toFixed(2),
+    montant_ht: totalHT,
+    montant_ttc: totalTTC
   };
+};
 
+  // Fonction pour générer des suggestions IA
   const generateAISuggestion = () => {
     const { statut, date_validite, lignes } = formData;
     const today = new Date();
@@ -272,12 +292,14 @@ const Devis = () => {
     
     let suggestions = [];
 
+    // Suggestions basées sur le statut
     if (statut === 'brouillon') {
       suggestions.push("Ce devis est encore en brouillon. Pensez à le finaliser et l'envoyer au client.");
     } else if (statut === 'envoyé') {
       suggestions.push("Le devis a été envoyé au client. Pensez à faire un suivi dans quelques jours.");
     }
 
+    // Suggestions basées sur la date de validité
     if (validiteDate && validiteDate < today) {
       suggestions.push("Attention ! La date de validité de ce devis est dépassée. Pensez à la mettre à jour.");
     } else if (validiteDate) {
@@ -287,12 +309,14 @@ const Devis = () => {
       }
     }
 
+    // Suggestions basées sur les lignes
     if (lignes.length === 0) {
       suggestions.push("Vous n'avez ajouté aucune ligne à ce devis. Ajoutez des produits ou services.");
     } else if (lignes.some(l => l.prix_unitaire_ht === 0)) {
-      suggestions.push("Certains articles ont un prix unitaire à 0€. Vérifiez les tarifs.");
+      suggestions.push("Certains articles ont un prix unitaire à 0DT. Vérifiez les tarifs.");
     }
 
+    // Si pas de suggestions spécifiques
     if (suggestions.length === 0) {
       suggestions.push("Tout semble en ordre avec ce devis. Pensez à l'envoyer au client si ce n'est pas déjà fait.");
     }
@@ -300,21 +324,22 @@ const Devis = () => {
     return suggestions;
   };
 
+  // Fonction pour soumettre le devis
   const submitDevis = async () => {
     const totals = calculateTotal();
     const token = getToken();
     const dataToSend = {
-      ...formData,
-      remise: parseFloat(formData.remise) || 0,
-      tva: parseFloat(formData.tva) || 20,
-      montant_ht: totals.montant_ht,
-      montant_ttc: totals.montant_ttc,
-      lignes: formData.lignes.map(l => ({
-        description: l.description,
-        prix_unitaire_ht: parseFloat(l.prix_unitaire_ht) || 0,
-        quantite: parseInt(l.quantite) || 1,
-        unite: l.unite || 'unité'
-      }))
+        ...formData,
+        remise: parseFloat(formData.remise) || 0,
+        tva: parseFloat(formData.tva) || 20,
+        montant_ht: totals.montant_ht, // Ajouté
+        montant_ttc: totals.montant_ttc, // Ajouté
+        lignes: formData.lignes.map(l => ({
+            description: l.description,
+            prix_unitaire_ht: parseFloat(l.prix_unitaire_ht) || 0,
+            quantite: parseInt(l.quantite) || 1,
+            unite: l.unite || 'unité'
+        }))
     };
 
     const url = currentDevis 
@@ -333,37 +358,42 @@ const Devis = () => {
     return response;
   };
 
+  // Gestion de la soumission du formulaire
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setError(null);
       checkAuth();
       
+      // Validation des données
       if (!formData.numero) throw new Error('Le numéro de devis est obligatoire');
       if (!formData.client_name) throw new Error('Le client est requis');
       if (formData.lignes.some(l => !l.description)) {
         throw new Error('Toutes les lignes doivent avoir une description');
       }
 
+      // Générer les suggestions IA
       const suggestions = generateAISuggestion();
       setAiSuggestions(suggestions);
       
+      // Si des suggestions existent, afficher le modal IA
       if (suggestions.length > 0) {
         setShowAIModal(true);
       } else {
-        const response = await submitDevis();
-        if (response.data?.success) {
-          await fetchDevis();
-          setShowModal(false);
-          setAlert({
-            show: true,
-            message: currentDevis 
-            ? 'Devis mis à jour avec succès' 
-            : 'Devis créé avec succès',
-            type: 'success'
-          });
+        // Sinon, soumettre directement
+          const response = await submitDevis();
+          if (response.data?.success) {
+            await fetchDevis();
+            setShowModal(false);
+            setAlert({
+              show: true,
+              message: currentDevis 
+              ? 'Devis mis à jour avec succès' 
+              : 'Devis créé avec succès',
+              type: 'success'
+            });
+          }
         }
-      }
     } catch (error) {
       setAlert({
         show: true,
@@ -375,6 +405,7 @@ const Devis = () => {
     }
   };
 
+  // Fonction pour confirmer après les suggestions IA
   const confirmAfterAISuggestions = async () => {
     setShowAIModal(false);
     try {
@@ -392,25 +423,30 @@ const Devis = () => {
   };
 
   const handleDeleteDevis = async (id) => {
-    if (!window.confirm('Confirmez la suppression ?')) return;
-    try {
-      const token = getToken();
-      await axios.delete(`http://localhost:5000/api/devis/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      await fetchDevis();
-      setAlert({
-        show: true,
-        message: 'Devis supprimé avec succès',
-        type: 'success'
-      });
-    } catch (error) {
-      setAlert({
-        show: true,
-        message: error.response?.data?.message || error.message,
-        type: 'error'
-      });
-    }
+  if (!window.confirm('Confirmez la suppression ?')) return;
+  try {
+    const token = getToken();
+    await axios.delete(`http://localhost:5000/api/devis/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    await fetchDevis();
+    setAlert({
+      show: true,
+      message: 'Devis supprimé avec succès',
+      type: 'success'
+    });
+  } catch (error) {
+    setAlert({
+      show: true,
+      message: error.response?.data?.message || error.message,
+      type: 'error'
+    });
+  }
+};
+
+  const handlePrintDevis = (devis) => {
+    console.log('Impression:', devis);
+    // Implémentez la logique d'impression ici
   };
 
   const getStatusColor = (status) => {
@@ -426,68 +462,73 @@ const Devis = () => {
 
   const handleViewDevis = async (devis) => {
     try {
-      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await axios.get(`http://localhost:5000/api/devis/${devis.id}/pdf`, {
-        responseType: 'blob',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        const response = await axios.get(`http://localhost:5000/api/devis/${devis.id}/pdf`, {
+            responseType: 'blob',
+            headers: { Authorization: `Bearer ${token}` }
+        });
 
-      const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      
-      setPdfUrl(pdfUrl);
-      setCurrentPdfDevis(devis);
-      setPdfModalOpen(true);
+        const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        
+        setPdfUrl(pdfUrl);
+        setCurrentPdfDevis(devis); // Utilisez setCurrentPdfDevis ici
+        setPdfModalOpen(true);
     } catch (error) {
-      console.error("Erreur:", error);
-      alert("Erreur lors du chargement du PDF");
+        console.error("Erreur:", error);
+        alert("Erreur lors du chargement du PDF");
     }
   };
 
   const handleGenerateFacture = async (devis) => {
-    if (devis.statut !== 'accepté') {
+  // Vérifier que le devis est dans un statut valide
+  if (devis.statut !== 'accepté') {
+    setAlert({
+      show: true,
+      message: 'Seuls les devis avec le statut "accepté" peuvent être convertis en facture',
+      type: 'error'
+    });
+    return;
+  }
+
+  try {
+    // Confirmation stylisée (vous pourriez aussi créer un modal de confirmation personnalisé)
+    const isConfirmed = window.confirm(`Voulez-vous convertir le devis ${devis.numero} en facture ?`);
+    if (!isConfirmed) return;
+    
+    const token = getToken();
+    const response = await axios.post(
+      'http://localhost:5000/api/factures', 
+      { devis_id: devis.id },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    if (response.data.success) {
       setAlert({
         show: true,
-        message: 'Seuls les devis avec le statut "accepté" peuvent être convertis en facture',
-        type: 'error'
+        message: `Facture ${response.data.data.numero} générée avec succès !`,
+        type: 'success'
       });
-      return;
-    }
-
-    try {
-      const isConfirmed = window.confirm(`Voulez-vous convertir le devis ${devis.numero} en facture ?`);
-      if (!isConfirmed) return;
       
-      const token = getToken();
-      const response = await axios.post(
-        'http://localhost:5000/api/factures', 
-        { devis_id: devis.id },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (response.data.success) {
-        setAlert({
-          show: true,
-          message: `Facture ${response.data.data.numero} générée avec succès !`,
-          type: 'success'
-        });
-        
-        await fetchDevis();
-        
-        setTimeout(() => {
-          navigate('/factures');
-        }, 1500);
-      } else {
-        throw new Error(response.data.message || 'Erreur lors de la génération');
-      }
-    } catch (error) {
-      setAlert({
-        show: true,
-        message: error.response?.data?.message || error.message,
-        type: 'error'
-      });
+      // Rafraîchir la liste des devis
+      await fetchDevis();
+      
+      // Rediriger vers la page des factures après un délai pour voir l'alerte
+      setTimeout(() => {
+        navigate('/factures');
+      }, 1500); // 1.5 secondes avant la redirection
+    } else {
+      throw new Error(response.data.message || 'Erreur lors de la génération');
     }
-  };
+  } catch (error) {
+    setAlert({
+      show: true,
+      message: error.response?.data?.message || error.message,
+      type: 'error'
+    });
+  }
+};
+
 
   const Alert = ({ message, type, onClose }) => {
     useEffect(() => {
@@ -498,7 +539,7 @@ const Devis = () => {
     }, [onClose]);
 
     return (
-      <div className={`alert alert-${type} ${darkMode ? 'dark' : ''}`}>
+      <div className={`alert alert-${type}`}>
         <span className="alert-icon">
           {type === 'success' ? '✓' : '⚠'}
         </span>
@@ -511,84 +552,108 @@ const Devis = () => {
   const [alert, setAlert] = useState({
     show: false,
     message: '',
-    type: ''
+    type: '' // 'success' ou 'error'
   });
 
   const { totalHT, tvaAmount, totalTTC } = calculateTotal();
 
-  if (loading) return <div className={`loading-container ${darkMode ? 'dark' : ''}`}>Chargement...</div>;
-
+  if (loading) return <div className="loading-spinner">Chargement...</div>
+  
   return (
-    <div className={`devis-container ${darkMode ? 'dark' : ''}`}>
-      <h2>Gestion des Devis</h2>
-      <button onClick={handleAddDevis} className={`btn-add ${darkMode ? 'dark' : ''}`}>
-        <FiPlus /> Ajouter un devis
-      </button>
+    <div className={`devis-dashboard ${darkMode ? 'dark-mode' : ''}`}>
+      {/* En-tête avec statistiques */}
+      <div className="dashboard-header">
+        <div className="header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <h1 style={{ margin: 0 }}>Mes Devis</h1>
+          <div className="action-bar">
+            <button onClick={handleAddDevis} className="primary-button">
+              <FiPlus /> Nouveau devis
+            </button>
+          </div>
+        </div>
+        <p style={{ width: '100%', marginTop: '10px' }}>Gérez vos devis et suivez votre activité</p>
+        <div className="stats-container">
+          <div className="stat-card">
+            <h3>{devis.length}</h3>
+            <p>DEVIS</p>
+          </div>
+          
+          <div className="stat-card warning">
+            <h3>{devis.filter(d => d.statut === 'envoyé').length}</h3>
+            <p>EN ATTENTE</p>
+          </div>
+          
+          <div className="stat-card">
+            <h3>
+              {devis.reduce((sum, d) => sum + (parseFloat(d.montant_ttc) || 0), 0).toFixed(2)} DT
+            </h3>
+           <p>CHIFFRE D'AFFAIRES</p>
+          </div>
+        </div>
+      </div>
 
-      {error && <div className={`error-message ${darkMode ? 'dark' : ''}`}>{error}</div>}
+      {/* Liste des devis sous forme de cartes */}
+      <div className="devis-grid">
+        {devis.map(item => (
+          <div key={item.id} className={`devis-card ${getStatusColor(item.statut)}`}>
+            <div className="card-header">
+              <h3>Devis {item.numero}</h3>
+              <span className="status-badge">{item.statut}</span>
+            </div>
+            
+            <div className="card-client">{item.client_name || '----'}</div>
+            
+            <div className="card-dates">
+              <div>
+                <small>Créé le</small>
+                <p>{new Date(item.date_creation).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <small>Validité</small>
+                <p>{item.date_validite ? new Date(item.date_validite).toLocaleDateString() : 'N/A'}</p>
+              </div>
+            </div>
+            
+            <div className="card-amount">
+              <div>
+                <small>Montant TTC</small>
+                <p>{typeof item.montant_ttc === 'number' ? item.montant_ttc.toFixed(2) : '0.00'} DT</p>
+              </div>
+            </div>
+            
+            <div className="card-actions">
+              <button onClick={() => handleViewDevis(item)} title="Voir">
+                <FiEye />
+              </button>
+              {item.statut === 'accepté' && (
+                <button onClick={() => handleGenerateFacture(item)} title="Générer facture">
+                  <FiFileText />
+                </button>
+              )}
+              <button onClick={() => handleEditDevis(item)} title="Modifier">
+                <FiEdit2 />
+              </button>
+              <button onClick={() => handleDeleteDevis(item.id)} title="Supprimer">
+                <FiTrash2 />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
 
-      <table className={`devis-table ${darkMode ? 'dark' : ''}`}>
-        <thead>
-          <tr>
-            <th>Numéro</th>
-            <th>Client</th>
-            <th>Date</th>
-            <th>Valide jusqu'à</th>
-            <th>Montant HT</th>
-            <th>TVA</th>
-            <th>Montant TTC</th>
-            <th>Statut</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {devis.map(item => (
-            <tr key={item.id}>
-              <td>{item.numero}</td>
-              <td>{item.client_name || '----'}</td>
-              <td>{new Date(item.date_creation).toLocaleDateString()}</td>
-              <td>{item.date_validite ? new Date(item.date_validite).toLocaleDateString() : 'N/A'}</td>
-              <td>{typeof item.montant_ht === 'number' ? item.montant_ht.toFixed(2) : '0.00'} €</td>
-              <td>{item.tva} %</td>
-              <td>{typeof item.montant_ttc === 'number' ? item.montant_ttc.toFixed(2) : '0.00'} €</td>
-              <td>
-                <span className={`status-badge ${getStatusColor(item.statut)} ${darkMode ? 'dark' : ''}`}>
-                  {item.statut}
-                </span>
-              </td>
-              <td className="actions">
-                <button onClick={() => handleViewDevis(item)} className={`btn-icon ${darkMode ? 'dark' : ''}`}>
-                  <FiEye />
-                </button>
-                {item.statut === 'accepté' && (
-                  <button onClick={() => handleGenerateFacture(item)} className={`btn-icon ${darkMode ? 'dark' : ''}`}>
-                    <FiFileText />
-                  </button>
-                )}
-                <button onClick={() => handleEditDevis(item)} className={`btn-icon ${darkMode ? 'dark' : ''}`}>
-                  <FiEdit2 />
-                </button>
-                <button onClick={() => handleDeleteDevis(item.id)} className={`btn-icon ${darkMode ? 'dark' : ''}`}>
-                  <FiTrash2 />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
+      {/* Modal de création/édition de devis */}
       {showModal && (
         <div className="modal-overlay">
-          <div className={`modal-content ${darkMode ? 'dark' : ''}`}>
-            <div className={`modal-header ${darkMode ? 'dark' : ''}`}>
+          <div className="modal-content">
+            <div className="modal-header">
               <h3>{currentDevis ? 'Modifier Devis' : 'Nouveau Devis'}</h3>
-              <button className={`modal-close ${darkMode ? 'dark' : ''}`} onClick={() => setShowModal(false)}>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
                 <FiX />
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className={`devis-form ${darkMode ? 'dark' : ''}`}>
-              {error && <div className={`form-error ${darkMode ? 'dark' : ''}`}>{error}</div>}
+            <form onSubmit={handleSubmit} className="devis-form">
+              {error && <div className="form-error">{error}</div>}
               
               <div className="form-grid">
                 <div className="form-section">
@@ -601,7 +666,6 @@ const Devis = () => {
                       value={formData.numero} 
                       onChange={handleInputChange} 
                       required 
-                      className={darkMode ? 'dark' : ''}
                     />
                   </div>
                   
@@ -614,7 +678,6 @@ const Devis = () => {
                         value={formData.date_creation} 
                         onChange={handleInputChange} 
                         required 
-                        className={darkMode ? 'dark' : ''}
                       />
                     </div>
                     
@@ -625,7 +688,6 @@ const Devis = () => {
                         name="date_validite" 
                         value={formData.date_validite} 
                         onChange={handleInputChange} 
-                        className={darkMode ? 'dark' : ''}
                       />
                     </div>
                   </div>
@@ -638,7 +700,6 @@ const Devis = () => {
                       value={formData.client_name} 
                       onChange={handleInputChange} 
                       required 
-                      className={darkMode ? 'dark' : ''}
                     />
                   </div>
                 </div>
@@ -656,7 +717,6 @@ const Devis = () => {
                         step="0.1" 
                         value={formData.remise} 
                         onChange={handleInputChange} 
-                        className={darkMode ? 'dark' : ''}
                       />
                     </div>
                     
@@ -670,7 +730,6 @@ const Devis = () => {
                         step="0.1" 
                         value={formData.tva} 
                         onChange={handleInputChange} 
-                        className={darkMode ? 'dark' : ''}
                       />
                     </div>
                     
@@ -680,7 +739,6 @@ const Devis = () => {
                         name="statut" 
                         value={formData.statut} 
                         onChange={handleInputChange}
-                        className={darkMode ? 'dark' : ''}
                       >
                         <option value="brouillon">Brouillon</option>
                         <option value="envoyé">Envoyé</option>
@@ -696,14 +754,14 @@ const Devis = () => {
               <div className="form-section">
                 <div className="section-header">
                   <h4>Lignes de devis</h4>
-                  <button type="button" className={`add-line ${darkMode ? 'dark' : ''}`} onClick={addLigne}>
+                  <button type="button" className="add-line" onClick={addLigne}>
                     <FiPlus /> Ajouter une ligne
                   </button>
                 </div>
                 
                 <div className="lignes-container">
                   {formData.lignes.map((ligne, index) => (
-                    <div key={index} className={`ligne-devis ${darkMode ? 'dark' : ''}`}>
+                    <div key={index} className="ligne-devis">
                       <div className="form-group">
                         <label>Description*</label>
                         <input
@@ -712,7 +770,6 @@ const Devis = () => {
                           value={ligne.description}
                           onChange={(e) => handleLigneChange(index, e)}
                           required
-                          className={darkMode ? 'dark' : ''}
                         />
                       </div>
                       
@@ -727,7 +784,6 @@ const Devis = () => {
                             value={ligne.prix_unitaire_ht}
                             onChange={(e) => handleLigneChange(index, e)}
                             required
-                            className={darkMode ? 'dark' : ''}
                           />
                         </div>
                         
@@ -741,7 +797,6 @@ const Devis = () => {
                             value={ligne.quantite}
                             onChange={(e) => handleLigneChange(index, e)}
                             required
-                            className={darkMode ? 'dark' : ''}
                           />
                         </div>
                         
@@ -751,7 +806,6 @@ const Devis = () => {
                             name="unite"
                             value={ligne.unite}
                             onChange={(e) => handleLigneChange(index, e)}
-                            className={darkMode ? 'dark' : ''}
                           >
                             <option value="unité">Unité</option>
                             <option value="heure">Heure</option>
@@ -765,7 +819,7 @@ const Devis = () => {
                         {formData.lignes.length > 1 && (
                           <button 
                             type="button" 
-                            className={`remove-line ${darkMode ? 'dark' : ''}`} 
+                            className="remove-line" 
                             onClick={() => removeLigne(index)}
                           >
                             <FiTrash2 />
@@ -777,30 +831,30 @@ const Devis = () => {
                 </div>
               </div>
               
-              <div className={`totals-section ${darkMode ? 'dark' : ''}`}>
-                <div className="total-item">
-                  <span>Total HT:</span>
-                  <span>{totalHT} €</span>
-                </div>
-                <div className="total-item">
-                  <span>Remise ({formData.remise}%):</span>
-                  <span>-{(totalHT * formData.remise / 100).toFixed(2)} €</span>
-                </div>
-                <div className="total-item">
-                  <span>TVA ({formData.tva}%):</span>
-                  <span>{tvaAmount} €</span>
-                </div>
-                <div className="total-item total-ttc">
-                  <span>Total TTC:</span>
-                  <span>{totalTTC} €</span>
-                </div>
-              </div>
+              <div className="totals-section">
+    <div className="total-item">
+        <span>Total HT:</span>
+        <span>{totalHT} DT</span>
+    </div>
+    <div className="total-item">
+        <span>Remise ({formData.remise}%):</span>
+        <span>-{(totalHT * formData.remise / 100).toFixed(2)} DT</span>
+    </div>
+    <div className="total-item">
+        <span>TVA ({formData.tva}%):</span>
+        <span>{tvaAmount} DT</span>
+    </div>
+    <div className="total-item total-ttc">
+        <span>Total TTC:</span>
+        <span>{totalTTC} DT</span>
+    </div>
+</div>
               
               <div className="form-actions">
-                <button type="button" className={`cancel-btn ${darkMode ? 'dark' : ''}`} onClick={() => setShowModal(false)}>
+                <button type="button" className="cancel-btn" onClick={() => setShowModal(false)}>
                   Annuler
                 </button>
-                <button type="submit" className={`submit-btn ${darkMode ? 'dark' : ''}`}>
+                <button type="submit" className="submit-btn">
                   {currentDevis ? 'Mettre à jour' : 'Créer le devis'}
                 </button>
               </div>
@@ -809,9 +863,10 @@ const Devis = () => {
         </div>
       )}
 
+      {/* Modal des suggestions IA */}
       {showAIModal && (
         <div className="modal-overlay">
-          <div className={`modal-content ai-suggestions ${darkMode ? 'dark' : ''}`}>
+          <div className="modal-content ai-suggestions">
             <h3>Suggestions de l'IA</h3>
             <ul>
               {aiSuggestions.map((suggestion, index) => (
@@ -819,10 +874,10 @@ const Devis = () => {
               ))}
             </ul>
             <div className="modal-actions">
-              <button onClick={() => setShowAIModal(false)} className={`cancel-btn ${darkMode ? 'dark' : ''}`}>
+              <button onClick={() => setShowAIModal(false)} className="cancel-btn">
                 Annuler
               </button>
-              <button onClick={confirmAfterAISuggestions} className={`submit-btn ${darkMode ? 'dark' : ''}`}>
+              <button onClick={confirmAfterAISuggestions} className="submit-btn">
                 Confirmer
               </button>
             </div>
@@ -830,11 +885,12 @@ const Devis = () => {
         </div>
       )}
 
+      {/* Modal PDF */}
       {pdfModalOpen && (
         <div style={pdfModalStyle.overlay}>
           <div style={pdfModalStyle.content}>
             <div style={pdfModalStyle.header}>
-              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600', color: darkMode ? '#e2e8f0' : '#1e293b' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600' }}>
                 Devis {currentPdfDevis?.numero}
               </h3>
               <button 
@@ -847,7 +903,7 @@ const Devis = () => {
                   border: 'none', 
                   cursor: 'pointer',
                   fontSize: '1.25rem',
-                  color: darkMode ? '#e2e8f0' : '#64748b'
+                  color: '#64748b'
                 }}
               >
                 <FiX />
@@ -893,15 +949,16 @@ const Devis = () => {
         </div>
       )}
 
-      {alert.show && (
-        <Alert 
-          message={alert.message} 
-          type={alert.type} 
-          onClose={() => setAlert({...alert, show: false})} 
-        />
-      )}
+      {/* Ajoutez ceci juste avant la fermeture de la div principale */}
+    {alert.show && (
+      <Alert 
+        message={alert.message} 
+        type={alert.type} 
+        onClose={() => setAlert({...alert, show: false})} 
+      />
+    )}
     </div>
   );
 };
 
-export default Devis;
+export default Devis; 

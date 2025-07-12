@@ -13,7 +13,7 @@ const Facture = () => {
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
-    itemsPerPage: 10,
+    itemsPerPage: 9, // Modifié pour un affichage en grille de 3 cartes par ligne
     totalItems: 0
   });
 
@@ -83,12 +83,11 @@ const Facture = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
-  // Fonctions utilitaires
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('fr-FR', { 
       style: 'currency', 
-      currency: 'EUR',
-      minimumFractionDigits: 2
+      currency: 'TND',  // Changé de 'EUR' à 'TND'
+      minimumFractionDigits: 3  // Le dinar tunisien utilise généralement 3 décimales
     }).format(amount || 0);
   };
 
@@ -137,17 +136,10 @@ const Facture = () => {
 
   return (
     <div className={`facture-container ${darkMode ? 'dark' : ''}`}>
-      <div className="facture-header">
+      <div className="facture-header-container">
         <h2>Gestion des Factures</h2>
-        <button 
-          className={`btn-add ${darkMode ? 'dark' : ''}`}
-          onClick={() => navigate('/dash-entr/factures/nouveau')}
-        >
-          <FiPlusCircle /> Nouvelle facture
-        </button>
-      </div>
-
-      <div className={`facture-filters ${darkMode ? 'dark' : ''}`}>
+      
+        <div className={`facture-filters ${darkMode ? 'dark' : ''}`}>
         <div className="search-box">
           <input 
             type="text" 
@@ -165,6 +157,7 @@ const Facture = () => {
           </select>
         </div>
       </div>
+    </div>
 
       {factures.length === 0 ? (
         <div className={`no-data ${darkMode ? 'dark' : ''}`}>
@@ -178,52 +171,54 @@ const Facture = () => {
         </div>
       ) : (
         <>
-          <div className="table-responsive">
-            <table className={`facture-table ${darkMode ? 'dark' : ''}`}>
-              <thead>
-                <tr>
-                  <th>Numéro</th>
-                  <th>Client</th>
-                  <th>Date émission</th>
-                  <th>Échéance</th>
-                  <th>Montant TTC</th>
-                  <th>Statut</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {factures.map(facture => (
-                  <tr key={facture.id}>
-                    <td className="invoice-number">{facture.numero}</td>
-                    <td className="client-name">{facture.client_name}</td>
-                    <td className="invoice-date">{formatDate(facture.date_emission)}</td>
-                    <td className="due-date">{formatDate(facture.date_echeance)}</td>
-                    <td className="amount">{formatCurrency(facture.montant_ttc)}</td>
-                    <td>
-                      <span className={`status-badge ${getStatusClass(facture.statut_paiement)} ${darkMode ? 'dark' : ''}`}>
-                        {facture.statut_paiement}
-                      </span>
-                    </td>
-                    <td className="actions">
-                      <button
-                        className={`btn-action btn-view ${darkMode ? 'dark' : ''}`}
-                        onClick={() => navigate(`/dash-entr/factures/${facture.id}`)}
-                        title="Voir détails"
-                      >
-                        Détails
-                      </button>
-                      <button
-                        className={`btn-action btn-pdf ${darkMode ? 'dark' : ''}`}
-                        onClick={() => navigate(`/dash-entr/factures/${facture.id}/pdf`)}
-                        title="Télécharger PDF"
-                      >
-                        PDF
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="facture-grid">
+            {factures.map(facture => (
+              <div key={facture.id} className={`facture-card ${darkMode ? 'dark' : ''}`}>
+                <div className="card-header">
+                  <h3>Facture</h3>
+                  <span className={`status-badge ${getStatusClass(facture.statut_paiement)} ${darkMode ? 'dark' : ''}`}>
+                    {facture.statut_paiement}
+                  </span>
+                </div>
+                
+                <div className="card-client">
+                  <p>{facture.client_name}</p>
+                </div>
+                
+                <div className="card-dates">
+                  <div>
+                    <small>Émission</small>
+                    <p>{formatDate(facture.date_emission)}</p>
+                  </div>
+                  <div>
+                    <small>Échéance</small>
+                    <p>{formatDate(facture.date_echeance)}</p>
+                  </div>
+                </div>
+                
+                <div className="card-amount">
+                  <small>Montant TTC</small>
+                  <p>{formatCurrency(facture.montant_ttc)}</p>
+                </div>
+                
+                <div className="card-actions">
+                  <button
+                    className={`btn-action btn-view ${darkMode ? 'dark' : ''}`}
+                    onClick={() => navigate(`/dash-entr/factures/${facture.id}`)}
+                    title="Voir détails"
+                  >
+                    Détails
+                  </button>
+                  <button
+                    className={`btn-action btn-pdf ${darkMode ? 'dark' : ''}`}
+                    onClick={() => navigate(`/dash-entr/factures/${facture.id}/pdf`)}
+                    title="Télécharger PDF"
+                  >
+                    PDF
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className={`pagination-container ${darkMode ? 'dark' : ''}`}>
