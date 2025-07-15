@@ -481,18 +481,25 @@ const Devis = () => {
   };
 
   const handleGenerateFacture = async (devis) => {
-  // Vérifier que le devis est dans un statut valide
-  if (devis.statut !== 'accepté') {
-    setAlert({
-      show: true,
-      message: 'Seuls les devis avec le statut "accepté" peuvent être convertis en facture',
-      type: 'error'
-    });
-    return;
-  }
-
   try {
-    // Confirmation stylisée (vous pourriez aussi créer un modal de confirmation personnalisé)
+    if (devis.statut !== 'accepté') {
+      setAlert({
+        show: true,
+        message: 'Seuls les devis avec le statut "accepté" peuvent être convertis en facture',
+        type: 'error'
+      });
+      return;
+    }
+
+    if (!devis.client_name) {
+      setAlert({
+        show: true,
+        message: 'Le devis doit avoir un client associé avant de générer une facture',
+        type: 'error'
+      });
+      return;
+    }
+
     const isConfirmed = window.confirm(`Voulez-vous convertir le devis ${devis.numero} en facture ?`);
     if (!isConfirmed) return;
     
@@ -510,15 +517,11 @@ const Devis = () => {
         type: 'success'
       });
       
-      // Rafraîchir la liste des devis
       await fetchDevis();
       
-      // Rediriger vers la page des factures après un délai pour voir l'alerte
       setTimeout(() => {
         navigate('/factures');
-      }, 1500); // 1.5 secondes avant la redirection
-    } else {
-      throw new Error(response.data.message || 'Erreur lors de la génération');
+      }, 1500);
     }
   } catch (error) {
     setAlert({
@@ -571,25 +574,7 @@ const Devis = () => {
             </button>
           </div>
         </div>
-        <p style={{ width: '100%', marginTop: '10px' }}>Gérez vos devis et suivez votre activité</p>
-        <div className="stats-container">
-          <div className="stat-card">
-            <h3>{devis.length}</h3>
-            <p>DEVIS</p>
-          </div>
-          
-          <div className="stat-card warning">
-            <h3>{devis.filter(d => d.statut === 'envoyé').length}</h3>
-            <p>EN ATTENTE</p>
-          </div>
-          
-          <div className="stat-card">
-            <h3>
-              {devis.reduce((sum, d) => sum + (parseFloat(d.montant_ttc) || 0), 0).toFixed(2)} DT
-            </h3>
-           <p>CHIFFRE D'AFFAIRES</p>
-          </div>
-        </div>
+        
       </div>
 
       {/* Liste des devis sous forme de cartes */}
@@ -597,9 +582,12 @@ const Devis = () => {
         {devis.map(item => (
           <div key={item.id} className={`devis-card ${getStatusColor(item.statut)}`}>
             <div className="card-header">
-              <h3>Devis {item.numero}</h3>
-              <span className="status-badge">{item.statut}</span>
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <FiFileText className="devis-icon" /> {/* Icône ajoutée ici */}
+          <h3>Devis</h3>
+        </div>
+        <span className="status-badge">{item.statut}</span>
+      </div>
             
             <div className="card-client">{item.client_name || '----'}</div>
             
@@ -832,12 +820,12 @@ const Devis = () => {
               </div>
               
               <div className="totals-section">
-    <div className="total-item">
-        <span>Total HT:</span>
-        <span>{totalHT} DT</span>
-    </div>
-    <div className="total-item">
-        <span>Remise ({formData.remise}%):</span>
+                <div className="total-item">
+                  <span>Total HT:</span>
+                  <span>{totalHT} DT</span>
+                </div>
+                <div className="total-item">
+                  <span>Remise ({formData.remise}%):</span>
         <span>-{(totalHT * formData.remise / 100).toFixed(2)} DT</span>
     </div>
     <div className="total-item">

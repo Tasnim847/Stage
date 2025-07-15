@@ -205,11 +205,28 @@ body {
 }
 
 /* Contenu des cartes */
+/* Dans votre fichier CSS */
+.devis-icon {
+  color: #44745c; /* Couleur verte par défaut */
+  font-size: 1.2rem;
+}
+
+[data-theme="dark"] .devis-icon {
+  color: #72ac8f; /* Couleur plus claire pour le mode sombre */
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 1.25rem;
+}
+
+/* Style pour aligner l'icône et le texte */
+.card-header > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .card-header h3 {

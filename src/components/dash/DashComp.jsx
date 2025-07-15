@@ -5,6 +5,7 @@ import {
   FiBriefcase, 
   FiLogOut, 
   FiUser, 
+  FiTrendingUp,
   FiFileText, 
   FiAlertTriangle,
   FiSettings,
@@ -144,6 +145,13 @@ const DashComp = ({ setIsAuthenticated }) => {
                 <FiHome className="icon" /> 
                 <span>Accueil</span>
               </li>
+               <li 
+                  className={location.pathname === '/dash-comp/dashboard' ? 'active' : ''} 
+                  onClick={() => handleNavigation('/dash-comp/dashboard')}
+                >
+                  <FiTrendingUp className="icon" />
+                  <span>Dashboard</span>
+                </li>
               <li 
                 className={location.pathname.includes('/dash-comp/entreprises') ? 'active' : ''} 
                 onClick={() => handleNavigation('/dash-comp/entreprises')}

@@ -153,7 +153,7 @@ const DashEntr = ({ setIsAuthenticated }) => {
                 <span>Accueil</span>
               </li>
               <li 
-                className={location.pathname.includes('/dash-entr/dashboard') ? 'active' : ''} 
+                className={location.pathname === '/dash-entr/dashboard' ? 'active' : ''} 
                 onClick={() => handleNavigation('/dash-entr/dashboard')}
               >
                 <FiTrendingUp className="icon" /> 
@@ -297,7 +297,7 @@ const DashEntr = ({ setIsAuthenticated }) => {
                     onClick={handleLogout}
                   >
                     <FiLogOut className="icon" /> 
-                    <span>Déconnexion</span>
+                    <span>Logout</span>
                   </div>
                 </div>
               )}

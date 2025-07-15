@@ -1,0 +1,74 @@
+.facture-container {
+  padding: 2rem;
+  background-color: #f9f9f9;
+  min-height: 100vh;
+}
+
+.facture-title {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.facture-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.facture-search {
+  padding: 0.5rem 1rem;
+  width: 250px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.add-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.facture-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+}
+
+.facture-table th,
+.facture-table td {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.edit-btn, .delete-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  margin-right: 0.5rem;
+}
+
+.edit-btn:hover { color: #007bff; }
+.delete-btn:hover { color: #dc3545; }
+
+.loader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: bold;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
