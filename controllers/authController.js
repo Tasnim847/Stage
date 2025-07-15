@@ -177,7 +177,7 @@ export const login = async (req, res) => {
         const user = await User.findOne({
             where: { email },
             include: [
-                { model: Comptable, required: false },
+                { model: Comptable, as: 'comptableProfile', required: false },
                 { model: Entreprise, as: 'entreprises', required: false }
             ]
         });
@@ -198,12 +198,12 @@ export const login = async (req, res) => {
         }
 
         let userDetails = {};
-        if (user.role === 'comptable' && user.Comptable) {
+        if (user.role === 'comptable' && user.comptableProfile) {
             userDetails = {
-                id: user.Comptable.id,
-                username: user.Comptable.username,
-                name: user.Comptable.name,
-                lastname: user.Comptable.lastname
+                id: user.comptableProfile.id,
+                username: user.comptableProfile.username,
+                name: user.comptableProfile.name,
+                lastname: user.comptableProfile.lastname
             };
         } else if (user.role === 'entreprise' && user.entreprises && user.entreprises.length > 0) {
             userDetails = {

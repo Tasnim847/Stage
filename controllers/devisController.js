@@ -36,11 +36,12 @@ export const getDevisByEntreprise = async (req, res) => {
             where: { entreprise_id: entreprise.id },
             include: [{
                 model: LigneDevis,
-                as: 'lignes',
+                as: 'lignesDevis', // ✅ alias correct ici
                 attributes: ['id', 'description', 'prix_unitaire_ht', 'quantite', 'unite']
             }],
             order: [['date_creation', 'DESC']]
         });
+
 
         res.status(200).json({
             success: true,
@@ -78,8 +79,9 @@ export const getDevisById = async (req, res) => {
             },
             include: [{
                 model: LigneDevis,
-                as: 'lignes'
+                as: 'lignesDevis'
             }]
+
         });
 
         if (!devis) {
@@ -388,7 +390,7 @@ export const generateDevisPdf = async (req, res) => {
             where: { id: req.params.id },
             include: [{
                 model: LigneDevis,
-                as: 'lignes'
+                as: 'lignesDevis'
             }]
         });
 
@@ -400,7 +402,7 @@ export const generateDevisPdf = async (req, res) => {
         }
 
         // 3. Calculer les montants si nécessaire
-        const montantHT = devis.lignes.reduce((sum, ligne) =>
+        const montantHT = devis.lignesDevis.reduce((sum, ligne) =>
             sum + (parseFloat(ligne.prix_unitaire_ht || 0) * parseFloat(ligne.quantite || 0), 0));
         const montantApresRemise = montantHT - (montantHT * (devis.remise / 100));
         const montantTTC = montantApresRemise * (1 + (devis.tva / 100));
@@ -419,7 +421,7 @@ export const generateDevisPdf = async (req, res) => {
                 montant_ttc: parseFloat(montantTTC),
                 date_creation: formatDate(devis.date_creation),
                 date_validite: devis.date_validite ? formatDate(devis.date_validite) : null,
-                lignes: devis.lignes.map(l => ({
+                lignes: devis.lignesDevis.map(l => ({
                     ...l.get({ plain: true }),
                     prix_unitaire_ht: parseFloat(l.prix_unitaire_ht),
                     quantite: parseFloat(l.quantite),

@@ -5,6 +5,8 @@ import Facture from '../models/Facture.js';
 import Entreprise from '../models/Entreprise.js';
 import LigneDevis from '../models/lignesDevis.js';
 import LigneFacture from "../models/LigneFacture.js";
+import Comptable from "../models/Comptable.js";
+import { Op } from 'sequelize';
 
 // Fonction utilitaire pour gérer les transactions
 const executeInTransaction = async (fn) => {
@@ -22,10 +24,9 @@ const executeInTransaction = async (fn) => {
 /**
  * Récupère toutes les factures d'une entreprise avec pagination et filtrage
  */
-// Dans factureController.js - version corrigée de getFacturesByEntreprise
 export const getFacturesByEntreprise = async (req, res) => {
     try {
-        // 1. Vérifier que l'utilisateur est authentifié et a une entreprise
+        // Vérification de l'authentification
         if (!req.user || !req.user.id) {
             return res.status(401).json({
                 success: false,
@@ -33,10 +34,14 @@ export const getFacturesByEntreprise = async (req, res) => {
             });
         }
 
-        // 2. Récupérer l'entreprise de l'utilisateur
+        // Récupération de l'entreprise
         const entreprise = await Entreprise.findOne({
             where: { userId: req.user.id },
-            attributes: ['id', 'nom']
+            attributes: ['id', 'nom'],
+            include: [{
+                model: Comptable,
+                as: 'comptableAttitre'
+            }]
         });
 
         if (!entreprise) {
@@ -46,12 +51,12 @@ export const getFacturesByEntreprise = async (req, res) => {
             });
         }
 
-        // 3. Paramètres de pagination
+        // Paramètres de pagination
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const offset = (page - 1) * limit;
 
-        // 4. Construire les conditions de requête
+        // Construction de la requête
         const where = { entreprise_id: entreprise.id };
 
         // Filtres optionnels
@@ -71,14 +76,19 @@ export const getFacturesByEntreprise = async (req, res) => {
             }
         }
 
-        // 5. Requête principale
+        // Requête principale
         const { count, rows: factures } = await Facture.findAndCountAll({
             where,
             include: [
                 {
                     model: LigneFacture,
-                    as: 'lignes',
+                    as: 'lignesFacture',  // <-- alias corrigé pour correspondre à l’association
                     attributes: ['id', 'description', 'prix_unitaire_ht', 'quantite']
+                },
+                {
+                    model: Devis,
+                    as: 'devisOrigine',
+                    attributes: ['id', 'numero', 'client_name']
                 }
             ],
             order: [['date_emission', 'DESC']],
@@ -86,19 +96,20 @@ export const getFacturesByEntreprise = async (req, res) => {
             offset
         });
 
-        // 6. Calculer les totaux pour chaque facture
+        // Calcul des totaux
         const facturesWithTotals = factures.map(facture => {
-            const montantHT = facture.lignes.reduce((sum, ligne) =>
+            const montantHT = facture.lignesFacture.reduce((sum, ligne) =>
                 sum + (ligne.prix_unitaire_ht * ligne.quantite), 0);
 
             return {
                 ...facture.get({ plain: true }),
+                client_name: facture.client_name || facture.Devis?.client_name || 'Client inconnu',
                 montant_ht: montantHT,
                 montant_ttc: montantHT * 1.2 // TVA 20% par défaut
             };
         });
 
-        // 7. Réponse structurée
+        // Réponse
         res.json({
             success: true,
             data: {
@@ -156,13 +167,13 @@ export const getFactureById = async (req, res) => {
                     attributes: ['id', 'numero', 'date_creation', 'date_validite', 'remise', 'tva'],
                     include: [{
                         model: LigneDevis,
-                        as: 'lignes',
+                        as: 'lignesDevis',
                         attributes: ['id', 'description', 'prix_unitaire_ht', 'quantite', 'unite']
                     }]
                 },
                 {
                     model: LigneFacture,
-                    as: 'lignes',
+                    as: 'lignesFacture',
                     attributes: ['id', 'description', 'prix_unitaire_ht', 'quantite', 'unite']
                 }
             ]
@@ -176,7 +187,7 @@ export const getFactureById = async (req, res) => {
         }
 
         // 3. Calculer les totaux si nécessaire
-        const montantHT = facture.lignes.reduce((sum, ligne) =>
+        const montantHT = facture.lignesFacture.reduce((sum, ligne) =>
             sum + (parseFloat(ligne.prix_unitaire_ht) * parseFloat(ligne.quantite)), 0);
 
         const remise = facture.Devis?.remise || 0;
@@ -227,105 +238,89 @@ export const generateFromDevis = async (req, res) => {
     try {
         const { devis_id } = req.body;
 
-        // 1. Vérifier que l'utilisateur a une entreprise
+        // Vérification de l'entreprise
         const entreprise = await Entreprise.findOne({
             where: { userId: req.user.id },
-            attributes: ['id']
+            attributes: ['id', 'comptableId']
         });
 
         if (!entreprise) {
-            return res.status(403).json({
+            return res.status(403).json({ success: false, message: 'Accès non autorisé' });
+        }
+
+        if (!entreprise.comptableId) {
+            return res.status(400).json({
                 success: false,
-                message: 'Accès non autorisé'
+                message: 'Aucun comptable associé à cette entreprise'
             });
         }
 
-        // 2. Récupérer le devis et vérifier qu'il appartient à l'entreprise
+        // Récupération du devis
         const devis = await Devis.findOne({
             where: {
                 id: devis_id,
                 entreprise_id: entreprise.id,
-                statut: 'accepté' // Seuls les devis acceptés peuvent être convertis
+                statut: 'accepté'
             },
             include: [{
                 model: LigneDevis,
-                as: 'lignes'
+                as: 'lignesDevis'
             }]
         });
 
         if (!devis) {
             return res.status(404).json({
                 success: false,
-                message: 'Devis non trouvé ou non éligible à la conversion'
+                message: 'Devis non trouvé ou non éligible'
             });
         }
 
-        // 3. Vérifier si une facture existe déjà
-        const existingFacture = await Facture.findOne({
-            where: { devis_id }
-        });
+        // Calcul des montants HT et TTC
+        const montantHT = devis.lignesDevis.reduce((sum, ligne) =>
+            sum + (parseFloat(ligne.prix_unitaire_ht || 0) * parseFloat(ligne.quantite || 0)), 0);
 
-        if (existingFacture) {
-            return res.status(400).json({
-                success: false,
-                message: 'Une facture existe déjà pour ce devis'
-            });
-        }
+        const montantTTC = montantHT * 1.2;
 
-        // 4. Générer le numéro de facture
-        const lastFacture = await Facture.findOne({
-            where: { entreprise_id: entreprise.id },
-            order: [['createdAt', 'DESC']]
-        });
-
-        let nextNum = 1;
-        if (lastFacture) {
-            const matches = lastFacture.numero.match(/\d+/);
-            if (matches) nextNum = parseInt(matches[0]) + 1;
-        }
-
-        const numero = `FA-${new Date().getFullYear()}-${nextNum.toString().padStart(3, '0')}`;
-
-        // 5. Créer la facture et ses lignes dans une transaction
-        const result = await executeInTransaction(async (transaction) => {
-            // Créer la facture
+        // Création de la facture
+        const transaction = await sequelize.transaction();
+        try {
+            // Création de la facture avec les montants calculés
             const facture = await Facture.create({
-                numero,
+                numero: `FAC-${Date.now()}`,
                 date_emission: new Date(),
-                devis_id: devis.id,
-                montant_ht: devis.montant_ht,
-                montant_ttc: devis.montant_ttc,
-                statut_paiement: 'impayé',
+                statut_paiement: 'brouillon', // Or 'impayé' if that makes more sense // ou 'en_attente_de_paiement' selon ce que tu as
+                client_name: devis.client_name,
+                montant_ht: montantHT,
+                montant_ttc: montantTTC,
                 entreprise_id: entreprise.id,
-                client_name: devis.client_name
+                comptable_id: entreprise.comptableId,
+                devis_id: devis.id
             }, { transaction });
 
-            // Créer les lignes de facture
-            const lignesFacture = await LigneFacture.bulkCreate(
-                devis.lignes.map(ligne => ({
-                    description: ligne.description,
-                    prix_unitaire_ht: ligne.prix_unitaire_ht,
-                    quantite: ligne.quantite,
-                    unite: ligne.unite,
-                    facture_id: facture.id
-                })),
-                { transaction }
-            );
+            // Copie des lignes
+            const lignesFacture = devis.lignesDevis.map(ligne => ({
+                description: ligne.description,
+                prix_unitaire_ht: ligne.prix_unitaire_ht,
+                quantite: ligne.quantite,
+                unite: ligne.unite,
+                facture_id: facture.id
+            }));
 
-            // Mettre à jour le statut du devis
-            await devis.update({ statut: 'facturé' }, { transaction });
 
-            return { facture, lignesFacture };
-        });
+            await LigneFacture.bulkCreate(lignesFacture, { transaction });
 
-        res.json({
-            success: true,
-            data: {
-                ...result.facture.toJSON(),
-                lignes: result.lignesFacture
-            },
-            message: 'Facture générée avec succès'
-        });
+            await transaction.commit();
+
+            res.json({
+                success: true,
+                data: facture,
+                message: 'Facture générée avec succès'
+            });
+
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
 
     } catch (error) {
         console.error('Erreur génération facture:', error);
@@ -432,7 +427,7 @@ export const generateFacturePdf = async (req, res) => {
                     attributes: ['id', 'numero', 'remise', 'tva'],
                     include: [{
                         model: LigneDevis,
-                        as: 'lignes'
+                        as: 'lignesDevis'
                     }]
                 },
                 {
@@ -450,7 +445,7 @@ export const generateFacturePdf = async (req, res) => {
         }
 
         // 3. Calculer les montants
-        const montantHT = facture.lignes.reduce((sum, ligne) =>
+        const montantHT = facture.lignesFacture.reduce((sum, ligne) =>
             sum + (parseFloat(ligne.prix_unitaire_ht) * parseFloat(ligne.quantite)), 0);
 
         const remise = facture.Devis?.remise || 0;
@@ -460,7 +455,7 @@ export const generateFacturePdf = async (req, res) => {
         const montantTVA = montantApresRemise * (tva / 100);
         const montantTTC = montantApresRemise + montantTVA;
 
-        // 4. Préparer les données pour le template PDF (à adapter selon votre template)
+        // 4. Préparer les données pour le template PDF
         const pdfData = {
             entreprise: {
                 nom: entreprise.nom,
@@ -487,17 +482,7 @@ export const generateFacturePdf = async (req, res) => {
             }
         };
 
-        // 5. Générer le PDF (implémentation dépend de votre librairie PDF)
-        // Exemple avec html-pdf:
-        // const html = factureTemplate(pdfData);
-        // pdf.create(html, options).toStream((err, stream) => {
-        //     if (err) return res.status(500).json({ success: false, message: 'Erreur génération PDF' });
-        //     res.setHeader('Content-Type', 'application/pdf');
-        //     res.setHeader('Content-Disposition', `inline; filename=facture-${facture.numero}.pdf`);
-        //     stream.pipe(res);
-        // });
-
-        // Pour l'instant, retourner les données en JSON
+        // 5. Retourner les données en JSON (à remplacer par la génération PDF réelle)
         res.json({
             success: true,
             data: pdfData,
@@ -514,4 +499,52 @@ export const generateFacturePdf = async (req, res) => {
     }
 };
 
+/**
+ * Récupère les factures associées à un comptable
+ */
+export const getFacturesByComptable = async (req, res) => {
+    try {
+        const comptableId = req.user.id;
 
+        const factures = await Facture.findAll({
+            where: { comptable_id: comptableId },
+            include: [
+                {
+                    model: Entreprise,
+                    as: 'entrepriseFacturee' // Utilise bien l'alias défini dans les relations
+                },
+                {
+                    model: LigneFacture,
+                    as: 'lignesFacture' // Inclut aussi les lignes de facture si nécessaire
+                }
+            ]
+        });
+
+        res.json({
+            success: true,
+            data: factures.map(facture => {
+                const facturePlain = facture.get({ plain: true });
+
+                const montantHT = facturePlain.lignesFacture?.reduce((sum, ligne) =>
+                    sum + (ligne.prix_unitaire_ht * ligne.quantite), 0
+                ) ?? 0;
+
+                const montantTTC = montantHT * 1.2; // TVA 20%
+
+                return {
+                    ...facturePlain,
+                    entreprise: facturePlain.entrepriseFacturee,
+                    montant_ht: montantHT,
+                    montant_ttc: montantTTC
+                };
+            })
+        });
+    } catch (err) {
+        console.error("Erreur getFacturesByComptable:", err);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur serveur',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
+    }
+};

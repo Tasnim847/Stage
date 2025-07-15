@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import User from '../models/User.js';
-import Entreprise from '../models/Entreprise.js'; // Assure-toi que ce modèle existe
+import Entreprise from '../models/Entreprise.js';
+import Comptable from '../models/Comptable.js'; // Ajout de l'import manquant
 
 dotenv.config();
 
@@ -18,11 +19,11 @@ export const generateToken = (user) => {
     return jwt.sign(
         {
             id: user.id,
-            role: user.role,
-            version: 2
+            email: user.email,
+            role: user.role
         },
         JWT_SECRET,
-        { expiresIn: JWT_EXPIRES_IN }
+        { expiresIn: '24h' }
     );
 };
 
@@ -31,63 +32,31 @@ export const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({
-            code: 'INVALID_HEADER',
-            //message: 'En-tête Authorization malformé (Bearer token manquant)'
-        });
+        return res.status(401).json({ code: 'INVALID_HEADER' });
     }
 
     const token = authHeader.split(' ')[1];
 
-    if (!token || token === 'null' || token === 'undefined') {
-        return res.status(401).json({
-            code: 'MISSING_OR_INVALID_TOKEN',
-            message: 'Token JWT manquant ou invalide'
-        });
-    }
-
-    if (!token.match(/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/)) {
-        console.error('❌ Format JWT invalide');
-        return res.status(403).json({
-            code: 'MALFORMED_TOKEN',
-            message: 'Le format du token est invalide'
-        });
-    }
-
     try {
         const decoded = await verifyToken(token);
+
         const user = await User.findByPk(decoded.id, {
-           /* include: [{
-                model: Entreprise,
-                as: 'entreprises',
-                required: false,
-                attributes: ['id']
-            }]*/
+            attributes: ['id', 'email', 'role']
         });
 
         if (!user) {
-            return res.status(403).json({
-                code: 'USER_NOT_FOUND',
-                message: 'Compte utilisateur introuvable'
-            });
+            return res.status(403).json({ code: 'USER_NOT_FOUND' });
         }
 
         req.user = {
             id: user.id,
             email: user.email,
-            role: user.role,
-            ...(user.role === 'entreprise' && user.entreprises?.length > 0 && {
-                entrepriseId: user.entreprises[0].id
-            })
+            role: user.role
         };
 
         next();
     } catch (error) {
-        console.error('Erreur de vérification du token:', {
-            name: error.name,
-            message: error.message,
-            token: token ? `${token.substring(0, 20)}...` : 'null'
-        });
+        console.error('Erreur auth:', error);
         handleAuthError(error, res);
     }
 };
@@ -137,24 +106,62 @@ const handleAuthError = (error, res) => {
     });
 };
 
+// === Middleware protect ===
+export const protect = async (req, res, next) => {
+    let token;
+
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+            req.user = await User.findByPk(decoded.id, {
+                attributes: { exclude: ['password'] },
+                include: [
+                    { model: Entreprise, as: 'entreprises' }, // Changé de 'entreprise' à 'entreprises'
+                    { model: Comptable, as: 'comptableProfile' }
+                ]
+            });
+
+            if (!req.user) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Utilisateur non trouvé'
+                });
+            }
+
+            next();
+        } catch (error) {
+            console.error('Erreur d\'authentification:', error);
+            res.status(401).json({
+                success: false,
+                message: 'Non autorisé, token invalide'
+            });
+        }
+    }
+
+    if (!token) {
+        res.status(401).json({
+            success: false,
+            message: 'Non autorisé, pas de token'
+        });
+    }
+};
+
 // === Vérification de rôle ===
-export const checkRole = (requiredRoles) => {
+export const checkRole = (roles) => {
     return (req, res, next) => {
         if (!req.user) {
             return res.status(401).json({
-                code: 'UNAUTHORIZED',
-                message: 'Authentification requise'
+                success: false,
+                message: 'Utilisateur non authentifié'
             });
         }
 
-        const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
-
         if (!roles.includes(req.user.role)) {
             return res.status(403).json({
-                code: 'FORBIDDEN',
-                message: 'Permissions insuffisantes',
-                requiredRoles: roles,
-                userRole: req.user.role
+                success: false,
+                message: 'Accès non autorisé pour ce rôle'
             });
         }
 
@@ -189,7 +196,7 @@ export const verifyTokenMiddleware = async (req, res, next) => {
     }
 };
 
-// === Authentification souple (ex: afficher infos même si expiré) ===
+// === Authentification souple ===
 export const softAuthenticate = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader?.split(' ')[1];
@@ -210,6 +217,15 @@ export const softAuthenticate = async (req, res, next) => {
     next();
 };
 
+// === Middleware spécifique pour comptable ===
+export const authenticateComptable = (req, res, next) => {
+    if (req.user && req.user.role === 'comptable') {
+        next();
+    } else {
+        return res.status(403).json({ success: false, message: 'Accès refusé' });
+    }
+};
+
 // === Exports groupés ===
 export default {
     authenticate: authenticateToken,
@@ -217,5 +233,6 @@ export default {
     checkRole,
     authLogger,
     verifyToken: verifyTokenMiddleware,
-    softAuthenticate
+    softAuthenticate,
+    authenticateComptable
 };

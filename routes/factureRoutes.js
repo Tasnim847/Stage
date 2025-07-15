@@ -1,30 +1,30 @@
-import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import express from 'express';
 import {
     getFacturesByEntreprise,
     getFactureById,
     generateFromDevis,
     updateFacture,
-    generateFacturePdf
+    generateFacturePdf,
+    getFacturesByComptable
 } from '../controllers/factureController.js';
+import { protect, checkRole } from '../middleware/auth.js';
 
-const router = Router();
+const router = express.Router();
 
-// Appliquer le middleware d'authentification à toutes les routes
-router.use(authenticateToken);
-
-// Routes principales
+// Routes pour les entreprises
 router.route('/')
-    .get(getFacturesByEntreprise)
-    .post(generateFromDevis); // Utiliser uniquement cette route pour la génération
+    .get(protect, checkRole(['entreprise']), getFacturesByEntreprise)
+    .post(protect, checkRole(['entreprise']), generateFromDevis);
 
 router.route('/:id')
-    .get(getFactureById)
-    .put(updateFacture);
+    .get(protect, checkRole(['entreprise', 'comptable']), getFactureById)
+    .put(protect, checkRole(['entreprise']), updateFacture);
 
-router.get('/:id/pdf', generateFacturePdf);
+router.route('/:id/pdf')
+    .get(protect, checkRole(['entreprise', 'comptable']), generateFacturePdf);
 
-// Supprimer la route redondante
-// router.post('/generate-from-devis', authMiddleware, generateFactureFromDevis);
+// Route spécifique pour les comptables
+router.route('/comptable/mes-factures')
+    .get(protect, checkRole(['comptable']), getFacturesByComptable);
 
 export default router;

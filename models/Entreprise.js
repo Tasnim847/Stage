@@ -84,7 +84,7 @@ const Entreprise = sequelize.define('Entreprise', {
     }
 }, {
     tableName: 'entreprises',
-    timestamps: true
+    freezeTableName: true
 });
 
 export default Entreprise;
