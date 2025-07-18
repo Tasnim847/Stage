@@ -153,8 +153,8 @@ const DashEntr = ({ setIsAuthenticated }) => {
                 <span>Accueil</span>
               </li>
               <li 
-                className={location.pathname === '/dash-entr/dashboard' ? 'active' : ''} 
-                onClick={() => handleNavigation('/dash-entr/dashboard')}
+                className={location.pathname === '/dash-entr/dashb_entre' ? 'active' : ''} 
+                onClick={() => handleNavigation('/dash-entr/dashb_entre')}
               >
                 <FiTrendingUp className="icon" /> 
                 <span>Dashboard</span>

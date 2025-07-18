@@ -8,7 +8,8 @@ import DashboardHome from './components/dash/DashboardHome';
 import Profile from './components/dash/Profile';
 import Devis from './components/Entreprise/Devis';
 import Facture from './components/Entreprise/Facture';
-import Dashboard from './components/dash/Dashboard';
+import DashbComp from './components/Comptable/dashb_comp';
+import DashbEntre from './components/Entreprise/dashb_entre';
 import Factures from './components/Comptable/Factures';
 import './App.css';
 
@@ -101,13 +102,13 @@ function App() {
           }
         />
 
-        <Route path="/dash-comp" element={
-          <ProtectedRoute requiredRole="comptable">
-            <DashComp setIsAuthenticated={setAuthState} userData={userData} />
-          </ProtectedRoute>
-        }>
-          <Route index element={<DashboardHome />} />
-          <Route path="dashboard" element={<Dashboard />} />
+<Route path="/dash-comp" element={
+  <ProtectedRoute requiredRole="comptable">
+    <DashComp setIsAuthenticated={setAuthState} userData={userData} />
+  </ProtectedRoute>
+}>
+  <Route index element={<DashboardHome />} />
+  <Route path="dashb_comp" element={<DashbComp />} />
           <Route path="entreprises" element={<EntrepriseList />} />
           <Route path="factures" element={<Factures />} />
           <Route path="profile" element={<Profile handleLogout={handleLogout} />} />
@@ -121,7 +122,7 @@ function App() {
         <Route index element={<DashboardHome />} />
         <Route path="devis" element={<Devis />} />
         <Route path="factures" element={<Facture />} />
-        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="dashb_entre" element={<DashbEntre />} />
         <Route path="profile" element={<Profile handleLogout={handleLogout} />} />
       </Route>
 

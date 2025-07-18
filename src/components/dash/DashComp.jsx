@@ -146,8 +146,8 @@ const DashComp = ({ setIsAuthenticated }) => {
                 <span>Accueil</span>
               </li>
                <li 
-                  className={location.pathname === '/dash-comp/dashboard' ? 'active' : ''} 
-                  onClick={() => handleNavigation('/dash-comp/dashboard')}
+                  className={location.pathname === '/dash-comp/dashb_comp' ? 'active' : ''} 
+                  onClick={() => handleNavigation('/dash-comp/dashb_comp')}
                 >
                   <FiTrendingUp className="icon" />
                   <span>Dashboard</span>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import { FiEdit2, FiTrash2, FiLoader, FiPlus } from 'react-icons/fi';
-import './Factures.css';
+import { FiEdit2, FiTrash2, FiLoader, FiPlus, FiSearch, FiDownload, FiEye } from 'react-icons/fi';
+import './comptable.css';
 
 const Factures = () => {
   const [factures, setFactures] = useState([]);
@@ -9,20 +9,18 @@ const Factures = () => {
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
 
-  // Récupération du token (localStorage ou sessionStorage)
+  // Token handling
   const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-  
-  // Extraction du rôle depuis le token
   let role = null;
-if (token) {
-  try {
-    const decoded = jwtDecode(token);
-    role = decoded.role || null;
-  } catch (err) {
-    console.error('Token decoding error:', err);
-    role = null;
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      role = decoded.role || null;
+    } catch (err) {
+      console.error('Token decoding error:', err);
+      role = null;
+    }
   }
-}
 
   useEffect(() => {
     if (!token || !role) {
@@ -36,11 +34,9 @@ if (token) {
         setLoading(true);
         setError('');
 
-        // Choix de l’endpoint selon le rôle
         const endpoint = role === 'comptable'
           ? 'http://localhost:5000/api/factures/comptable/mes-factures'
           : 'http://localhost:5000/api/factures';
-
 
         const response = await fetch(endpoint, {
           headers: {
@@ -55,11 +51,7 @@ if (token) {
         }
 
         const result = await response.json();
-
-        // Selon ta structure API : adapte ici
-        // Exemple : { data: { factures: [...] } } ou { data: [...] }
         const data = result.data?.factures || result.data || [];
-
         setFactures(data);
       } catch (err) {
         console.error('Erreur fetchFactures:', err);
@@ -72,67 +64,120 @@ if (token) {
     fetchFactures();
   }, [token, role]);
 
-  // Filtrer les factures par client (exemple)
   const filteredFactures = factures.filter(facture =>
-    facture.client_name?.toLowerCase().includes(search.toLowerCase())
+    facture.client_name?.toLowerCase().includes(search.toLowerCase()) ||
+    facture.numero?.toLowerCase().includes(search.toLowerCase())
   );
 
-  return (
-    <div className="facture-container">
-      <h1 className="facture-title">Liste des Factures</h1>
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'TND',
+      minimumFractionDigits: 2
+    }).format(amount || 0);
+  };
 
-      <div className="facture-actions">
-        <input
-          type="text"
-          placeholder="Rechercher une facture..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="facture-search"
-        />
-        <button className="add-button">
-          <FiPlus /> Ajouter Facture
-        </button>
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString('fr-FR', options);
+  };
+
+  // Get status badge
+  const getStatusBadge = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'payé':
+        return <span className="status-badge payé">Payé</span>;
+      case 'impayé':
+        return <span className="status-badge impayé">Impayé</span>;
+      case 'partiel':
+        return <span className="status-badge partiel">Paiement partiel</span>;
+      default:
+        return <span className="status-badge">Inconnu</span>;
+    }
+  };
+
+  return (
+    <div className="factures-container">
+      <div className="factures-header">
+        <h1>Gestion des Factures</h1>
+        <div className="factures-controls">
+          <div className="search-bar">
+            <FiSearch className="search-icon" />
+            <input
+              type="text"
+              placeholder="Rechercher par client ou numéro..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <button className="add-button">
+            <FiPlus /> Nouvelle Facture
+          </button>
+        </div>
       </div>
 
       {loading ? (
-        <div className="loader">
+        <div className="loading">
           <FiLoader className="spin" size={24} />
-          Chargement des factures...
+          <p>Chargement des factures...</p>
         </div>
       ) : error ? (
-        <div className="error-message">{error}</div>
+        <div className="error">
+          <p>{error}</p>
+        </div>
       ) : (
-        <table className="facture-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Client</th>
-              <th>Date</th>
-              <th>Montant (€)</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredFactures.length > 0 ? (
-              filteredFactures.map(facture => (
-                <tr key={facture.id}>
-                  <td>{facture.id}</td>
-                  <td>{facture.client_name || 'N/A'}</td>
-                  <td>{facture.date_emission ? new Date(facture.date_emission).toLocaleDateString() : 'N/A'}</td>
-                  <td>{facture.montant_ttc !== undefined ? facture.montant_ttc.toFixed(2) : '0.00'} DT</td>
-                  <td>
-                    <button className="edit-btn" title="Modifier"><FiEdit2 /></button>
-                    <button className="delete-btn" title="Supprimer"><FiTrash2 /></button>
+        <div className="factures-table-container">
+          <table className="factures-table">
+            <thead>
+              <tr>
+                <th>Numéro</th>
+                <th>Client</th>
+                <th>Date</th>
+                <th>Montant</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredFactures.length > 0 ? (
+                filteredFactures.map((facture) => (
+                  <tr key={facture.id}>
+                    <td>
+                      <strong>#{facture.numero || facture.id}</strong>
+                    </td>
+                    <td>{facture.client_name || 'N/A'}</td>
+                    <td>{formatDate(facture.date_emission)}</td>
+                    <td>{formatCurrency(facture.montant_ttc)}</td>
+                    <td>{getStatusBadge(facture.statut)}</td>
+                    <td className="actions">
+                      <button className="view-button" title="Voir">
+                        <FiEye />
+                      </button>
+                      <button className="download-button" title="Télécharger">
+                        <FiDownload />
+                      </button>
+                      <button className="edit-btn" title="Modifier">
+                        <FiEdit2 />
+                      </button>
+                      <button className="delete-btn" title="Supprimer">
+                        <FiTrash2 />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="no-results">
+                    Aucune facture trouvée
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5">Aucune facture trouvée.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

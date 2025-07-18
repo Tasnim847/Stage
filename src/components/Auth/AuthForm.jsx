@@ -127,21 +127,24 @@ const AuthForm = ({ onLogin, error: propError }) => {
     }
   };
 
-  const resetPasswordAPI = async (email, password) => {
-    try {
-      const res = await fetch('http://localhost:5000/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, newPassword: password }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Password reset failed');
-      return data;
-    } catch (err) {
-      console.error('Reset password error:', err);
-      throw err;
-    }
-  };
+  const resetPasswordAPI = async (email, newPassword, confirmPassword) => {
+  console.log("Sending reset data:", { email, newPassword, confirmPassword });
+
+  try {
+    const res = await fetch('http://localhost:5000/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, newPassword, confirmPassword }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Password reset failed');
+    return data;
+  } catch (err) {
+    console.error('Reset password error:', err);
+    throw err;
+  }
+};
+
 
   // Validation Functions
   const validateLogin = () => {
@@ -298,25 +301,27 @@ const validateRegister = () => {
 };
 
   const handleResetSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
   
-  try {
-    await resetPasswordAPI(formData.email, formData.password);
-    setSuccessMessage('Password reset! Redirecting...');
+    try {
+      await resetPasswordAPI(formData.email, formData.password, formData.confirmPassword);
 
-    setTimeout(() => {
-      setType('login');
-      setFormData(prev => ({
-        ...prev,
-        password: '',
-        confirmPassword: ''
-      }));
-      setSuccessMessage('');
-    }, 1500);
-  } catch (error) {
-    handleAIError(error.message || 'Password reset failed. Please try again.');
-  }
-};
+
+      setSuccessMessage('Password reset! Redirecting...');
+
+      setTimeout(() => {
+        setType('login');
+        setFormData(prev => ({
+          ...prev,
+          password: '',
+          confirmPassword: ''
+        }));
+        setSuccessMessage('');
+      }, 1500);
+    } catch (error) {
+      handleAIError(error.message || 'Password reset failed. Please try again.');
+    }
+  };
 
 const validateForgotPassword = () => {
   const newErrors = {};
@@ -566,19 +571,16 @@ const handleSubmit = async (e) => {
               </>
             )}
 
-            <div className="button-container">
-              <button type="submit" className="primary-button">
+            <div className="button-container" style={{ display: 'flex', gap: '1rem' }}>
+              <button type="submit" className="primary-button" style={{ flex: 1 }}>
                 {type === 'login' ? 'Login' : type === 'signup' ? 'Sign up' : 'Reset'}
               </button>
 
-              <div className="button-separator">
-                <span>or</span>
-              </div>
-  
               <button
                 type="button"
                 className="secondary-button"
                 onClick={() => changeFormType(type === 'login' ? 'signup' : 'login')}
+                style={{ flex: 1 }}
               >
                 {type === 'forgot' ? 'Back to login' : type === 'login' ? 'Create account' : 'Already registered?'}
               </button>
@@ -597,9 +599,19 @@ const handleSubmit = async (e) => {
         textShadow: '1px 1px 3px rgba(0,0,0,0.5)'
       }}>
         <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>Hello!</h1>
-        <p style={{ fontSize: '1.2rem', lineHeight: '1.6' }}>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed pharetra magna nisi, at posuere sem dapibus sed.
+        <p style={{ 
+          fontSize: '1.25rem',
+          lineHeight: '1.6',
+          marginBottom: '2rem',
+          fontWeight: '300',
+          opacity: '0.9',
+          maxWidth: '90%'
+        }}>
+          Welcome to our invoice management platform — your all-in-one solution for creating, 
+          tracking, and managing business transactions with ease. 
+          Log in to access powerful tools that streamline your workflow.
         </p>
+
       </div>
 
       {showAIErrorPopup && (
