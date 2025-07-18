@@ -10,6 +10,8 @@ import { authenticateToken } from './middleware/auth.js'; // Importez le middlew
 import profileRoutes from './routes/profileRoutes.js';
 import devisRoutes from './routes/devisRoutes.js';
 import factureRoutes from "./routes/factureRoutes.js";
+import dashboardRoutes from './routes/dashboardRoutes.js';
+import emailRouter from './routes/email.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -70,6 +72,8 @@ app.use('/api/entreprises', authenticateToken, entrepriseRoutes);
 app.use('/api/profile', authenticateToken, profileRoutes); // Nouvelle route
 app.use('/api/devis', authenticateToken, devisRoutes);
 app.use('/api/factures', authenticateToken, factureRoutes);
+app.use('/api/dashboard', authenticateToken, dashboardRoutes);
+app.use('/api/email', emailRouter);
 
 // Route de santé
 app.get('/api/health', (req, res) => {

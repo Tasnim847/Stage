@@ -31,11 +31,23 @@ export const generateToken = (user) => {
 export const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ code: 'INVALID_HEADER' });
+    if (!authHeader) {
+        return res.status(401).json({
+            success: false,
+            code: 'MISSING_TOKEN',
+            message: 'Authorization header is required'
+        });
     }
 
     const token = authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            code: 'INVALID_TOKEN_FORMAT',
+            message: 'Token must be in format: Bearer <token>'
+        });
+    }
 
     try {
         const decoded = await verifyToken(token);
@@ -226,6 +238,64 @@ export const authenticateComptable = (req, res, next) => {
     }
 };
 
+// middleware/auth.js
+export const authComptable = async (req, res, next) => {
+    console.log('[MIDDLEWARE] Début authComptable');
+    try {
+        const authHeader = req.headers['authorization'];
+        console.log('[MIDDLEWARE] Authorization header:', authHeader);
+
+        if (!authHeader) {
+            console.log('[MIDDLEWARE] Header Authorization manquant');
+            return res.status(401).json({ message: 'Token manquant' });
+        }
+
+        const token = authHeader.split(' ')[1];
+        console.log('[MIDDLEWARE] Token:', token ? 'présent' : 'absent');
+
+        if (!token) {
+            console.log('[MIDDLEWARE] Format de token invalide');
+            return res.status(401).json({ message: 'Format de token invalide' });
+        }
+
+        console.log('[MIDDLEWARE] Vérification du token...');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log('[MIDDLEWARE] Token décodé:', decoded);
+
+        console.log('[MIDDLEWARE] Recherche de l\'utilisateur...');
+        const user = await User.findByPk(decoded.id, {
+            include: [{
+                model: Comptable,
+                as: 'comptableProfile',
+                attributes: ['id']
+            }]
+        });
+
+        console.log('[MIDDLEWARE] Utilisateur trouvé:', user ? 'oui' : 'non');
+
+        if (!user || user.role !== 'comptable') {
+            console.log('[MIDDLEWARE] Accès non autorisé');
+            return res.status(403).json({ message: 'Accès réservé aux comptables' });
+        }
+
+        req.comptableId = user.comptableProfile?.id;
+        req.user = user.get({ plain: true });
+
+        console.log('[MIDDLEWARE] Comptable ID:', req.comptableId);
+        console.log('[MIDDLEWARE] User:', req.user);
+
+        console.log('[MIDDLEWARE] Authentification réussie');
+        next();
+    } catch (error) {
+        console.error('[MIDDLEWARE] Erreur:', error);
+        const message = error.name === 'TokenExpiredError'
+            ? 'Session expirée'
+            : 'Token invalide';
+        res.status(403).json({ message });
+    }
+};
+
+
 // === Exports groupés ===
 export default {
     authenticate: authenticateToken,
@@ -234,5 +304,6 @@ export default {
     authLogger,
     verifyToken: verifyTokenMiddleware,
     softAuthenticate,
-    authenticateComptable
+    authenticateComptable,
+    authComptable
 };
