@@ -2,6 +2,7 @@ import Entreprise from '../models/Entreprise.js';
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
 import sequelize from '../config/database.js';
+import {sendWelcomeEmailWithCredentials} from '../services/emailService.js'
 
 export const getEntreprisesForComptable = async (req, res) => {
     try {
@@ -83,6 +84,19 @@ export const createEntreprise = async (req, res) => {
 
         await transaction.commit();
 
+        // Envoi de l'email de bienvenue avec les informations de connexion
+        try {
+            await sendWelcomeEmailWithCredentials(
+                newEntreprise.email,
+                newEntreprise.nom,
+                newEntreprise.email,
+                motDePasse // On envoie le mot de passe en clair (seulement dans l'email)
+            );
+        } catch (emailError) {
+            console.error("Erreur lors de l'envoi de l'email de bienvenue:", emailError);
+            // On ne bloque pas la création même si l'email échoue
+        }
+
         return res.status(201).json({
             success: true,
             entreprise: {
@@ -127,7 +141,10 @@ export const deleteEntreprise = async (req, res) => {
 
     try {
         const entreprise = await Entreprise.findByPk(req.params.id, {
-            include: [{ model: User }],
+            include: [{
+                model: User,
+                as: 'proprietaire' // Utilisez le même alias que dans votre relation
+            }],
             transaction
         });
 
@@ -149,9 +166,9 @@ export const deleteEntreprise = async (req, res) => {
         }
 
         // Hard delete de l'utilisateur associé
-        if (entreprise.User) {
+        if (entreprise.proprietaire) { // Utilisez le même alias ici
             await User.destroy({
-                where: { id: entreprise.User.id },
+                where: { id: entreprise.proprietaire.id }, // Et ici
                 force: true, // Force le hard delete
                 transaction
             });

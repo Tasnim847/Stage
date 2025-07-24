@@ -184,8 +184,7 @@ export const checkRole = (roles) => {
 // === Logger des requêtes protégées ===
 export const authLogger = (req, res, next) => {
     const user = req.user ? req.user.id : 'anonymous';
-    console.log(`[AUTH] ${req.method} ${req.originalUrl} - User: ${user}`);
-    next();
+     next();
 };
 
 // === Vérification simple d'un token via body ou query ===
@@ -240,29 +239,20 @@ export const authenticateComptable = (req, res, next) => {
 
 // middleware/auth.js
 export const authComptable = async (req, res, next) => {
-    console.log('[MIDDLEWARE] Début authComptable');
     try {
         const authHeader = req.headers['authorization'];
-        console.log('[MIDDLEWARE] Authorization header:', authHeader);
 
         if (!authHeader) {
-            console.log('[MIDDLEWARE] Header Authorization manquant');
             return res.status(401).json({ message: 'Token manquant' });
         }
 
         const token = authHeader.split(' ')[1];
-        console.log('[MIDDLEWARE] Token:', token ? 'présent' : 'absent');
 
         if (!token) {
-            console.log('[MIDDLEWARE] Format de token invalide');
             return res.status(401).json({ message: 'Format de token invalide' });
         }
 
-        console.log('[MIDDLEWARE] Vérification du token...');
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log('[MIDDLEWARE] Token décodé:', decoded);
-
-        console.log('[MIDDLEWARE] Recherche de l\'utilisateur...');
         const user = await User.findByPk(decoded.id, {
             include: [{
                 model: Comptable,
@@ -271,20 +261,14 @@ export const authComptable = async (req, res, next) => {
             }]
         });
 
-        console.log('[MIDDLEWARE] Utilisateur trouvé:', user ? 'oui' : 'non');
 
         if (!user || user.role !== 'comptable') {
-            console.log('[MIDDLEWARE] Accès non autorisé');
             return res.status(403).json({ message: 'Accès réservé aux comptables' });
         }
 
         req.comptableId = user.comptableProfile?.id;
         req.user = user.get({ plain: true });
 
-        console.log('[MIDDLEWARE] Comptable ID:', req.comptableId);
-        console.log('[MIDDLEWARE] User:', req.user);
-
-        console.log('[MIDDLEWARE] Authentification réussie');
         next();
     } catch (error) {
         console.error('[MIDDLEWARE] Erreur:', error);
