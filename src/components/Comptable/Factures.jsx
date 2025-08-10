@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import { FiEdit2, FiTrash2, FiLoader, FiPlus, FiSearch, FiDownload, FiEye } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiLoader, FiPlus, FiSearch, FiDownload, FiEye, FiFileText } from 'react-icons/fi';
 import './comptable.css';
 
 const Factures = () => {
@@ -8,6 +8,11 @@ const Factures = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
+  const [stats, setStats] = useState({
+    total: 0,
+    payees: 0,
+    impayees: 0
+  });
 
   // Token handling
   const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
@@ -53,6 +58,13 @@ const Factures = () => {
         const result = await response.json();
         const data = result.data?.factures || result.data || [];
         setFactures(data);
+        
+        // Calcul des statistiques
+        setStats({
+          total: data.length,
+          payees: data.filter(f => f.statut?.toLowerCase() === 'payé').length,
+          impayees: data.filter(f => f.statut?.toLowerCase() === 'impayé').length
+        });
       } catch (err) {
         console.error('Erreur fetchFactures:', err);
         setError(err.message);
@@ -66,7 +78,8 @@ const Factures = () => {
 
   const filteredFactures = factures.filter(facture =>
     facture.client_name?.toLowerCase().includes(search.toLowerCase()) ||
-    facture.numero?.toLowerCase().includes(search.toLowerCase())
+    facture.numero?.toLowerCase().includes(search.toLowerCase()) ||
+    facture.statut?.toLowerCase().includes(search.toLowerCase())
   );
 
   // Format currency
@@ -102,20 +115,56 @@ const Factures = () => {
   return (
     <div className="factures-container">
       <div className="factures-header">
-        <h1>Gestion des Factures</h1>
+        <div>
+          <h1>Gestion des Factures</h1>
+          <p className="factures-subtitle">
+            {stats.total} facture{stats.total !== 1 ? 's' : ''} au total
+          </p>
+        </div>
         <div className="factures-controls">
           <div className="search-bar">
             <FiSearch className="search-icon" />
             <input
               type="text"
-              placeholder="Rechercher par client ou numéro..."
+              placeholder="Rechercher par client, numéro ou statut..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <button className="add-button">
-            <FiPlus /> Nouvelle Facture
+            <FiPlus /> Nouvelle facture
           </button>
+        </div>
+      </div>
+
+      {/* Statistiques */}
+      <div className="stats-container">
+        <div className="stat-card total">
+          <div className="stat-icon">
+            <FiFileText />
+          </div>
+          <div className="stat-content">
+            <span className="stat-label">Total</span>
+            <span className="stat-value">{stats.total}</span>
+          </div>
+        </div>
+        <div className="stat-card payees">
+          <div className="stat-icon">
+            <FiFileText />
+          </div>
+          <div className="stat-content">
+            <span className="stat-label">Payées</span>
+            <span className="stat-value">{stats.payees}</span>
+          </div>
+        </div>
+        <div className="stat-card impayees">
+          <div className="stat-icon">
+            <FiFileText />
+          </div>
+          <div className="stat-content">
+            <span className="stat-label">Impayées</span>
+            <span className="stat-value">{stats.impayees}</span>
+          </div>
         </div>
       </div>
 
@@ -148,21 +197,28 @@ const Factures = () => {
                     <td>
                       <strong>#{facture.numero || facture.id}</strong>
                     </td>
-                    <td>{facture.client_name || 'N/A'}</td>
+                    <td>
+                      <div className="client-cell">
+                        <div className="client-avatar">
+                          {facture.client_name?.charAt(0).toUpperCase() || 'C'}
+                        </div>
+                        <span>{facture.client_name || 'N/A'}</span>
+                      </div>
+                    </td>
                     <td>{formatDate(facture.date_emission)}</td>
-                    <td>{formatCurrency(facture.montant_ttc)}</td>
+                    <td className="amount-cell">{formatCurrency(facture.montant_ttc)}</td>
                     <td>{getStatusBadge(facture.statut)}</td>
                     <td className="actions">
-                      <button className="view-button" title="Voir">
+                      <button className="action-btn view" title="Voir">
                         <FiEye />
                       </button>
-                      <button className="download-button" title="Télécharger">
+                      <button className="action-btn download" title="Télécharger">
                         <FiDownload />
                       </button>
-                      <button className="edit-btn" title="Modifier">
+                      <button className="action-btn edit" title="Modifier">
                         <FiEdit2 />
                       </button>
-                      <button className="delete-btn" title="Supprimer">
+                      <button className="action-btn delete" title="Supprimer">
                         <FiTrash2 />
                       </button>
                     </td>
@@ -171,7 +227,18 @@ const Factures = () => {
               ) : (
                 <tr>
                   <td colSpan="6" className="no-results">
-                    Aucune facture trouvée
+                    <div className="empty-state">
+                      <FiFileText size={48} />
+                      <p>Aucune facture trouvée</p>
+                      {search && (
+                        <button 
+                          className="clear-search" 
+                          onClick={() => setSearch('')}
+                        >
+                          Effacer la recherche
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               )}

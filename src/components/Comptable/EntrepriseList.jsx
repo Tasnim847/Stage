@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiEdit2, FiTrash2, FiPlus, FiLoader, FiSearch, FiExternalLink, FiX } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiPlus, FiLoader, FiSearch, FiExternalLink, FiX, FiUser, FiDollarSign } from 'react-icons/fi';
 import './comptable.css';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -253,76 +253,638 @@ const EntrepriseList = () => {
     setShowDetailModal(true);
   };
 
+  // Fonction pour générer des couleurs uniques basées sur le nom
+  const getColorFromName = (name) => {
+    if (!name) return '#72ac8d';
+    const colors = ['#72ac8d', '#4c9f70', '#3d8b63', '#2e7656', '#1f6249'];
+    const index = name.charCodeAt(0) % colors.length;
+    return colors[index];
+  };
+
   if (loading) {
     return (
-      <div className="loading-container">
-        <FiLoader className="spinner" />
-        <p>Chargement en cours...</p>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh',
+        background: '#f8fafc'
+      }}>
+        <FiLoader className="spinner" size={32} style={{ animation: 'spin 1s linear infinite', color: '#72ac8d' }} />
+        <p style={{ marginTop: '1rem', color: '#4a5568' }}>Chargement en cours...</p>
       </div>
     );
   }
   
   if (error) {
     return (
-      <div className="error-container">
-        <div className="error-message">{error}</div>
-        <button 
-          onClick={() => {
-            localStorage.clear();
-            sessionStorage.clear();
-            navigate('/login');
-          }}
-          className="error-button"
-        >
-          Se reconnecter
-        </button>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh',
+        background: '#f8fafc',
+        padding: '2rem',
+        textAlign: 'center'
+      }}>
+        <div style={{ 
+          background: 'white',
+          padding: '2rem',
+          borderRadius: '12px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+          maxWidth: '500px',
+          width: '100%'
+        }}>
+          <h3 style={{ color: '#f72585', marginBottom: '1rem' }}>Erreur</h3>
+          <p style={{ color: '#4a5568', marginBottom: '2rem' }}>{error}</p>
+          <button 
+            onClick={() => {
+              localStorage.clear();
+              sessionStorage.clear();
+              navigate('/login');
+            }}
+            style={{
+              background: '#f72585',
+              color: 'white',
+              border: 'none',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '0.95rem',
+              fontWeight: '500',
+              transition: 'all 0.3s',
+              ':hover': {
+                background: '#e5177b'
+              }
+            }}
+          >
+            Se reconnecter
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="entreprise-container">
-      <ToastContainer 
-        position="top-center"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+    <div style={{ 
+      maxWidth: '1400px', 
+      margin: '0 auto',
+      padding: '2rem 1rem',
+      background: '#f8fafc',
+      minHeight: '100vh'
+    }}>
+      <ToastContainer position="top-right" autoClose={5000} />
       
-      <div className="header-section">
-        <h2>Gestion des Entreprises</h2>
-        <div className="header-actions">
-          <div className="search-container">
-            <FiSearch className="search-icon" />
+      {/* Header */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '2rem',
+        flexWrap: 'wrap',
+        gap: '1rem'
+      }}>
+        <div>
+          <h1 style={{ 
+            margin: 0, 
+            fontSize: '1.8rem', 
+            fontWeight: '600',
+            color: '#2d3748',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <FiUser size={24} /> Gestion des Entreprises
+          </h1>
+          <p style={{ margin: '0.25rem 0 0', color: '#718096', fontSize: '0.95rem' }}>
+            {entreprises.length} entreprise{entreprises.length !== 1 ? 's' : ''} enregistrée{entreprises.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div style={{ 
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            <FiSearch style={{ 
+              position: 'absolute', 
+              left: '1rem', 
+              color: '#a0aec0' 
+            }} />
             <input
               type="text"
-              placeholder="Rechercher une entreprise..."
+              placeholder="Rechercher..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                padding: '0.75rem 1rem 0.75rem 2.5rem',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                width: '280px',
+                fontSize: '0.95rem',
+                transition: 'all 0.3s',
+                outline: 'none',
+                ':focus': {
+                  borderColor: '#72ac8d',
+                  boxShadow: '0 0 0 3px rgba(114, 172, 141, 0.1)'
+                }
+              }}
             />
           </div>
+          
           <button 
-            className="add-button"
             onClick={() => setShowAddModal(true)}
-            disabled={loading}
+            style={{
+              background: '#72ac8d',
+              color: 'white',
+              border: 'none',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.95rem',
+              fontWeight: '500',
+              transition: 'all 0.3s',
+              ':hover': {
+                background: '#5d9979'
+              }
+            }}
           >
             <FiPlus /> Ajouter
           </button>
         </div>
       </div>
 
+      {/* Statistiques */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+        gap: '1.5rem',
+        marginBottom: '2rem'
+      }}>
+        <div style={{ 
+          background: 'linear-gradient(135deg, #72ac8d, #5d9979)',
+          color: 'white',
+          padding: '1.5rem',
+          borderRadius: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          textAlign: 'left',
+          height: '100%',
+          boxShadow: '0 4px 12px rgba(114, 172, 141, 0.2)'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.75rem',
+            marginBottom: '0.75rem'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '8px',
+              background: 'rgba(255, 255, 255, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <FiUser size={20} />
+            </div>
+            <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>Total Entreprises</span>
+          </div>
+          <p style={{ 
+            margin: 0, 
+            fontSize: '1.75rem', 
+            fontWeight: '700',
+            lineHeight: '1.2'
+          }}>
+            {entreprises.length}
+          </p>
+        </div>
+        
+        <div style={{ 
+          background: 'linear-gradient(135deg, #4c9f70, #3d8b63)',
+          color: 'white',
+          padding: '1.5rem',
+          borderRadius: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          textAlign: 'left',
+          height: '100%',
+          boxShadow: '0 4px 12px rgba(76, 159, 112, 0.2)'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.75rem',
+            marginBottom: '0.75rem'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '8px',
+              background: 'rgba(255, 255, 255, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <FiDollarSign size={20} />
+            </div>
+            <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>Entreprises Actives</span>
+          </div>
+          <p style={{ 
+            margin: 0, 
+            fontSize: '1.75rem', 
+            fontWeight: '700',
+            lineHeight: '1.2'
+          }}>
+            {entreprises.filter(e => e.statut === 'active').length}
+          </p>
+        </div>
+      </div>
+
+      {/* Liste des entreprises */}
+      {filteredEntreprises.length === 0 ? (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '3rem', 
+          background: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)'
+        }}>
+          <p style={{ 
+            color: '#718096', 
+            marginBottom: '1.5rem',
+            fontSize: '1.1rem'
+          }}>
+            {searchTerm ? `Aucune entreprise trouvée pour "${searchTerm}"` : 'Aucune entreprise enregistrée'}
+          </p>
+          {searchTerm ? (
+            <button 
+              onClick={() => setSearchTerm('')}
+              style={{
+                background: 'white',
+                border: '1px solid #e2e8f0',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '0.95rem',
+                fontWeight: '500',
+                transition: 'all 0.3s',
+                ':hover': {
+                  borderColor: '#72ac8d',
+                  color: '#72ac8d'
+                }
+              }}
+            >
+              Effacer la recherche
+            </button>
+          ) : (
+            <button 
+              onClick={() => setShowAddModal(true)}
+              style={{
+                background: '#72ac8d',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                margin: '0 auto',
+                fontSize: '0.95rem',
+                fontWeight: '500',
+                transition: 'all 0.3s',
+                ':hover': {
+                  background: '#5d9979'
+                }
+              }}
+            >
+              <FiPlus /> Ajouter une entreprise
+            </button>
+          )}
+        </div>
+      ) : (
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+          gap: '1.5rem'
+        }}>
+          {filteredEntreprises.map(entreprise => (
+            <div 
+              key={entreprise.id} 
+              style={{ 
+                background: 'white',
+                borderRadius: '12px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                transition: 'all 0.3s ease',
+                overflow: 'hidden',
+                position: 'relative',
+                ':hover': {
+                  transform: 'translateY(-5px)',
+                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)'
+                }
+              }}
+            >
+              <div style={{ 
+                height: '6px',
+                background: getColorFromName(entreprise.nom)
+              }}></div>
+              
+              <div style={{ padding: '1.5rem' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'flex-start',
+                  gap: '1rem',
+                  marginBottom: '1rem'
+                }}>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: getColorFromName(entreprise.nom),
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    flexShrink: 0
+                  }}>
+                    {entreprise.nom.charAt(0).toUpperCase()}
+                  </div>
+                  
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ 
+                      margin: '0 0 0.25rem', 
+                      color: '#2d3748',
+                      fontSize: '1.2rem',
+                      fontWeight: '600'
+                    }}>
+                      {entreprise.nom}
+                    </h3>
+                    <span style={{ 
+                      fontSize: '0.8rem',
+                      color: '#718096',
+                      background: '#f7fafc',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '4px',
+                      display: 'inline-block'
+                    }}>
+                      ID: {entreprise.numeroIdentificationFiscale}
+                    </span>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button 
+                      onClick={() => handleEdit(entreprise)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#a0aec0',
+                        fontSize: '1rem',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.3s',
+                        ':hover': {
+                          background: 'rgba(114, 172, 141, 0.1)',
+                          color: '#72ac8d'
+                        }
+                      }}
+                    >
+                      <FiEdit2 />
+                    </button>
+                    
+                    <button 
+                      onClick={() => handleDelete(entreprise.id)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#a0aec0',
+                        fontSize: '1rem',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.3s',
+                        ':hover': {
+                          background: 'rgba(247, 37, 133, 0.1)',
+                          color: '#f72585'
+                        }
+                      }}
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                </div>
+                
+                <div style={{ 
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '1rem',
+                  marginBottom: '1rem'
+                }}>
+                  <div>
+                    <span style={{ 
+                      fontSize: '0.75rem',
+                      color: '#718096',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '0.25rem',
+                      display: 'block'
+                    }}>
+                      Email
+                    </span>
+                    <span style={{ 
+                      fontSize: '0.95rem',
+                      color: '#4a5568',
+                      fontWeight: '500',
+                      wordBreak: 'break-word'
+                    }}>
+                      {entreprise.email}
+                    </span>
+                  </div>
+                  
+                  <div>
+                    <span style={{ 
+                      fontSize: '0.75rem',
+                      color: '#718096',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '0.25rem',
+                      display: 'block'
+                    }}>
+                      Adresse
+                    </span>
+                    <span style={{ 
+                      fontSize: '0.95rem',
+                      color: '#4a5568',
+                      fontWeight: '500',
+                      wordBreak: 'break-word'
+                    }}>
+                      {entreprise.adresse || '-'}
+                    </span>
+                  </div>
+                  
+                  <div>
+                    <span style={{ 
+                      fontSize: '0.75rem',
+                      color: '#718096',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '0.25rem',
+                      display: 'block'
+                    }}>
+                      Téléphone
+                    </span>
+                    <span style={{ 
+                      fontSize: '0.95rem',
+                      color: '#4a5568',
+                      fontWeight: '500'
+                    }}>
+                      {entreprise.telephone || '-'}
+                    </span>
+                  </div>
+                  
+                  <div>
+                    <span style={{ 
+                      fontSize: '0.75rem',
+                      color: '#718096',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '0.25rem',
+                      display: 'block'
+                    }}>
+                      Statut
+                    </span>
+                    <span style={{ 
+                      fontSize: '0.95rem',
+                      color: '#38a169',
+                      background: 'rgba(56, 161, 105, 0.1)',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '4px',
+                      fontWeight: '500',
+                      display: 'inline-block'
+                    }}>
+                      Actif
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div style={{ 
+                padding: '1rem 1.5rem',
+                borderTop: '1px solid #edf2f7',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: '#f8fafc'
+              }}>
+                <span style={{ 
+                  fontSize: '0.8rem',
+                  color: '#718096'
+                }}>
+                  Créé le: {new Date(entreprise.createdAt).toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                  })}
+                </span>
+                
+                <button 
+                  onClick={() => openDetailModal(entreprise)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#72ac8d',
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '4px',
+                    transition: 'all 0.3s',
+                    ':hover': {
+                      background: 'rgba(114, 172, 141, 0.1)'
+                    }
+                  }}
+                >
+                  <FiExternalLink /> Détails
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal d'ajout/modification */}
       {showAddModal && (
-        <div className="modal-overlay" onClick={() => !isSubmitting && setShowAddModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{editingEntreprise ? 'Modifier Entreprise' : 'Nouvelle Entreprise'}</h3>
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }} onClick={() => !isSubmitting && setShowAddModal(false)}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            width: '100%',
+            maxWidth: '500px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{
+              padding: '1.5rem',
+              borderBottom: '1px solid #edf2f7',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600', color: '#2d3748' }}>
+                {editingEntreprise ? 'Modifier Entreprise' : 'Nouvelle Entreprise'}
+              </h3>
               <button
-                className="modal-close-btn"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#a0aec0',
+                  fontSize: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  transition: 'all 0.3s',
+                  ':hover': {
+                    color: '#718096'
+                  }
+                }}
                 onClick={() => !isSubmitting && setShowAddModal(false)}
                 disabled={isSubmitting}
               >
@@ -330,15 +892,23 @@ const EntrepriseList = () => {
               </button>
             </div>
 
-            <div className="modal-body">
+            <div style={{ padding: '1.5rem' }}>
               <form onSubmit={handleSubmit}>
                 {['nom', 'email', 'adresse', 'telephone', 'numeroIdentificationFiscale', 'motDePasse'].map((field) => (
-                  <div className="form-group" key={field}>
-                    <label>
+                  <div key={field} style={{ marginBottom: '1.25rem' }}>
+                    <label style={{
+                      display: 'block',
+                      marginBottom: '0.5rem',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      color: '#4a5568'
+                    }}>
                       {field === 'motDePasse' ? 'Mot de passe' : 
                        field === 'numeroIdentificationFiscale' ? 'NIF' :
                        field.charAt(0).toUpperCase() + field.slice(1)}
-                      {['nom', 'email', 'adresse', 'numeroIdentificationFiscale'].includes(field) && ' *'}
+                      {['nom', 'email', 'adresse', 'numeroIdentificationFiscale'].includes(field) && (
+                        <span style={{ color: '#f56565', marginLeft: '0.25rem' }}>*</span>
+                      )}
                     </label>
                     <input
                       type={field === 'motDePasse' ? 'password' : 
@@ -347,23 +917,69 @@ const EntrepriseList = () => {
                       name={field}
                       value={newEntreprise[field]}
                       onChange={handleInputChange}
-                      className={formErrors[field] ? 'error' : ''}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 1rem',
+                        border: formErrors[field] ? '1px solid #f56565' : '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        fontSize: '0.95rem',
+                        transition: 'all 0.3s',
+                        outline: 'none',
+                        ':focus': {
+                          borderColor: formErrors[field] ? '#f56565' : '#72ac8d',
+                          boxShadow: formErrors[field] 
+                            ? '0 0 0 3px rgba(245, 101, 101, 0.1)' 
+                            : '0 0 0 3px rgba(114, 172, 141, 0.1)'
+                        }
+                      }}
                       disabled={isSubmitting}
                       placeholder={
                         field === 'motDePasse' ? 'Laisser vide pour ne pas modifier' :
                         field === 'telephone' ? 'Optionnel' : ''
                       }
                     />
-                    {formErrors[field] && <span className="error-message">{formErrors[field]}</span>}
+                    {formErrors[field] && (
+                      <span style={{
+                        display: 'block',
+                        marginTop: '0.25rem',
+                        fontSize: '0.75rem',
+                        color: '#f56565'
+                      }}>
+                        {formErrors[field]}
+                      </span>
+                    )}
                   </div>
                 ))}
               </form>
             </div>
 
-            <div className="modal-footer">
+            <div style={{
+              padding: '1rem 1.5rem',
+              borderTop: '1px solid #edf2f7',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '1rem'
+            }}>
               <button 
                 type="button" 
-                className="btn btn-cancel"
+                style={{
+                  background: 'white',
+                  border: '1px solid #e2e8f0',
+                  color: '#4a5568',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '0.95rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s',
+                  ':hover': {
+                    borderColor: '#a0aec0'
+                  },
+                  ':disabled': {
+                    opacity: 0.7,
+                    cursor: 'not-allowed'
+                  }
+                }}
                 onClick={() => setShowAddModal(false)}
                 disabled={isSubmitting}
               >
@@ -371,13 +987,33 @@ const EntrepriseList = () => {
               </button>
               <button
                 type="submit"
-                className="btn btn-submit"
+                style={{
+                  background: '#72ac8d',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '0.95rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  ':hover': {
+                    background: '#5d9979'
+                  },
+                  ':disabled': {
+                    background: '#a0aec0',
+                    cursor: 'not-allowed'
+                  }
+                }}
                 onClick={handleSubmit}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <>
-                    <FiLoader className="spinner" size={16} />
+                    <FiLoader className="spinner" size={16} style={{ animation: 'spin 1s linear infinite' }} />
                     {editingEntreprise ? 'Enregistrement...' : 'Création...'}
                   </>
                 ) : editingEntreprise ? 'Enregistrer' : 'Créer'}
@@ -387,162 +1023,250 @@ const EntrepriseList = () => {
         </div>
       )}
 
+      {/* Modal de détails */}
       {showDetailModal && selectedEntreprise && (
-        <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Détails de l'entreprise</h3>
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '1rem'
+        }} onClick={() => setShowDetailModal(false)}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            width: '100%',
+            maxWidth: '500px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{
+              padding: '1.5rem',
+              borderBottom: '1px solid #edf2f7',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600', color: '#2d3748' }}>
+                Détails de l'entreprise
+              </h3>
               <button
-                className="modal-close-btn"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#a0aec0',
+                  fontSize: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  transition: 'all 0.3s',
+                  ':hover': {
+                    color: '#718096'
+                  }
+                }}
                 onClick={() => setShowDetailModal(false)}
               >
                 <FiX />
               </button>
             </div>
 
-            <div className="modal-body">
-              <div className="detail-container">
-                <div className="detail-logo">
+            <div style={{ padding: '1.5rem' }}>
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center',
+                marginBottom: '1.5rem'
+              }}>
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '16px',
+                  background: getColorFromName(selectedEntreprise.nom),
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '2rem',
+                  fontWeight: '700',
+                  marginBottom: '1rem'
+                }}>
                   {selectedEntreprise.nom.charAt(0).toUpperCase()}
                 </div>
-                <h4>{selectedEntreprise.nom}</h4>
-                <div className="detail-info">
-                  <div className="detail-row">
-                    <span className="detail-label">Email:</span>
-                    <span className="detail-value">{selectedEntreprise.email}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Adresse:</span>
-                    <span className="detail-value">{selectedEntreprise.adresse}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Téléphone:</span>
-                    <span className="detail-value">{selectedEntreprise.telephone || '-'}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">NIF:</span>
-                    <span className="detail-value">{selectedEntreprise.numeroIdentificationFiscale}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Statut:</span>
-                    <span className="detail-value status-active">Actif</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Date de création:</span>
-                    <span className="detail-value">
-                      {new Date(selectedEntreprise.createdAt).toLocaleDateString('fr-FR', {
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                  </div>
+                <h4 style={{ 
+                  margin: '0 0 0.25rem', 
+                  fontSize: '1.5rem',
+                  fontWeight: '600',
+                  color: '#2d3748',
+                  textAlign: 'center'
+                }}>
+                  {selectedEntreprise.nom}
+                </h4>
+                <span style={{ 
+                  fontSize: '0.9rem',
+                  color: '#718096',
+                  background: '#f7fafc',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '20px',
+                  display: 'inline-block'
+                }}>
+                  ID: {selectedEntreprise.numeroIdentificationFiscale}
+                </span>
+              </div>
+              
+              <div style={{ 
+                display: 'grid',
+                gridTemplateColumns: '1fr',
+                gap: '1.25rem'
+              }}>
+                <div>
+                  <span style={{ 
+                    fontSize: '0.75rem',
+                    color: '#718096',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '0.5rem',
+                    display: 'block'
+                  }}>
+                    Email
+                  </span>
+                  <span style={{ 
+                    fontSize: '1rem',
+                    color: '#4a5568',
+                    fontWeight: '500',
+                    wordBreak: 'break-word'
+                  }}>
+                    {selectedEntreprise.email}
+                  </span>
+                </div>
+                
+                <div>
+                  <span style={{ 
+                    fontSize: '0.75rem',
+                    color: '#718096',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '0.5rem',
+                    display: 'block'
+                  }}>
+                    Adresse
+                  </span>
+                  <span style={{ 
+                    fontSize: '1rem',
+                    color: '#4a5568',
+                    fontWeight: '500',
+                    wordBreak: 'break-word'
+                  }}>
+                    {selectedEntreprise.adresse || '-'}
+                  </span>
+                </div>
+                
+                <div>
+                  <span style={{ 
+                    fontSize: '0.75rem',
+                    color: '#718096',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '0.5rem',
+                    display: 'block'
+                  }}>
+                    Téléphone
+                  </span>
+                  <span style={{ 
+                    fontSize: '1rem',
+                    color: '#4a5568',
+                    fontWeight: '500'
+                  }}>
+                    {selectedEntreprise.telephone || '-'}
+                  </span>
+                </div>
+                
+                <div>
+                  <span style={{ 
+                    fontSize: '0.75rem',
+                    color: '#718096',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '0.5rem',
+                    display: 'block'
+                  }}>
+                    Statut
+                  </span>
+                  <span style={{ 
+                    fontSize: '1rem',
+                    color: '#38a169',
+                    background: 'rgba(56, 161, 105, 0.1)',
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '6px',
+                    fontWeight: '500',
+                    display: 'inline-block'
+                  }}>
+                    Actif
+                  </span>
+                </div>
+                
+                <div>
+                  <span style={{ 
+                    fontSize: '0.75rem',
+                    color: '#718096',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '0.5rem',
+                    display: 'block'
+                  }}>
+                    Date de création
+                  </span>
+                  <span style={{ 
+                    fontSize: '1rem',
+                    color: '#4a5568',
+                    fontWeight: '500'
+                  }}>
+                    {new Date(selectedEntreprise.createdAt).toLocaleDateString('fr-FR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div className="modal-footer">
+            <div style={{
+              padding: '1rem 1.5rem',
+              borderTop: '1px solid #edf2f7',
+              display: 'flex',
+              justifyContent: 'flex-end'
+            }}>
               <button 
                 type="button" 
-                className="btn btn-cancel"
+                style={{
+                  background: '#72ac8d',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '0.95rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s',
+                  ':hover': {
+                    background: '#5d9979'
+                  }
+                }}
                 onClick={() => setShowDetailModal(false)}
               >
                 Fermer
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {filteredEntreprises.length === 0 ? (
-        <div className="empty-state">
-          {searchTerm ? (
-            <>
-              <p>Aucune entreprise trouvée pour "{searchTerm}"</p>
-              <button className="clear-search" onClick={() => setSearchTerm('')}>
-                Effacer la recherche
-              </button>
-            </>
-          ) : (
-            <>
-              <p>Aucune entreprise enregistrée</p>
-              <button className="add-button" onClick={() => setShowAddModal(true)}>
-                <FiPlus /> Ajouter une entreprise
-              </button>
-            </>
-          )}
-        </div>
-      ) : (
-        <div className="entreprise-cards">
-          {filteredEntreprises.map(entreprise => (
-            <div className="entreprise-card" key={entreprise.id}>
-              <div className="card-gradient"></div>
-              <div className="card-header">
-                <div className="company-logo">
-                  {entreprise.nom.charAt(0).toUpperCase()}
-                </div>
-                <div className="company-info">
-                  <h3>{entreprise.nom}</h3>
-                  <span className="company-id">ID: {entreprise.numeroIdentificationFiscale}</span>
-                </div>
-                <div className="card-actions">
-                  <button 
-                    className="edit-btn" 
-                    title="Modifier"
-                    onClick={() => handleEdit(entreprise)}
-                  >
-                    <FiEdit2 />
-                  </button>
-                  <button 
-                    className="delete-btn" 
-                    title="Supprimer"
-                    onClick={() => handleDelete(entreprise.id)}
-                  >
-                    <FiTrash2 />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="card-body">
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="info-label">Email</span>
-                    <span className="info-value">{entreprise.email}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="info-label">Adresse</span>
-                    <span className="info-value">{entreprise.adresse}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="info-label">Téléphone</span>
-                    <span className="info-value">{entreprise.telephone || '-'}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="info-label">Statut</span>
-                    <span className="info-value status-active">Actif</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="card-footer">
-                <span className="last-update">
-                  Créé le: {new Date(entreprise.createdAt).toLocaleDateString('fr-FR', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric'
-                  })}
-                </span>
-                <button 
-                  className="details-btn"
-                  onClick={() => openDetailModal(entreprise)}
-                >
-                  <FiExternalLink /> Détails
-                </button>
-              </div>
-            </div>
-          ))}
         </div>
       )}
     </div>

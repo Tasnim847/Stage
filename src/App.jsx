@@ -11,6 +11,7 @@ import Facture from './components/Entreprise/Facture';
 import DashbComp from './components/Comptable/dashb_comp';
 import DashbEntre from './components/Entreprise/dashb_entre';
 import Factures from './components/Comptable/Factures';
+import Notifications from './components/Comptable/Notifications';
 import './App.css';
 
 function App() {
@@ -102,15 +103,16 @@ function App() {
           }
         />
 
-<Route path="/dash-comp" element={
-  <ProtectedRoute requiredRole="comptable">
-    <DashComp setIsAuthenticated={setAuthState} userData={userData} />
-  </ProtectedRoute>
-}>
-  <Route index element={<DashboardHome />} />
-  <Route path="dashb_comp" element={<DashbComp />} />
+        <Route path="/dash-comp" element={
+          <ProtectedRoute requiredRole="comptable">
+            <DashComp setIsAuthenticated={setAuthState} userData={userData} />
+          </ProtectedRoute>
+        }>
+        <Route index element={<DashboardHome />} />
+        <Route path="dashb_comp" element={<DashbComp />} />
           <Route path="entreprises" element={<EntrepriseList />} />
           <Route path="factures" element={<Factures />} />
+          <Route path="notification" element={<Notifications />} />
           <Route path="profile" element={<Profile handleLogout={handleLogout} />} />
         </Route>
 
