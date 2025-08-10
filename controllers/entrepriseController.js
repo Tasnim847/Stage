@@ -209,7 +209,6 @@ export const updateEntreprise = async (req, res) => {
 
     try {
         const { id } = req.params;
-        console.log('Tentative de modification entreprise ID:', id); // Log important
 
         if (!id) {
             await transaction.rollback();

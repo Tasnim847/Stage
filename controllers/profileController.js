@@ -38,7 +38,7 @@ export const getProfile = async (req, res) => {
                 attributes: ['id', 'nom', 'adresse', 'numeroIdentificationFiscale', 'logo', 'telephone'],
                 include: [{
                     model: Comptable,
-                    as: 'comptable',
+                    as: 'comptableAttitre',
                     attributes: ['id', 'name', 'lastname', 'email']
                 }]
             });

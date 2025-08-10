@@ -7,7 +7,7 @@ import Devis from "../models/Devis.js";
 import LigneDevis from "../models/lignesDevis.js";
 import Facture from "../models/Facture.js";
 import LigneFacture from "../models/LigneFacture.js";
-
+import Notification from "../models/Notification.js";
 export default async function syncDatabase() {
     try {
         // Ne pas appeler setupRelations ici
@@ -30,7 +30,8 @@ export default async function syncDatabase() {
             { model: Devis, tableName: 'devis' },
             { model: LigneDevis, tableName: 'lignes_devis' },
             { model: Facture, tableName: 'factures' },
-            { model: LigneFacture, tableName: 'lignes_facture' }
+            { model: LigneFacture, tableName: 'lignes_facture' },
+            { model: Notification, tableName: 'notifications' }
         ];
 
         // 4. Vérifier et créer les tables si nécessaire

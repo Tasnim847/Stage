@@ -5,6 +5,7 @@ import Devis from './Devis.js';
 import LigneDevis from './lignesDevis.js';
 import Facture from './Facture.js';
 import LigneFacture from "./LigneFacture.js";
+import Notification from "./Notification.js";
 
 export default function setupRelations() {
     try {
@@ -101,6 +102,10 @@ export default function setupRelations() {
             foreignKey: 'comptable_id',
             as: 'comptableCreateur'  // Alias modifié pour éviter le conflit
         });
+
+        // Ajoutez ces relations
+        Notification.belongsTo(Comptable, { foreignKey: 'comptable_id' });
+        Comptable.hasMany(Notification, { foreignKey: 'comptable_id' });
 
         console.log('✅ Relations configurées avec succès');
     } catch (error) {

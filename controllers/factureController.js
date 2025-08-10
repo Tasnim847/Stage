@@ -6,7 +6,9 @@ import Entreprise from '../models/Entreprise.js';
 import LigneDevis from '../models/lignesDevis.js';
 import LigneFacture from "../models/LigneFacture.js";
 import Comptable from "../models/Comptable.js";
+import Notification from '../models/Notification.js';
 import { Op } from 'sequelize';
+import { sendNotificationToComptable } from '../server.js';
 
 // Fonction utilitaire pour gérer les transactions
 const executeInTransaction = async (fn) => {
@@ -17,6 +19,27 @@ const executeInTransaction = async (fn) => {
         return result;
     } catch (error) {
         await transaction.rollback();
+        throw error;
+    }
+};
+
+// Fonction pour créer une notification
+const createNotification = async (comptableId, message, type, relatedEntityId) => {
+    try {
+        const notification = await Notification.create({
+            message,
+            type,
+            related_entity_id: relatedEntityId,
+            comptable_id: comptableId,
+            read: false
+        });
+
+        // Envoyer la notification via WebSocket
+        sendNotificationToComptable(comptableId, notification);
+
+        return notification;
+    } catch (error) {
+        console.error('Error creating notification:', error);
         throw error;
     }
 };
@@ -82,7 +105,7 @@ export const getFacturesByEntreprise = async (req, res) => {
             include: [
                 {
                     model: LigneFacture,
-                    as: 'lignesFacture',  // <-- alias corrigé pour correspondre à l’association
+                    as: 'lignesFacture',
                     attributes: ['id', 'description', 'prix_unitaire_ht', 'quantite']
                 },
                 {
@@ -132,6 +155,116 @@ export const getFacturesByEntreprise = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erreur serveur',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+/**
+ * Génère une facture à partir d'un devis
+ */
+export const generateFromDevis = async (req, res) => {
+    try {
+        const { devis_id } = req.body;
+
+        // 1. Vérification de l'entreprise liée à l'utilisateur connecté
+        const entreprise = await Entreprise.findOne({
+            where: { userId: req.user.id },
+            attributes: ['id', 'comptableId', 'nom']
+        });
+
+        if (!entreprise) {
+            return res.status(403).json({ success: false, message: 'Accès non autorisé' });
+        }
+
+        if (!entreprise.comptableId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Aucun comptable associé à cette entreprise'
+            });
+        }
+
+        // 2. Récupération du devis accepté avec ses lignes
+        const devis = await Devis.findOne({
+            where: {
+                id: devis_id,
+                entreprise_id: entreprise.id,
+                statut: 'accepté'
+            },
+            include: [{
+                model: LigneDevis,
+                as: 'lignesDevis'
+            }]
+        });
+
+        if (!devis) {
+            return res.status(404).json({
+                success: false,
+                message: 'Devis non trouvé ou non éligible'
+            });
+        }
+
+        // 3. Calcul du montant HT total du devis
+        const montantHT = devis.lignesDevis.reduce((sum, ligne) =>
+            sum + (parseFloat(ligne.prix_unitaire_ht || 0) * parseFloat(ligne.quantite || 0)), 0);
+
+        const montantTTC = montantHT * 1.2; // TVA 20% par défaut
+
+        // 4. Création de la facture dans une transaction
+        const transaction = await sequelize.transaction();
+        try {
+            // Création de la facture
+            const facture = await Facture.create({
+                numero: `FAC-${Date.now()}`,
+                date_emission: new Date(),
+                statut_paiement: 'brouillon',
+                client_name: devis.client_name,
+                montant_ht: montantHT,
+                montant_ttc: montantTTC,
+                entreprise_id: entreprise.id,
+                comptable_id: entreprise.comptableId,
+                devis_id: devis.id
+            }, { transaction });
+
+            // Copie des lignes de devis vers les lignes de facture
+            const lignesFacture = devis.lignesDevis.map(ligne => ({
+                description: ligne.description,
+                prix_unitaire_ht: ligne.prix_unitaire_ht,
+                quantite: ligne.quantite,
+                unite: ligne.unite,
+                facture_id: facture.id
+            }));
+
+            await LigneFacture.bulkCreate(lignesFacture, { transaction });
+
+            // Création de la notification
+            await createNotification(
+                entreprise.comptableId,
+                `Nouvelle facture générée par ${entreprise.nom}`,
+                'NEW_FACTURE',
+                facture.id
+            );
+
+            // Commit transaction
+            await transaction.commit();
+
+            // Réponse avec la facture créée
+            return res.json({
+                success: true,
+                data: facture,
+                message: 'Facture générée avec succès'
+            });
+
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
+
+    } catch (error) {
+        console.error('Erreur génération facture:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la génération de la facture',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
@@ -233,12 +366,12 @@ export const getFactureById = async (req, res) => {
 
 /**
  * Génère une facture à partir d'un devis
- */
+
 export const generateFromDevis = async (req, res) => {
     try {
         const { devis_id } = req.body;
 
-        // Vérification de l'entreprise
+        // 1. Vérification de l'entreprise liée à l'utilisateur connecté
         const entreprise = await Entreprise.findOne({
             where: { userId: req.user.id },
             attributes: ['id', 'comptableId']
@@ -255,12 +388,12 @@ export const generateFromDevis = async (req, res) => {
             });
         }
 
-        // Récupération du devis
+        // 2. Récupération du devis accepté avec ses lignes
         const devis = await Devis.findOne({
             where: {
                 id: devis_id,
                 entreprise_id: entreprise.id,
-                statut: 'accepté'
+                statut: 'accepté'  // On ne génère que si le devis est accepté
             },
             include: [{
                 model: LigneDevis,
@@ -275,20 +408,20 @@ export const generateFromDevis = async (req, res) => {
             });
         }
 
-        // Calcul des montants HT et TTC
+        // 3. Calcul du montant HT total du devis
         const montantHT = devis.lignesDevis.reduce((sum, ligne) =>
             sum + (parseFloat(ligne.prix_unitaire_ht || 0) * parseFloat(ligne.quantite || 0)), 0);
 
-        const montantTTC = montantHT * 1.2;
+        const montantTTC = montantHT * 1.2; // TVA 20% par défaut
 
-        // Création de la facture
+        // 4. Création de la facture dans une transaction
         const transaction = await sequelize.transaction();
         try {
-            // Création de la facture avec les montants calculés
+            // Création de la facture
             const facture = await Facture.create({
-                numero: `FAC-${Date.now()}`,
+                numero: `FAC-${Date.now()}`,  // Numéro unique
                 date_emission: new Date(),
-                statut_paiement: 'brouillon', // Or 'impayé' if that makes more sense // ou 'en_attente_de_paiement' selon ce que tu as
+                statut_paiement: 'brouillon',  // Statut initial
                 client_name: devis.client_name,
                 montant_ht: montantHT,
                 montant_ttc: montantTTC,
@@ -297,7 +430,7 @@ export const generateFromDevis = async (req, res) => {
                 devis_id: devis.id
             }, { transaction });
 
-            // Copie des lignes
+            // Copie des lignes de devis vers les lignes de facture
             const lignesFacture = devis.lignesDevis.map(ligne => ({
                 description: ligne.description,
                 prix_unitaire_ht: ligne.prix_unitaire_ht,
@@ -306,12 +439,13 @@ export const generateFromDevis = async (req, res) => {
                 facture_id: facture.id
             }));
 
-
             await LigneFacture.bulkCreate(lignesFacture, { transaction });
 
+            // Commit transaction
             await transaction.commit();
 
-            res.json({
+            // Réponse avec la facture créée
+            return res.json({
                 success: true,
                 data: facture,
                 message: 'Facture générée avec succès'
@@ -324,13 +458,14 @@ export const generateFromDevis = async (req, res) => {
 
     } catch (error) {
         console.error('Erreur génération facture:', error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: 'Erreur lors de la génération de la facture',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };
+*/
 
 /**
  * Met à jour une facture (principalement le statut de paiement)
@@ -547,4 +682,14 @@ export const getFacturesByComptable = async (req, res) => {
             error: process.env.NODE_ENV === 'development' ? err.message : undefined
         });
     }
+};
+
+
+export default {
+    getFacturesByEntreprise,
+    getFactureById,
+    generateFromDevis,
+    updateFacture,
+    generateFacturePdf,
+    getFacturesByComptable
 };

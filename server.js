@@ -6,15 +6,17 @@ import sequelize from './config/database.js';
 import syncDatabase from './database/syncDatabase.js';
 import entrepriseRoutes from './routes/entrepriseRoutes.js';
 import setupRelations from './models/relations.js';
-import { authenticateToken } from './middleware/auth.js'; // Importez le middleware
+import { authenticateToken } from './middleware/auth.js';
 import profileRoutes from './routes/profileRoutes.js';
 import devisRoutes from './routes/devisRoutes.js';
 import factureRoutes from "./routes/factureRoutes.js";
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import emailRouter from './routes/email.js';
+import notificationRoutes from './routes/notificationRoutes.js'; // Nouvelle route
 import fs from 'fs';
 import path from 'path';
-
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
 
 // Configuration de l'environnement
 dotenv.config();
@@ -27,6 +29,40 @@ const corsOptions = {
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
+};
+
+// Création du serveur HTTP
+const server = createServer(app);
+
+// Configuration WebSocket
+const wss = new WebSocketServer({ server });
+const userConnections = new Map();
+
+wss.on('connection', (ws, req) => {
+    const params = new URLSearchParams(req.url.split('?')[1]);
+    const userId = params.get('userId');
+    const userType = params.get('userType');
+
+    if (userId && userType === 'comptable') {
+        userConnections.set(userId, ws);
+        console.log(`Nouvelle connexion WebSocket pour comptable ID: ${userId}`);
+
+        ws.on('close', () => {
+            userConnections.delete(userId);
+            console.log(`Connexion WebSocket fermée pour comptable ID: ${userId}`);
+        });
+    }
+});
+
+// Export pour utilisation dans les contrôleurs
+export const sendNotificationToComptable = (comptableId, notification) => {
+    const ws = userConnections.get(comptableId.toString());
+    if (ws) {
+        ws.send(JSON.stringify({
+            type: 'NEW_NOTIFICATION',
+            data: notification
+        }));
+    }
 };
 
 // Vérification/Création du dossier uploads
@@ -42,21 +78,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-/*
-// Logging en développement
-if (process.env.NODE_ENV === 'development') {
-    app.use((req, res, next) => {
-        next();
-    });
-}
-*/
-
 // Synchronisation de la base de données
 sequelize.authenticate()
     .then(() => {
         console.log('✅ Connecté à PostgreSQL');
-        setupRelations(); // D'abord les relations
-        return syncDatabase(); // Ensuite la synchronisation
+        setupRelations();
+        return syncDatabase();
     })
     .then(() => {
         startServer();
@@ -69,17 +96,19 @@ sequelize.authenticate()
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/entreprises', authenticateToken, entrepriseRoutes);
-app.use('/api/profile', authenticateToken, profileRoutes); // Nouvelle route
+app.use('/api/profile', authenticateToken, profileRoutes);
 app.use('/api/devis', authenticateToken, devisRoutes);
 app.use('/api/factures', authenticateToken, factureRoutes);
 app.use('/api/dashboard', authenticateToken, dashboardRoutes);
 app.use('/api/email', emailRouter);
+app.use('/api/notifications', authenticateToken, notificationRoutes); // Nouvelle route
 
 // Route de santé
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'healthy',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        wsConnections: userConnections.size
     });
 });
 
@@ -98,9 +127,10 @@ app.use((err, req, res, next) => {
 
 function startServer() {
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
         console.log(`\n✅ Server running on port ${PORT}`);
         console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`🔐 CORS allowed origin: ${corsOptions.origin}\n`);
+        console.log(`🔐 CORS allowed origin: ${corsOptions.origin}`);
+        console.log(`🔄 ${userConnections.size} connexions WebSocket actives\n`);
     });
 }
