@@ -16,7 +16,8 @@ import {
   FiMenu,
   FiX,
   FiSun,
-  FiMoon
+  FiMoon,
+  FiCalendar
 } from 'react-icons/fi';
 import defaultAvatar from '../../assets/default-avatar.png';
 import DashboardHome from './DashboardHome';
@@ -184,11 +185,11 @@ const DashEntr = ({ setIsAuthenticated }) => {
                   <span>Devis</span>
                 </li>
                 <li 
-                  className={location.pathname.includes('/dash-entr/customers') ? 'active' : ''} 
-                  onClick={() => handleNavigation('/dash-entr/customers')}
+                  className={location.pathname.includes('/dash-entr/calendrier') ? 'active' : ''} 
+                  onClick={() => handleNavigation('/dash-entr/calendriers')}
                 >
-                  <FiUsers className="icon" /> 
-                  <span>Clients</span>
+                  <FiCalendar className="icon" /> 
+                  <span>Calendrier</span>
                 </li>
                 <li 
                   className={location.pathname.includes('/dash-entr/factures') ? 'active' : ''} 
@@ -223,7 +224,7 @@ const DashEntr = ({ setIsAuthenticated }) => {
                 onClick={handleLogout}
               >
                 <FiLogOut className="icon" /> 
-                <span>Déconnexion</span>
+                <span>Logout</span>
               </button>
             </div>
           </>

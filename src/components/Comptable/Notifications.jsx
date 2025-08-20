@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiBell, FiCheck, FiTrash2 } from 'react-icons/fi';
+import { FiBell, FiCheck, FiTrash2, FiChevronRight } from 'react-icons/fi';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
 import './comptable.css';
@@ -184,54 +184,63 @@ const Notifications = () => {
   return (
     <div className={`notifications-container ${context?.darkMode ? 'dark' : ''}`}>
       <div className="notifications-header">
-        <h1>
-          <FiBell /> Notifications 
-          {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
-        </h1>
+        <div className="header-title">
+          <FiBell className="header-icon" />
+          <h1>Notifications</h1>
+          {unreadCount > 0 && <span className="unread-badge">{unreadCount}</span>}
+        </div>
         {unreadCount > 0 && (
-          <button onClick={markAllAsRead} className="mark-all-read-btn">
+          <button onClick={markAllAsRead} className="mark-all-btn">
             <FiCheck /> Tout marquer comme lu
           </button>
         )}
       </div>
 
-      {notifications.length === 0 ? (
-        <div className="no-notifications">
-          <p>Aucune notification disponible</p>
-        </div>
-      ) : (
-        <ul className="notifications-list">
-          {notifications.map(notification => (
-            <li 
-              key={notification.id} 
-              className={`notification-item ${notification.read ? '' : 'unread'} ${getNotificationTypeClass(notification.type)}`}
-              onClick={() => handleNotificationClick(notification)}
-            >
-              <div className="notification-content">
-                {notification.type && (
-                  <span className={`notification-type type-${notification.type.toLowerCase().replace('_', '-')}`}>
-                    {notification.type.replace('_', ' ')}
-                  </span>
-                )}
-                <p>{notification.message}</p>
-                <span className="notification-time">
-                  {formatTime(notification.createdAt)}
-                  {!notification.read && <span className="unread-dot"></span>}
-                </span>
-              </div>
-              <button
-                className="delete-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteNotification(notification.id);
-                }}
+      <div className="notifications-content">
+        {notifications.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">
+              <FiBell />
+            </div>
+            <h3>Aucune notification</h3>
+            <p>Vous n'avez aucune notification pour le moment</p>
+          </div>
+        ) : (
+          <div className="notifications-grid">
+            {notifications.map(notification => (
+              <div
+                key={notification.id}
+                className={`notification-card ${notification.read ? '' : 'unread'} ${getNotificationTypeClass(notification.type)}`}
+                onClick={() => handleNotificationClick(notification)}
               >
-                <FiTrash2 />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+                <div className="notification-badge"></div>
+                <div className="notification-main">
+                  <div className="notification-header">
+                    <span className="notification-type">{notification.type.replace('_', ' ')}</span>
+                    <span className="notification-time">{formatTime(notification.createdAt)}</span>
+                  </div>
+                  <p className="notification-message">{notification.message}</p>
+                  <div className="notification-footer">
+                    <span className="notification-sender">
+                      {notification.comptable ? `${notification.comptable.prenom} ${notification.comptable.nom}` : 'Système'}
+                    </span>
+                    <FiChevronRight className="notification-arrow" />
+                  </div>
+                </div>
+                <button
+                  className="notification-delete"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteNotification(notification.id);
+                  }}
+                >
+                  <FiTrash2 />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

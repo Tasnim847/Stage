@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import AuthPage from './components/Auth/AuthPage';
+import Home from './components/Home/home';
 import DashComp from './components/dash/DashComp';
 import DashEntr from './components/dash/DashEntr';
 import EntrepriseList from './components/Comptable/EntrepriseList';
@@ -12,6 +13,7 @@ import DashbComp from './components/Comptable/dashb_comp';
 import DashbEntre from './components/Entreprise/dashb_entre';
 import Factures from './components/Comptable/Factures';
 import Notifications from './components/Comptable/Notifications';
+import MyFullCalendar from './components/Entreprise/MyFullCalendar';
 import './App.css';
 
 function App() {
@@ -92,6 +94,12 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/" element={
+          authState.isAuthenticated 
+          ? <Navigate to={authState.userRole === 'comptable' ? '/dash-comp' : '/dash-entr'} replace />
+          : <Home />
+        } />
+        
         <Route
           path="/login"
           element={
@@ -125,6 +133,7 @@ function App() {
         <Route path="devis" element={<Devis />} />
         <Route path="factures" element={<Facture />} />
         <Route path="dashb_entre" element={<DashbEntre />} />
+        <Route path="calendriers" element={<MyFullCalendar />} />
         <Route path="profile" element={<Profile handleLogout={handleLogout} />} />
       </Route>
 

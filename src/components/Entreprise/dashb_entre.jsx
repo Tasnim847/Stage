@@ -17,11 +17,7 @@ const DashbEntre = () => {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
-        <h1>Tableau de bord Entreprise</h1>
-        <div className="user-info">
-          <span>Entreprise XYZ</span>
-          <img src="https://via.placeholder.com/40" alt="Profile" />
-        </div>
+        <h1> Votre Tableau de bord</h1>
       </header>
 
       <nav className="dashboard-nav">
@@ -31,9 +27,6 @@ const DashbEntre = () => {
           </li>
           <li className={activeTab === 'candidates' ? 'active' : ''} onClick={() => setActiveTab('candidates')}>
             Candidats
-          </li>
-          <li className={activeTab === 'challenges' ? 'active' : ''} onClick={() => setActiveTab('challenges')}>
-            Challenges
           </li>
           <li className={activeTab === 'analytics' ? 'active' : ''} onClick={() => setActiveTab('analytics')}>
             Analytics

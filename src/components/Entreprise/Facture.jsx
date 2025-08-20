@@ -191,15 +191,12 @@ const Facture = () => {
                     <p>{formatDate(facture.date_emission)}</p>
                   </div>
                   <div>
-                    <small>Échéance</small>
-                    <p>{formatDate(facture.date_echeance)}</p>
+                    <small>Montant TTC</small>
+                    <p>{formatCurrency(facture.montant_ttc)}</p>
                   </div>
                 </div>
                 
-                <div className="card-amount">
-                  <small>Montant TTC</small>
-                  <p>{formatCurrency(facture.montant_ttc)}</p>
-                </div>
+                
                 
                 <div className="card-actions">
                   <button
@@ -222,11 +219,6 @@ const Facture = () => {
           </div>
 
           <div className={`pagination-container ${darkMode ? 'dark' : ''}`}>
-            <div className="pagination-info">
-              Affichage de {(pagination.currentPage - 1) * pagination.itemsPerPage + 1} à{' '}
-              {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} sur{' '}
-              {pagination.totalItems} factures
-            </div>
             
             <div className="pagination-controls">
               <button
@@ -235,7 +227,7 @@ const Facture = () => {
                 onClick={() => fetchFactures(pagination.currentPage - 1)}
                 aria-label="Page précédente"
               >
-                <FiChevronLeft /> Précédent
+                <FiChevronLeft />
               </button>
               
               <div className="page-numbers">
@@ -269,7 +261,7 @@ const Facture = () => {
                 onClick={() => fetchFactures(pagination.currentPage + 1)}
                 aria-label="Page suivante"
               >
-                Suivant <FiChevronRight />
+                <FiChevronRight />
               </button>
             </div>
           </div>

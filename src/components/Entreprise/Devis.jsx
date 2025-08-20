@@ -512,10 +512,28 @@ const Devis = () => {
 
     if (response.data.success) {
       setAlert({
-        show: true,
-        message: `Facture ${response.data.data.numero} générée avec succès !`,
-        type: 'success'
-      });
+  show: true,
+  message: (
+    <div className="ai-success-message">
+      <div className="ai-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div className="ai-content">
+        <h4>Facture générée avec succès</h4>
+        <p>La facture {response.data.data.numero} a été créée à partir du devis {devis.numero}.</p>
+        <p>Nous vous recommandons de :</p>
+        <ul>
+          <li>Vérifier les détails de la facture</li>
+          <li>Envoyer un email de confirmation au client</li>
+          <li>Planifier un rappel pour le suivi du paiement</li>
+        </ul>
+      </div>
+    </div>
+  ),
+  type: 'success'
+});
       
       await fetchDevis();
       
@@ -534,23 +552,45 @@ const Devis = () => {
 
 
   const Alert = ({ message, type, onClose }) => {
-    useEffect(() => {
-      const timer = setTimeout(() => {
-        onClose();
-      }, 5000);
-      return () => clearTimeout(timer);
-    }, [onClose]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
 
-    return (
-      <div className={`alert alert-${type}`}>
-        <span className="alert-icon">
-          {type === 'success' ? '✓' : '⚠'}
-        </span>
-        <span>{message}</span>
-        <span className="alert-close" onClick={onClose}>×</span>
-      </div>
-    );
+  // Pour gérer les messages complexes (composants React)
+  const renderMessage = () => {
+    if (React.isValidElement(message)) {
+      return message;
+    }
+    return <span>{message}</span>;
   };
+
+  return (
+    <div className={`alert-popup alert-${type}`}>
+      <div className="alert-content">
+        <div className="alert-icon">
+          {type === 'success' ? (
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor"/>
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>
+            </svg>
+          )}
+        </div>
+        <div className="alert-message">
+          {renderMessage()}
+        </div>
+        <button className="alert-close" onClick={onClose}>
+          <FiX />
+        </button>
+      </div>
+    </div>
+  );
+};
 
   const [alert, setAlert] = useState({
     show: false,
@@ -826,17 +866,17 @@ const Devis = () => {
                 </div>
                 <div className="total-item">
                   <span>Remise ({formData.remise}%):</span>
-        <span>-{(totalHT * formData.remise / 100).toFixed(2)} DT</span>
-    </div>
-    <div className="total-item">
-        <span>TVA ({formData.tva}%):</span>
-        <span>{tvaAmount} DT</span>
-    </div>
-    <div className="total-item total-ttc">
-        <span>Total TTC:</span>
-        <span>{totalTTC} DT</span>
-    </div>
-</div>
+                  <span>-{(totalHT * formData.remise / 100).toFixed(2)} DT</span>
+                </div>
+                <div className="total-item">
+                  <span>TVA ({formData.tva}%):</span>
+                  <span>{tvaAmount} DT</span>
+                </div>
+                <div className="total-item total-ttc">
+                  <span>Total TTC:</span>
+                  <span>{totalTTC} DT</span>
+                </div>
+              </div>
               
               <div className="form-actions">
                 <button type="button" className="cancel-btn" onClick={() => setShowModal(false)}>
