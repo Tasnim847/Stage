@@ -1,10 +1,22 @@
 import React, { useEffect, useState, useRef } from 'react';
-import './Home.css';
+import { useNavigate } from 'react-router-dom';
+import AuthForm from '../Auth/AuthForm';
+import './home.css';
+import './Modal.css';
 
 function Home() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showAuthForm, setShowAuthForm] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: '',
+    rememberMe: false
+  });
+  const [isLogin, setIsLogin] = useState(true);
   const isScrolling = useRef(false);
   const currentSection = useRef(0);
+  const navigate = useNavigate();
   
   // Images pour le carrousel
   const carouselImages = [
@@ -96,6 +108,39 @@ function Home() {
     }
   };
 
+  // Fonction pour ouvrir/fermer AuthForm
+  const toggleAuthForm = () => {
+    setShowAuthForm(!showAuthForm);
+  };
+
+  // Gestion des changements dans le formulaire
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  // Soumission du formulaire
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Ici vous ajouterez la logique de soumission (connexion API, etc.)
+    console.log('Données du formulaire:', formData);
+    
+    // Simulation de connexion réussie
+    alert(isLogin ? 'Connexion réussie!' : 'Inscription réussie!');
+    toggleAuthForm();
+    
+    // Redirection après connexion
+    navigate('/dashboard');
+  };
+
+  // Basculer entre connexion et inscription
+  const toggleAuthMode = () => {
+    setIsLogin(!isLogin);
+  };
+
   return (
     <div className="facturapro-app">
       
@@ -112,9 +157,146 @@ function Home() {
             <button onClick={() => scrollToSection('advantages')}>Avantages</button>
             <button onClick={() => scrollToSection('contact')}>Contact</button>
           </div>
-          <a href="#login" className="login-btn">Connexion</a>
+          {/* Bouton pour afficher AuthForm dans une modale */}
+          <button onClick={toggleAuthForm} className="login-btn">Connexion</button>
         </nav>
       </div>
+
+      {/* Modale pour AuthForm */}
+      {showAuthForm && (
+        <div className="auth-modal">
+          <div className="auth-modal-content">
+            <button className="close-modal" onClick={toggleAuthForm} aria-label="Fermer la fenêtre de connexion">
+              <span className="close-icon">×</span>
+            </button>
+
+            {/* Intelligence Artificielle - Assistant Virtuel */}
+            <div className="ai-assistant">
+              <div className="ai-header">
+                <div className="ai-avatar">
+                  <span className="ai-icon">🤖</span>
+                  <div className="ai-status"></div>
+                </div>
+                <div className="ai-info">
+                  <h4>Assistant FacturaPro</h4>
+                  <p>En ligne • Prêt à vous aider</p>
+                </div>
+              </div>
+            
+              <div className="ai-message">
+                <p>Bonjour ! Je suis là pour vous guider dans votre connexion ou inscription.</p>
+              </div>
+            
+              {/* Suggestions contextuelles IA */}
+              <div className="ai-suggestions">
+                <div className="suggestion-chip" onClick={() => console.log('Suggestion 1 cliquée')}>
+                  <span>💡 Mot de passe oublié ?</span>
+                </div>
+                <div className="suggestion-chip" onClick={() => toggleAuthMode()}>
+                  <span>🚀 {isLogin ? 'Créer un compte' : 'Se connecter'}</span>
+                </div>
+                <div className="suggestion-chip" onClick={() => console.log('Suggestion 3 cliquée')}>
+                  <span>🔐 Sécurité renforcée</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Formulaire d'authentification */}
+            <form className="auth-form" onSubmit={handleSubmit}>
+              <h2>{isLogin ? 'Connexion' : 'Inscription'}</h2>
+              
+              {!isLogin && (
+                <div className="form-group">
+                  <label htmlFor="name">Nom complet</label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              )}
+              
+              <div className="form-group">
+                <label htmlFor="email">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="password">Mot de passe</label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              
+              <div className="form-options">
+                <div className="remember-me">
+                  <input
+                    type="checkbox"
+                    id="rememberMe"
+                    name="rememberMe"
+                    checked={formData.rememberMe}
+                    onChange={handleInputChange}
+                  />
+                  <label htmlFor="rememberMe">Se souvenir de moi</label>
+                </div>
+                
+                {isLogin && (
+                  <a href="#forgot-password" className="forgot-password">
+                    Mot de passe oublié?
+                  </a>
+                )}
+              </div>
+              
+              <button type="submit" className="auth-submit-btn">
+                {isLogin ? 'Se connecter' : 'Créer un compte'}
+              </button>
+              
+              <div className="auth-switch">
+                <p>
+                  {isLogin ? 'Pas encore de compte? ' : 'Déjà un compte? '}
+                  <span onClick={toggleAuthMode} className="auth-switch-link">
+                    {isLogin ? 'Inscrivez-vous' : 'Connectez-vous'}
+                  </span>
+                </p>
+              </div>
+            </form>
+            
+            {/* Section de confiance et sécurité IA */}
+            <div className="trust-badges">
+              <div className="trust-item">
+                <span className="trust-icon">🔒</span>
+                <span>Chiffrement AES-256</span>
+              </div>
+              <div className="trust-item">
+                <span className="trust-icon">🤖</span>
+                <span>IA de détection de fraude</span>
+              </div>
+              <div className="trust-item">
+                <span className="trust-icon">✅</span>
+                <span>Certifié RGPD</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Overlay interactif */}
+          <div className="modal-overlay" onClick={toggleAuthForm}></div>
+        </div>
+      )}
 
       {/* Contenu principal */}
       <main className="scroll-container">
@@ -141,7 +323,7 @@ function Home() {
               </p>
               
               <div className="cta-section">
-                <button className="primary-cta">Commencer</button>
+                <button className="primary-cta" onClick={toggleAuthForm}>Commencer</button>
                 <p className="cta-subtext">Votre partenaire pour une gestion commerciale sans tracas</p>
               </div>
             </div>
@@ -195,21 +377,21 @@ function Home() {
                 <div className="tool-icon">📝</div>
                 <h3>Devis<br /><span className="tool-action">Créer</span></h3>
                 <p>Transformez vos idées en propositions commerciales percutantes en un clin d'œil.</p>
-                <button className="tool-button">Commencer</button>
+                <button className="tool-button" onClick={toggleAuthForm}>Commencer</button>
               </div>
               
               <div className="tool-card">
                 <div className="tool-icon">🧾</div>
                 <h3>Factures<br /><span className="tool-action">Générer</span></h3>
                 <p>Convertissez vos devis en factures professionnelles sans effort, pour un flux de trésorerie optimisé.</p>
-                <button className="tool-button">Commencer</button>
+                <button className="tool-button" onClick={toggleAuthForm}>Commencer</button>
               </div>
               
               <div className="tool-card">
                 <div className="tool-icon">👤</div>
                 <h3>Profil<br /><span className="tool-action">Gérer</span></h3>
                 <p>Personnalisez votre espace et gérez vos informations d'entreprise avec une aisance déconcertante.</p>
-                <button className="tool-button">Commencer</button>
+                <button className="tool-button" onClick={toggleAuthForm}>Commencer</button>
               </div>
             </div>
           </div>
@@ -378,7 +560,7 @@ function Home() {
             
             <div className="advantages-cta">
               <h3>Prêt à révolutionner votre facturation ?</h3>
-              <button className="cta-button">Essayer</button>
+              <button className="cta-button" onClick={toggleAuthForm}>Essayer</button>
             </div>
           </div>
         </section>
@@ -415,14 +597,13 @@ function Home() {
                 </div>
                 <div className="contact-item">
                   <span className="contact-icon">📍</span>
-                  <span>Paris, France</span>
+                  <span>Tunis, Tunis</span>
                 </div>
               </div>
             </div>
           </div>
         </section>
       </main>
-
     </div>
   );
 }
