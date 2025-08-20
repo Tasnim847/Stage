@@ -9,6 +9,7 @@ import Comptable from "../models/Comptable.js";
 import Notification from '../models/Notification.js';
 import { Op } from 'sequelize';
 import { sendNotificationToComptable } from '../server.js';
+import { sendEmail } from '../services/emailService.js';
 
 // Fonction utilitaire pour gérer les transactions
 const executeInTransaction = async (fn) => {
@@ -24,6 +25,7 @@ const executeInTransaction = async (fn) => {
 };
 
 // Fonction pour créer une notification
+/*
 const createNotification = async (comptableId, message, type, relatedEntityId) => {
     try {
         const notification = await Notification.create({
@@ -43,10 +45,71 @@ const createNotification = async (comptableId, message, type, relatedEntityId) =
         throw error;
     }
 };
+*/
 
-/**
- * Récupère toutes les factures d'une entreprise avec pagination et filtrage
- */
+// Fonction pour créer une notification
+const createNotification = async (comptableId, message, type, relatedEntityId) => {
+    try {
+        // Récupérer les infos du comptable
+        const comptable = await Comptable.findByPk(comptableId, {
+            attributes: ['id', 'name', 'lastname', 'email']
+        });
+
+        if (!comptable) {
+            throw new Error('Comptable introuvable');
+        }
+
+        const notification = await Notification.create({
+            message,
+            type,
+            related_entity_id: relatedEntityId,
+            comptable_id: comptableId,
+            read: false
+        });
+
+        // Envoyer la notification via WebSocket
+        sendNotificationToComptable(comptableId, notification);
+
+        try {
+            // Envoyer un email au comptable
+            const emailResult = await sendEmail({
+                to: comptable.email,
+                subject: 'Nouvelle notification - Invoice App',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px;">
+                        <h2 style="color: #2c3e50;">Nouvelle notification</h2>
+                        <p>Bonjour ${comptable.name} ${comptable.lastname},</p>
+                        <p>Vous avez reçu une nouvelle notification dans votre espace Invoice App :</p>
+                        <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #2c3e50;">
+                            <p><strong>${message}</strong></p>
+                        </div>
+                        <p>Connectez-vous à votre espace pour voir les détails :</p>
+                        <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/notifications" 
+                           style="display: inline-block; padding: 12px 24px; background-color: #2c3e50; color: white; 
+                                  text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0;">
+                            Voir mes notifications
+                        </a>
+                        <p style="margin-top: 20px;">Cordialement,<br><strong>L'équipe Invoice App</strong></p>
+                    </div>
+                `,
+                text: `Nouvelle notification\n\nBonjour ${comptable.name} ${comptable.lastname},\n\nVous avez reçu une nouvelle notification :\n\n${message}\n\nConnectez-vous à ${process.env.FRONTEND_URL || 'http://localhost:5173'}/notifications pour voir les détails.\n\nCordialement,\nL'équipe Invoice App`
+            });
+
+            if (!emailResult.success) {
+                console.error('Échec envoi email:', emailResult.error);
+            }
+        } catch (emailError) {
+            console.error('Erreur lors de l\'envoi de l\'email:', emailError);
+            // Ne pas bloquer le processus même si l'email échoue
+        }
+
+        return notification;
+    } catch (error) {
+        console.error('Error creating notification:', error);
+        throw error;
+    }
+};
+
 export const getFacturesByEntreprise = async (req, res) => {
     try {
         // Vérification de l'authentification
@@ -160,9 +223,6 @@ export const getFacturesByEntreprise = async (req, res) => {
     }
 };
 
-/**
- * Génère une facture à partir d'un devis
- */
 export const generateFromDevis = async (req, res) => {
     try {
         const { devis_id } = req.body;
@@ -270,9 +330,6 @@ export const generateFromDevis = async (req, res) => {
     }
 };
 
-/**
- * Récupère une facture spécifique avec toutes ses informations
- */
 export const getFactureById = async (req, res) => {
     try {
         // 1. Vérifier que l'utilisateur a une entreprise
@@ -364,112 +421,6 @@ export const getFactureById = async (req, res) => {
     }
 };
 
-/**
- * Génère une facture à partir d'un devis
-
-export const generateFromDevis = async (req, res) => {
-    try {
-        const { devis_id } = req.body;
-
-        // 1. Vérification de l'entreprise liée à l'utilisateur connecté
-        const entreprise = await Entreprise.findOne({
-            where: { userId: req.user.id },
-            attributes: ['id', 'comptableId']
-        });
-
-        if (!entreprise) {
-            return res.status(403).json({ success: false, message: 'Accès non autorisé' });
-        }
-
-        if (!entreprise.comptableId) {
-            return res.status(400).json({
-                success: false,
-                message: 'Aucun comptable associé à cette entreprise'
-            });
-        }
-
-        // 2. Récupération du devis accepté avec ses lignes
-        const devis = await Devis.findOne({
-            where: {
-                id: devis_id,
-                entreprise_id: entreprise.id,
-                statut: 'accepté'  // On ne génère que si le devis est accepté
-            },
-            include: [{
-                model: LigneDevis,
-                as: 'lignesDevis'
-            }]
-        });
-
-        if (!devis) {
-            return res.status(404).json({
-                success: false,
-                message: 'Devis non trouvé ou non éligible'
-            });
-        }
-
-        // 3. Calcul du montant HT total du devis
-        const montantHT = devis.lignesDevis.reduce((sum, ligne) =>
-            sum + (parseFloat(ligne.prix_unitaire_ht || 0) * parseFloat(ligne.quantite || 0)), 0);
-
-        const montantTTC = montantHT * 1.2; // TVA 20% par défaut
-
-        // 4. Création de la facture dans une transaction
-        const transaction = await sequelize.transaction();
-        try {
-            // Création de la facture
-            const facture = await Facture.create({
-                numero: `FAC-${Date.now()}`,  // Numéro unique
-                date_emission: new Date(),
-                statut_paiement: 'brouillon',  // Statut initial
-                client_name: devis.client_name,
-                montant_ht: montantHT,
-                montant_ttc: montantTTC,
-                entreprise_id: entreprise.id,
-                comptable_id: entreprise.comptableId,
-                devis_id: devis.id
-            }, { transaction });
-
-            // Copie des lignes de devis vers les lignes de facture
-            const lignesFacture = devis.lignesDevis.map(ligne => ({
-                description: ligne.description,
-                prix_unitaire_ht: ligne.prix_unitaire_ht,
-                quantite: ligne.quantite,
-                unite: ligne.unite,
-                facture_id: facture.id
-            }));
-
-            await LigneFacture.bulkCreate(lignesFacture, { transaction });
-
-            // Commit transaction
-            await transaction.commit();
-
-            // Réponse avec la facture créée
-            return res.json({
-                success: true,
-                data: facture,
-                message: 'Facture générée avec succès'
-            });
-
-        } catch (error) {
-            await transaction.rollback();
-            throw error;
-        }
-
-    } catch (error) {
-        console.error('Erreur génération facture:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Erreur lors de la génération de la facture',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    }
-};
-*/
-
-/**
- * Met à jour une facture (principalement le statut de paiement)
- */
 export const updateFacture = async (req, res) => {
     try {
         const entreprise = await Entreprise.findOne({
@@ -532,9 +483,6 @@ export const updateFacture = async (req, res) => {
     }
 };
 
-/**
- * Génère un PDF pour une facture
- */
 export const generateFacturePdf = async (req, res) => {
     try {
         // 1. Vérifier que l'utilisateur a une entreprise
@@ -634,9 +582,6 @@ export const generateFacturePdf = async (req, res) => {
     }
 };
 
-/**
- * Récupère les factures associées à un comptable
- */
 export const getFacturesByComptable = async (req, res) => {
     try {
         const comptableId = req.user.id;
