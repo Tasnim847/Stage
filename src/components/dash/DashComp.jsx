@@ -87,10 +87,10 @@ const DashComp = ({ setIsAuthenticated }) => {
         setIsAuthenticated(false);
       }
       
-      window.location.href = '/login';
+      window.location.href = '/';
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
-      window.location.href = '/login';
+      window.location.href = '/';
     }
   };
 
@@ -211,7 +211,7 @@ const DashComp = ({ setIsAuthenticated }) => {
                 onClick={handleLogout}
               >
                 <FiLogOut className="icon" /> 
-                <span>Déconnexion</span>
+                <span>Logout</span>
               </button>
             </div>
           </>

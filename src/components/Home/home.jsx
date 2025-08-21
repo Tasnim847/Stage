@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AuthForm from '../Auth/AuthForm';
 import './home.css';
 import './Modal.css';
 
@@ -11,13 +10,16 @@ function Home() {
     email: '',
     password: '',
     name: '',
+    lastname: '',
     rememberMe: false
   });
   const [isLogin, setIsLogin] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const isScrolling = useRef(false);
   const currentSection = useRef(0);
   const navigate = useNavigate();
-  
+
   // Images pour le carrousel
   const carouselImages = [
     'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=1500&q=80',
@@ -25,11 +27,56 @@ function Home() {
     'https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1500&q=80'
   ];
 
+  // Fonctions API pour communiquer avec le backend
+  const registerAPI = async (userData) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Échec de l\'inscription');
+      return data;
+    } catch (err) {
+      console.error('Erreur d\'inscription:', err);
+      throw err;
+    }
+  };
+
+  const loginAPI = async (credentials) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Erreur ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.token || !data.user) {
+        throw new Error('Réponse du serveur invalide');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erreur de connexion:', error);
+      throw error;
+    }
+  };
+
+  // SUPPRIMER le useEffect de vérification d'authentification au chargement
+  // Cela empêche la redirection automatique quand on ouvre la page
+
   // Gestion du défilement fluide
   useEffect(() => {
     const sections = document.querySelectorAll('.fullpage-section');
     
-    // Mettre à jour currentSection lors du défilement manuel
     const handleScroll = () => {
       if (isScrolling.current) return;
       
@@ -51,7 +98,6 @@ function Home() {
       e.preventDefault();
       isScrolling.current = true;
       
-      // Déterminer la direction
       if (e.deltaY > 0 && currentSection.current < sections.length - 1) {
         currentSection.current++;
       } else if (e.deltaY < 0 && currentSection.current > 0) {
@@ -83,7 +129,7 @@ function Home() {
       setCurrentImageIndex((prevIndex) => 
         prevIndex === carouselImages.length - 1 ? 0 : prevIndex + 1
       );
-    }, 5000); // Change d'image toutes les 5 secondes
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [carouselImages.length]);
@@ -92,7 +138,6 @@ function Home() {
     isScrolling.current = true;
     const element = document.getElementById(id);
     if (element) {
-      // Mettre à jour currentSection
       const sections = document.querySelectorAll('.fullpage-section');
       sections.forEach((section, index) => {
         if (section.id === id) {
@@ -111,6 +156,17 @@ function Home() {
   // Fonction pour ouvrir/fermer AuthForm
   const toggleAuthForm = () => {
     setShowAuthForm(!showAuthForm);
+    setErrorMessage('');
+    // Réinitialiser le formulaire quand on ouvre/ferme
+    if (!showAuthForm) {
+      setFormData({
+        email: '',
+        password: '',
+        name: '',
+        lastname: '',
+        rememberMe: false
+      });
+    }
   };
 
   // Gestion des changements dans le formulaire
@@ -120,25 +176,99 @@ function Home() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    setErrorMessage(''); // Effacer les erreurs quand l'utilisateur tape
   };
 
   // Soumission du formulaire
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Ici vous ajouterez la logique de soumission (connexion API, etc.)
-    console.log('Données du formulaire:', formData);
+    setIsLoading(true);
+    setErrorMessage('');
+  
+    try {
+      if (isLogin) {
+        // Validation pour la connexion
+        if (!formData.email || !formData.password) {
+          throw new Error('Veuillez remplir tous les champs');
+        }
+
+        // Connexion
+        const response = await loginAPI({
+          email: formData.email.trim(),
+          password: formData.password
+        });
+      
+        // Stocker les données d'authentification
+        const storage = formData.rememberMe ? localStorage : sessionStorage;
+        storage.setItem('authToken', response.token);
+        storage.setItem('userData', JSON.stringify(response.user));
+      
+        toggleAuthForm();
+      
+        // Forcer un rechargement complet de la page pour mettre à jour l'état d'authentification
+        setTimeout(() => {
+          if (response.user.role === 'comptable') {
+            window.location.href = '/dash-comp';
+          } else if (response.user.role === 'entreprise') {
+            window.location.href = '/dash-entr';
+          }
+        }, 100);
+      
+      } else {
+        // Validation pour l'inscription
+        if (!formData.name || !formData.email || !formData.password) {
+          throw new Error('Veuillez remplir tous les champs obligatoires');
+        }
+
+        if (formData.password.length < 6) {
+          throw new Error('Le mot de passe doit contenir au moins 6 caractères');
+        }
+
+        // Inscription
+        const response = await registerAPI({
+          email: formData.email.trim(),
+          password: formData.password,
+          name: formData.name,
+          lastname: formData.lastname || formData.name
+        });
+      
+         // Stocker les données d'authentification
+        const storage = formData.rememberMe ? localStorage : sessionStorage;
+        storage.setItem('authToken', response.token);
+        storage.setItem('userData', JSON.stringify(response.user));
+      
+        toggleAuthForm();
+      
+         // Forcer un rechargement complet de la page pour mettre à jour l'état d'authentification
+        setTimeout(() => {
+          if (response.user.role === 'comptable') {
+            window.location.href = '/dash-comp';
+          } else if (response.user.role === 'entreprise') {
+            window.location.href = '/dash-entr';
+          }
+        }, 100);
+      }
     
-    // Simulation de connexion réussie
-    alert(isLogin ? 'Connexion réussie!' : 'Inscription réussie!');
-    toggleAuthForm();
-    
-    // Redirection après connexion
-    navigate('/dashboard');
+    } catch (error) {
+      console.error('Erreur d\'authentification:', error);
+      setErrorMessage(error.message || 'Une erreur est survenue');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Basculer entre connexion et inscription
   const toggleAuthMode = () => {
     setIsLogin(!isLogin);
+    setErrorMessage('');
+    // Réinitialiser les données du formulaire
+    setFormData({
+      email: formData.email, // Garder l'email
+      password: '',
+      name: '',
+      lastname: '',
+      rememberMe: formData.rememberMe
+    });
   };
 
   return (
@@ -157,7 +287,6 @@ function Home() {
             <button onClick={() => scrollToSection('advantages')}>Avantages</button>
             <button onClick={() => scrollToSection('contact')}>Contact</button>
           </div>
-          {/* Bouton pour afficher AuthForm dans une modale */}
           <button onClick={toggleAuthForm} className="login-btn">Connexion</button>
         </nav>
       </div>
@@ -184,18 +313,17 @@ function Home() {
               </div>
             
               <div className="ai-message">
-                <p>Bonjour ! Je suis là pour vous guider dans votre connexion ou inscription.</p>
+                <p>Bonjour ! Je suis là pour vous guider dans votre {isLogin ? 'connexion' : 'inscription'}.</p>
               </div>
             
-              {/* Suggestions contextuelles IA */}
               <div className="ai-suggestions">
-                <div className="suggestion-chip" onClick={() => console.log('Suggestion 1 cliquée')}>
+                <div className="suggestion-chip" onClick={() => console.log('Mot de passe oublié')}>
                   <span>💡 Mot de passe oublié ?</span>
                 </div>
-                <div className="suggestion-chip" onClick={() => toggleAuthMode()}>
+                <div className="suggestion-chip" onClick={toggleAuthMode}>
                   <span>🚀 {isLogin ? 'Créer un compte' : 'Se connecter'}</span>
                 </div>
-                <div className="suggestion-chip" onClick={() => console.log('Suggestion 3 cliquée')}>
+                <div className="suggestion-chip" onClick={() => console.log('Sécurité')}>
                   <span>🔐 Sécurité renforcée</span>
                 </div>
               </div>
@@ -205,9 +333,15 @@ function Home() {
             <form className="auth-form" onSubmit={handleSubmit}>
               <h2>{isLogin ? 'Connexion' : 'Inscription'}</h2>
               
+              {errorMessage && (
+                <div className="error-message" style={{color: 'red', marginBottom: '15px'}}>
+                  {errorMessage}
+                </div>
+              )}
+              
               {!isLogin && (
                 <div className="form-group">
-                  <label htmlFor="name">Nom complet</label>
+                  <label htmlFor="name">Nom complet *</label>
                   <input
                     type="text"
                     id="name"
@@ -215,12 +349,27 @@ function Home() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
+                    placeholder="Votre nom complet"
+                  />
+                </div>
+              )}
+              
+              {!isLogin && (
+                <div className="form-group">
+                  <label htmlFor="lastname">Nom de famille</label>
+                  <input
+                    type="text"
+                    id="lastname"
+                    name="lastname"
+                    value={formData.lastname}
+                    onChange={handleInputChange}
+                    placeholder="Votre nom de famille (optionnel)"
                   />
                 </div>
               )}
               
               <div className="form-group">
-                <label htmlFor="email">Email</label>
+                <label htmlFor="email">Email *</label>
                 <input
                   type="email"
                   id="email"
@@ -228,11 +377,12 @@ function Home() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
+                  placeholder="votre@email.com"
                 />
               </div>
               
               <div className="form-group">
-                <label htmlFor="password">Mot de passe</label>
+                <label htmlFor="password">Mot de passe *</label>
                 <input
                   type="password"
                   id="password"
@@ -240,20 +390,23 @@ function Home() {
                   value={formData.password}
                   onChange={handleInputChange}
                   required
+                  placeholder={isLogin ? 'Votre mot de passe' : 'Minimum 6 caractères'}
                 />
               </div>
               
               <div className="form-options">
-                <div className="remember-me">
-                  <input
-                    type="checkbox"
-                    id="rememberMe"
-                    name="rememberMe"
-                    checked={formData.rememberMe}
-                    onChange={handleInputChange}
-                  />
-                  <label htmlFor="rememberMe">Se souvenir de moi</label>
-                </div>
+                {isLogin && (
+                  <div className="remember-me">
+                    <input
+                      type="checkbox"
+                      id="rememberMe"
+                      name="rememberMe"
+                      checked={formData.rememberMe}
+                      onChange={handleInputChange}
+                    />
+                    <label htmlFor="rememberMe">Se souvenir de moi</label>
+                  </div>
+                )}
                 
                 {isLogin && (
                   <a href="#forgot-password" className="forgot-password">
@@ -262,8 +415,16 @@ function Home() {
                 )}
               </div>
               
-              <button type="submit" className="auth-submit-btn">
-                {isLogin ? 'Se connecter' : 'Créer un compte'}
+              <button 
+                type="submit" 
+                className={`auth-submit-btn ${isLoading ? 'loading' : ''}`}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span>Chargement...</span>
+                ) : (
+                  isLogin ? 'Se connecter' : 'Créer un compte'
+                )}
               </button>
               
               <div className="auth-switch">
@@ -276,7 +437,6 @@ function Home() {
               </div>
             </form>
             
-            {/* Section de confiance et sécurité IA */}
             <div className="trust-badges">
               <div className="trust-item">
                 <span className="trust-icon">🔒</span>
@@ -293,7 +453,6 @@ function Home() {
             </div>
           </div>
 
-          {/* Overlay interactif */}
           <div className="modal-overlay" onClick={toggleAuthForm}></div>
         </div>
       )}
@@ -323,7 +482,9 @@ function Home() {
               </p>
               
               <div className="cta-section">
-                <button className="primary-cta" onClick={toggleAuthForm}>Commencer</button>
+                <button className="primary-cta" onClick={toggleAuthForm}>
+                  Commencer
+                </button>
                 <p className="cta-subtext">Votre partenaire pour une gestion commerciale sans tracas</p>
               </div>
             </div>
@@ -361,7 +522,7 @@ function Home() {
                 <div className="feature-icon">📈</div>
                 <h3>Analyses Avancées</h3>
                 <p>Visualisez vos performances financières avec des tableaux de bord intuitifs.</p>
-              </div>
+                </div>
             </div>
           </div>
         </section>
@@ -406,7 +567,6 @@ function Home() {
               faciliter la conversion, et offrir une gestion multi-entreprises avec un tableau de bord intuitif.
             </p>
             
-            {/* Bande magique déroulante */}
             <div className="magic-strip">
               <div className="magic-strip-content">
                 <div className="magic-item">
@@ -486,7 +646,7 @@ function Home() {
           </div>
         </section>
 
-        {/* Section Avantages - Nouveau Design */}
+        {/* Section Avantages */}
         <section id="advantages" className="fullpage-section advantages-section">
           <div className="section-container">
             <div className="advantages-header">
@@ -560,7 +720,7 @@ function Home() {
             
             <div className="advantages-cta">
               <h3>Prêt à révolutionner votre facturation ?</h3>
-              <button className="cta-button" onClick={toggleAuthForm}>Essayer</button>
+              <button className="cta-button" onClick={toggleAuthForm}>Essayer gratuitement</button>
             </div>
           </div>
         </section>

@@ -95,10 +95,10 @@ const DashEntr = ({ setIsAuthenticated }) => {
         setIsAuthenticated(false);
       }
       
-      window.location.href = '/login';
+      window.location.href = '/';
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
-      window.location.href = '/login';
+      window.location.href = '/';
     }
   };
 

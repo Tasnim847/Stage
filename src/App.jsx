@@ -23,8 +23,6 @@ function App() {
     isLoading: true
   });
 
-  const userData = JSON.parse(localStorage.getItem('userData') || sessionStorage.getItem('userData') || '{}');
-
   const checkAuthStatus = () => {
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
     const userData = JSON.parse(localStorage.getItem('userData') || sessionStorage.getItem('userData') || 'null');
@@ -66,9 +64,6 @@ function App() {
       userRole: null,
       isLoading: false
     });
-    
-    // Force a full page reload to reset all states
-    window.location.href = '/login';
   };
 
   const ProtectedRoute = ({ requiredRole, children }) => {
@@ -77,7 +72,7 @@ function App() {
     }
 
     if (!authState.isAuthenticated) {
-      return <Navigate to="/login" replace />;
+      return <Navigate to="/" replace />; // Rediriger vers la page d'accueil au lieu de /login
     }
 
     if (requiredRole && authState.userRole !== requiredRole) {
@@ -94,12 +89,10 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={
-          authState.isAuthenticated 
-          ? <Navigate to={authState.userRole === 'comptable' ? '/dash-comp' : '/dash-entr'} replace />
-          : <Home />
-        } />
+        {/* Page d'accueil - accessible à tous */}
+        <Route path="/" element={<Home />} />
         
+        {/* Page de login - seulement accessible si non authentifié */}
         <Route
           path="/login"
           element={
@@ -111,40 +104,35 @@ function App() {
           }
         />
 
+        {/* Routes protégées pour comptable */}
         <Route path="/dash-comp" element={
           <ProtectedRoute requiredRole="comptable">
-            <DashComp setIsAuthenticated={setAuthState} userData={userData} />
+            <DashComp setIsAuthenticated={setAuthState} />
           </ProtectedRoute>
         }>
-        <Route index element={<DashboardHome />} />
-        <Route path="dashb_comp" element={<DashbComp />} />
+          <Route index element={<DashboardHome />} />
+          <Route path="dashb_comp" element={<DashbComp />} />
           <Route path="entreprises" element={<EntrepriseList />} />
           <Route path="factures" element={<Factures />} />
           <Route path="notification" element={<Notifications />} />
           <Route path="profile" element={<Profile handleLogout={handleLogout} />} />
         </Route>
 
+        {/* Routes protégées pour entreprise */}
         <Route path="/dash-entr" element={
           <ProtectedRoute requiredRole="entreprise">
             <DashEntr setIsAuthenticated={setAuthState} />
           </ProtectedRoute>
         }>
-        <Route index element={<DashboardHome />} />
-        <Route path="devis" element={<Devis />} />
-        <Route path="factures" element={<Facture />} />
-        <Route path="dashb_entre" element={<DashbEntre />} />
-        <Route path="calendriers" element={<MyFullCalendar />} />
-        <Route path="profile" element={<Profile handleLogout={handleLogout} />} />
-      </Route>
+          <Route index element={<DashboardHome />} />
+          <Route path="devis" element={<Devis />} />
+          <Route path="factures" element={<Facture />} />
+          <Route path="dashb_entre" element={<DashbEntre />} />
+          <Route path="calendriers" element={<MyFullCalendar />} />
+          <Route path="profile" element={<Profile handleLogout={handleLogout} />} />
+        </Route>
 
-        <Route path="/" element={
-          <Navigate to={
-            authState.isAuthenticated 
-              ? (authState.userRole === 'comptable' ? '/dash-comp' : '/dash-entr') 
-              : '/login'
-          } replace />
-        } />
-
+        {/* Redirection par défaut pour les routes non trouvées */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
