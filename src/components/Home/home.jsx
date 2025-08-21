@@ -16,8 +16,19 @@ function Home() {
   const [isLogin, setIsLogin] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showChatbot, setShowChatbot] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    {
+      id: 1,
+      text: "Bonjour ! Je suis l'assistant virtuel FacturaPro. Comment puis-je vous aider aujourd'hui ?",
+      sender: 'bot',
+      timestamp: new Date()
+    }
+  ]);
+  const [userMessage, setUserMessage] = useState('');
   const isScrolling = useRef(false);
   const currentSection = useRef(0);
+  const chatContainerRef = useRef(null);
   const navigate = useNavigate();
 
   // Images pour le carrousel
@@ -69,9 +80,6 @@ function Home() {
       throw error;
     }
   };
-
-  // SUPPRIMER le useEffect de vérification d'authentification au chargement
-  // Cela empêche la redirection automatique quand on ouvre la page
 
   // Gestion du défilement fluide
   useEffect(() => {
@@ -133,6 +141,13 @@ function Home() {
 
     return () => clearInterval(interval);
   }, [carouselImages.length]);
+
+  // Scroll automatique vers le bas du chat
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
 
   const scrollToSection = (id) => {
     isScrolling.current = true;
@@ -269,6 +284,76 @@ function Home() {
       lastname: '',
       rememberMe: formData.rememberMe
     });
+  };
+
+  // Fonctions pour le chatbot
+  const toggleChatbot = () => {
+    setShowChatbot(!showChatbot);
+  };
+
+  const handleMessageSubmit = (e) => {
+    e.preventDefault();
+    if (!userMessage.trim()) return;
+
+    // Ajouter le message de l'utilisateur
+    const newUserMessage = {
+      id: Date.now(),
+      text: userMessage,
+      sender: 'user',
+      timestamp: new Date()
+    };
+
+    setChatMessages([...chatMessages, newUserMessage]);
+    setUserMessage('');
+
+    // Simuler une réponse du bot après un délai
+    setTimeout(() => {
+      const botResponse = generateBotResponse(userMessage);
+      const newBotMessage = {
+        id: Date.now() + 1,
+        text: botResponse,
+        sender: 'bot',
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, newBotMessage]);
+    }, 1000);
+  };
+
+  const generateBotResponse = (message) => {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('bonjour') || lowerMessage.includes('salut') || lowerMessage.includes('hello')) {
+      return "Bonjour ! Je suis l'assistant FacturaPro. Comment puis-je vous aider aujourd'hui ?";
+    } else if (lowerMessage.includes('rejoindre') || lowerMessage.includes('inscrire') || 
+               lowerMessage.includes('compte') || lowerMessage.includes('s\'inscrire') ||
+               lowerMessage.includes('inscription') || lowerMessage.includes('comment faire')) {
+      return "Je peux vous aider à rejoindre notre plateforme ! Dites-moi, êtes-vous :\n\n1. 🧮 Un comptable qui souhaite gérer plusieurs clients\n2. 🏢 Une entreprise qui veut utiliser nos services de facturation\n\nRépondez par 'comptable' ou 'entreprise' pour que je puisse vous guider au mieux.";
+    } else if (lowerMessage.includes('comptable')) {
+      return "Parfait ! En tant que comptable, voici comment procéder :\n\n1. Cliquez sur 'Connexion' en haut à droite\n2. Choisissez 'Créer un compte'\n3. Remplissez le formulaire avec vos informations professionnelles\n4. Une fois inscrit, vous pourrez inviter vos clients entreprises à rejoindre la plateforme\n\nVous pourrez ensuite gérer tous vos clients depuis un tableau de bord unique !";
+    } else if (lowerMessage.includes('entreprise')) {
+      return "Excellent ! En tant qu'entreprise, voici comment rejoindre FacturaPro :\n\n1. Demandez à votre comptable de créer un compte sur notre plateforme\n2. Votre comptable vous ajoutera ensuite à son espace client\n3. Vous recevrez un email d'invitation avec vos identifiants\n4. Connectez-vous et commencez à créer devis et factures !\n\nSi vous n'avez pas de comptable, vous pouvez aussi créer un compte directement et gérer votre facturation en autonomie.";
+    } else if (lowerMessage.includes('facture') || lowerMessage.includes('devis')) {
+      return "FacturaPro vous permet de créer des devis et factures professionnels en quelques clics. Souhaitez-vous en savoir plus sur cette fonctionnalité ?";
+    } else if (lowerMessage.includes('prix') || lowerMessage.includes('tarif') || lowerMessage.includes('coût') || lowerMessage.includes('abonnement')) {
+      return "FacturaPro propose différents forfaits adaptés à vos besoins :\n\n• Gratuit : Création de devis et factures basiques\n• Premium (9,99€/mois) : Fonctionnalités avancées, templates personnalisés\n• Professionnel (19,99€/mois) : Multi-utilisateurs, analytiques détaillées\n\nVoulez-vous que je vous en dise plus sur nos formules ?";
+    } else if (lowerMessage.includes('aide') || lowerMessage.includes('support') || lowerMessage.includes('problème')) {
+      return "Notre équipe de support est disponible du lundi au vendredi de 9h à 18h au 01 23 45 67 89. Vous pouvez aussi consulter notre centre d'aide en ligne pour des guides détaillés ou envoyer un email à support@facturapro.fr.";
+    } else if (lowerMessage.includes('merci')) {
+      return "Avec plaisir ! N'hésitez pas si vous avez d'autres questions. Je suis là pour vous aider à simplifier votre facturation ! 😊";
+    } else {
+      return "Je comprends que vous mentionnez : '" + message + "'.\n\nPourriez-vous reformuler votre question ? Je peux vous aider avec :\n• L'inscription sur la plateforme\n• La création de devis/factures\n• Nos tarifs et abonnements\n• Le support technique\n\nDites-moi simplement comment je peux vous aider !";
+    }
+  };
+
+  const quickSuggestions = [
+    { text: "Comment rejoindre la plateforme?", emoji: "🚀" },
+    { text: "Je suis comptable", emoji: "🧮" },
+    { text: "Je suis une entreprise", emoji: "🏢" },
+    { text: "Tarifs et abonnements", emoji: "💰" }
+  ];
+
+  const handleSuggestionClick = (suggestion) => {
+    setUserMessage(suggestion);
   };
 
   return (
@@ -764,6 +849,74 @@ function Home() {
           </div>
         </section>
       </main>
+
+      {/* Chatbot fixe en bas à droite */}
+      <div className={`chatbot-container ${showChatbot ? 'open' : ''}`}>
+        {showChatbot ? (
+          <div className="chatbot-window">
+            <div className="chatbot-header">
+              <div className="chatbot-info">
+                <div className="chatbot-avatar">🤖</div>
+                <div>
+                  <h4>Assistant FacturaPro</h4>
+                  <p>En ligne • Prêt à vous aider</p>
+                </div>
+              </div>
+              <button className="chatbot-close" onClick={toggleChatbot}>
+                ×
+              </button>
+            </div>
+      
+          <div className="chatbot-messages" ref={chatContainerRef}>
+            {chatMessages.map((message) => (
+              <div key={message.id} className={`message ${message.sender}`}>
+                <div className="message-content">
+                   {/* Remplacer les sauts de ligne par des balises <br /> */}
+                  {message.text.split('\n').map((line, i) => (
+                      <React.Fragment key={i}>
+                      {line}
+                      {i < message.text.split('\n').length - 1 && <br />}
+                    </React.Fragment>
+                  ))}
+                  <span className="message-time">
+                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Suggestions rapides */}
+      <div className="chatbot-suggestions">
+        {quickSuggestions.map((suggestion, index) => (
+          <button
+            key={index}
+            className="suggestion-chip"
+            onClick={() => handleSuggestionClick(suggestion.text)}
+          >
+            <span className="suggestion-emoji">{suggestion.emoji}</span>
+            {suggestion.text}
+          </button>
+        ))}
+      </div>
+      
+      <form className="chatbot-input" onSubmit={handleMessageSubmit}>
+        <input
+          type="text"
+          placeholder="Tapez votre message..."
+          value={userMessage}
+          onChange={(e) => setUserMessage(e.target.value)}
+        />
+        <button type="submit">➤</button>
+      </form>
+    </div>
+        ) : (
+    <button className="chatbot-toggle" onClick={toggleChatbot}>
+      <span className="chatbot-icon">💬</span>
+      <span className="chatbot-label">Assistant</span>
+    </button>
+  )}
+</div>
     </div>
   );
 }
