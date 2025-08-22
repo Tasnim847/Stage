@@ -330,6 +330,7 @@ export const generateFromDevis = async (req, res) => {
     }
 };
 
+/*
 export const getFactureById = async (req, res) => {
     try {
         // 1. Vérifier que l'utilisateur a une entreprise
@@ -382,6 +383,99 @@ export const getFactureById = async (req, res) => {
 
         const remise = facture.Devis?.remise || 0;
         const tva = facture.Devis?.tva || 20;
+
+        const montantApresRemise = montantHT - (montantHT * (remise / 100));
+        const montantTVA = montantApresRemise * (tva / 100);
+        const montantTTC = montantApresRemise + montantTVA;
+
+        // 4. Formater la réponse
+        const response = {
+            ...facture.get({ plain: true }),
+            entreprise: {
+                id: entreprise.id,
+                nom: entreprise.nom,
+                adresse: entreprise.adresse,
+                telephone: entreprise.telephone,
+                email: entreprise.email
+            },
+            totals: {
+                montantHT,
+                remise: montantHT * (remise / 100),
+                montantApresRemise,
+                tva: montantTVA,
+                montantTTC
+            }
+        };
+
+        res.json({
+            success: true,
+            data: response
+        });
+
+    } catch (error) {
+        console.error('Erreur récupération facture par ID:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur serveur',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+*/
+
+export const getFactureById = async (req, res) => {
+    try {
+        // 1. Vérifier que l'utilisateur a une entreprise
+        const entreprise = await Entreprise.findOne({
+            where: { userId: req.user.id },
+            attributes: ['id', 'nom', 'adresse', 'telephone', 'email']
+        });
+
+        if (!entreprise) {
+            return res.status(403).json({
+                success: false,
+                message: 'Accès non autorisé'
+            });
+        }
+
+        // 2. Récupérer la facture avec toutes ses relations
+        const facture = await Facture.findOne({
+            where: {
+                id: req.params.id,
+                entreprise_id: entreprise.id
+            },
+            include: [
+                {
+                    model: Devis,
+                    as: 'devisOrigine', // Utiliser l'alias correct défini dans les relations
+                    attributes: ['id', 'numero', 'date_creation', 'date_validite', 'remise', 'tva'],
+                    include: [{
+                        model: LigneDevis,
+                        as: 'lignesDevis', // Utiliser l'alias correct
+                        attributes: ['id', 'description', 'prix_unitaire_ht', 'quantite', 'unite']
+                    }]
+                },
+                {
+                    model: LigneFacture,
+                    as: 'lignesFacture', // Utiliser l'alias correct
+                    attributes: ['id', 'description', 'prix_unitaire_ht', 'quantite', 'unite']
+                }
+            ]
+        });
+
+        if (!facture) {
+            return res.status(404).json({
+                success: false,
+                message: 'Facture non trouvée ou accès non autorisé'
+            });
+        }
+
+        // 3. Calculer les totaux si nécessaire
+        const montantHT = facture.lignesFacture.reduce((sum, ligne) =>
+            sum + (parseFloat(ligne.prix_unitaire_ht) * parseFloat(ligne.quantite)), 0);
+
+        const remise = facture.devisOrigine?.remise || 0; // Utiliser l'alias correct
+        const tva = facture.devisOrigine?.tva || 20; // Utiliser l'alias correct
 
         const montantApresRemise = montantHT - (montantHT * (remise / 100));
         const montantTVA = montantApresRemise * (tva / 100);
@@ -483,6 +577,7 @@ export const updateFacture = async (req, res) => {
     }
 };
 
+/*
 export const generateFacturePdf = async (req, res) => {
     try {
         // 1. Vérifier que l'utilisateur a une entreprise
@@ -559,6 +654,107 @@ export const generateFacturePdf = async (req, res) => {
                 tva: montantTVA,
                 remise: montantHT * (remise / 100),
                 lignes: facture.lignes.map(l => ({
+                    ...l.get({ plain: true }),
+                    total: parseFloat(l.prix_unitaire_ht) * parseFloat(l.quantite)
+                }))
+            }
+        };
+
+        // 5. Retourner les données en JSON (à remplacer par la génération PDF réelle)
+        res.json({
+            success: true,
+            data: pdfData,
+            message: 'Génération PDF à implémenter'
+        });
+
+    } catch (error) {
+        console.error("Erreur génération PDF facture:", error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur serveur',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+*/
+
+export const generateFacturePdf = async (req, res) => {
+    try {
+        // 1. Vérifier que l'utilisateur a une entreprise
+        const entreprise = await Entreprise.findOne({
+            where: { userId: req.user.id },
+            attributes: ['id', 'nom', 'adresse', 'telephone', 'email', 'numeroIdentificationFiscale']
+        });
+
+        if (!entreprise) {
+            return res.status(403).json({
+                success: false,
+                message: 'Accès non autorisé'
+            });
+        }
+
+        // 2. Récupérer la facture avec toutes ses relations
+        const facture = await Facture.findOne({
+            where: {
+                id: req.params.id,
+                entreprise_id: entreprise.id
+            },
+            include: [
+                {
+                    model: Devis,
+                    as: 'devisOrigine', // Utiliser l'alias correct
+                    attributes: ['id', 'numero', 'remise', 'tva'],
+                    include: [{
+                        model: LigneDevis,
+                        as: 'lignesDevis' // Utiliser l'alias correct
+                    }]
+                },
+                {
+                    model: LigneFacture,
+                    as: 'lignesFacture' // Utiliser l'alias correct
+                }
+            ]
+        });
+
+        if (!facture) {
+            return res.status(404).json({
+                success: false,
+                message: 'Facture non trouvée ou accès non autorisé'
+            });
+        }
+
+        // 3. Calculer les montants
+        const montantHT = facture.lignesFacture.reduce((sum, ligne) =>
+            sum + (parseFloat(ligne.prix_unitaire_ht) * parseFloat(ligne.quantite)), 0);
+
+        const remise = facture.devisOrigine?.remise || 0; // Utiliser l'alias correct
+        const tva = facture.devisOrigine?.tva || 20; // Utiliser l'alias correct
+
+        const montantApresRemise = montantHT - (montantHT * (remise / 100));
+        const montantTVA = montantApresRemise * (tva / 100);
+        const montantTTC = montantApresRemise + montantTVA;
+
+        // 4. Préparer les données pour le template PDF
+        const pdfData = {
+            entreprise: {
+                nom: entreprise.nom,
+                adresse: entreprise.adresse,
+                telephone: entreprise.telephone,
+                email: entreprise.email,
+                siret: entreprise.numeroIdentificationFiscale
+            },
+            facture: {
+                ...facture.get({ plain: true }),
+                numero: facture.numero,
+                date_emission: facture.date_emission,
+                date_paiement: facture.date_paiement,
+                statut_paiement: facture.statut_paiement,
+                client_name: facture.client_name,
+                montant_ht: montantHT,
+                montant_ttc: montantTTC,
+                tva: montantTVA,
+                remise: montantHT * (remise / 100),
+                lignes: facture.lignesFacture.map(l => ({ // Utiliser l'alias correct
                     ...l.get({ plain: true }),
                     total: parseFloat(l.prix_unitaire_ht) * parseFloat(l.quantite)
                 }))

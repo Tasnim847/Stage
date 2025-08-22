@@ -316,3 +316,30 @@ export const resetPassword = async (req, res) => {
         });
     }
 };
+
+export const checkEmail = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email requis'
+            });
+        }
+
+        const user = await User.findOne({ where: { email } });
+
+        return res.json({
+            success: true,
+            exists: !!user
+        });
+
+    } catch (error) {
+        console.error('Erreur vérification email:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Erreur serveur'
+        });
+    }
+};
