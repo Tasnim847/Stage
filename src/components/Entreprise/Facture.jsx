@@ -5,10 +5,9 @@ import {
   FiFileText, FiPlusCircle, FiRefreshCw, FiChevronLeft, FiChevronRight, 
   FiX, FiDownload, FiPrinter, FiEdit, FiClock, FiDollarSign, FiUser, 
   FiCalendar, FiCheckCircle, FiAlertCircle, FiInfo, FiChevronUp,
-  FiEye, FiDownloadCloud // Ajout des nouvelles icônes
+  FiEye, FiDownloadCloud
 } from 'react-icons/fi';
 import './Entreprise.css';
-import FactureTelechargement from './FactureTelechargement';
 
 const Facture = () => {
   const navigate = useNavigate();
@@ -118,6 +117,507 @@ const Facture = () => {
       console.error('Erreur:', err);
       setError(err.response?.data?.message || err.message || "Erreur lors du chargement des détails de la facture");
     }
+  };
+
+  const downloadFacturePDF = async (factureId) => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      if (!token) {
+        navigate('/');
+        return;
+      }
+
+      setLoading(true);
+    
+      // Essayer d'abord l'endpoint spécifique pour le PDF
+      try {
+        const response = await axios.get(`/api/factures/${factureId}/pdf`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          responseType: 'blob'
+        });
+      
+        // Vérifier si c'est bien un PDF
+        if (response.headers['content-type'] === 'application/pdf') {
+          const blob = new Blob([response.data], { type: 'application/pdf' });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+        
+          // Nom du fichier avec le numéro de facture
+          const facture = factures.find(f => f.id === factureId);
+          const fileName = `facture-${facture?.numero || factureId}.pdf`;
+          link.setAttribute('download', fileName);
+        
+          document.body.appendChild(link);
+          link.click();
+        
+          // Nettoyer
+          link.remove();
+          window.URL.revokeObjectURL(url);
+          return;
+        }
+      } catch (pdfError) {
+        console.log('Endpoint PDF spécifique non disponible, génération côté client...');
+      }
+    
+      // Si l'endpoint PDF n'est pas disponible, récupérer les données et générer le PDF côté client
+      try {
+        const response = await axios.get(`/api/factures/${factureId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
+       });
+      
+        if (response.data?.success) {
+          const factureData = response.data.data;
+          await generateAndDownloadPDF(factureData, factureId);
+        } else {
+          throw new Error("Impossible de récupérer les données de la facture");
+        }
+      } catch (dataError) {
+        console.error('Erreur récupération données facture:', dataError);
+        setError("Erreur lors de la récupération des données de la facture");
+      }
+    
+    } catch (err) {
+      console.error('Erreur lors du téléchargement:', err);
+      setError(err.response?.data?.message || err.message || "Erreur lors du téléchargement du PDF");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fonction pour générer et télécharger un vrai PDF
+  const generateAndDownloadPDF = async (factureData, factureId) => {
+    const facture = factureData;
+  
+    // Calculer les totaux si nécessaire
+    const montantHT = facture.montant_ht || facture.totals?.montantHT || 
+      (facture.lignesFacture ? facture.lignesFacture.reduce((sum, ligne) => 
+      sum + ((ligne.prix_unitaire_ht || 0) * (ligne.quantite || 0)), 0) : 0);
+  
+    const montantTVA = facture.montant_tva || facture.totals?.tva || 0;
+    const montantTTC = facture.montant_ttc || facture.totals?.montantTTC || montantHT + montantTVA;
+
+    try {
+      // Importer jsPDF
+      const { jsPDF } = await import('jspdf');
+    
+      // Créer un nouveau document PDF
+      const doc = new jsPDF();
+    
+      // Ajouter le logo ou titre
+      doc.setFontSize(20);
+      doc.setTextColor(40, 40, 40);
+      doc.text('FACTURE', 105, 20, { align: 'center' });
+    
+      doc.setFontSize(14);
+      doc.text(`N° ${facture.numero || factureId}`, 105, 30, { align: 'center' });
+    
+      doc.setFontSize(10);
+      doc.text(`Date d'émission: ${formatDate(facture.date_emission)}`, 105, 40, { align: 'center' });
+    
+      // Informations de l'entreprise
+      doc.setFontSize(12);
+      doc.setTextColor(60, 60, 60);
+      doc.text('ÉMETTEUR', 20, 60);
+    
+      doc.setFontSize(10);
+      if (facture.entreprise) {
+        doc.text(facture.entreprise.nom || 'Non spécifié', 20, 70);
+        doc.text(facture.entreprise.adresse || '', 20, 80);
+        doc.text(`Tél: ${facture.entreprise.telephone || ''}`, 20, 90);
+        doc.text(`Email: ${facture.entreprise.email || ''}`, 20, 100);
+      }
+    
+      // Informations du client
+      doc.setFontSize(12);
+      doc.text('CLIENT', 140, 60);
+    
+      doc.setFontSize(10);
+      doc.text(facture.client_name || 'Non spécifié', 140, 70);
+    
+      // Ligne séparatrice
+      doc.setDrawColor(200, 200, 200);
+      doc.line(20, 110, 190, 110);
+    
+      // Détails des articles
+      doc.setFontSize(12);
+      doc.text('DÉTAILS DE LA FACTURE', 20, 125);
+    
+      // Préparer les données du tableau - version simple sans autoTable
+      let yPosition = 140;
+    
+      // En-tête du tableau
+      doc.setFillColor(44, 62, 80);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont(undefined, 'bold');
+      doc.rect(20, yPosition, 170, 10, 'F');
+      doc.text('Description', 25, yPosition + 7);
+      doc.text('Quantité', 100, yPosition + 7);
+      doc.text('Prix HT', 130, yPosition + 7);
+      doc.text('Total HT', 160, yPosition + 7);
+    
+      yPosition += 12;
+    
+      // Données du tableau
+      doc.setTextColor(0, 0, 0);
+      doc.setFont(undefined, 'normal');
+    
+      if (facture.lignesFacture && facture.lignesFacture.length > 0) {
+        facture.lignesFacture.forEach((ligne, index) => {
+          if (yPosition > 260) {
+            doc.addPage();
+            yPosition = 20;
+          }
+        
+        const description = ligne.description || 'Article sans description';
+        const quantite = `${ligne.quantite || 0} ${ligne.unite || 'unité'}`;
+        const prix = formatCurrency(ligne.prix_unitaire_ht || 0);
+        const total = formatCurrency((ligne.prix_unitaire_ht || 0) * (ligne.quantite || 0));
+        
+        // Description (avec gestion du texte trop long)
+        const maxWidth = 70;
+        let descLines = doc.splitTextToSize(description, maxWidth);
+        doc.text(descLines, 25, yPosition + 4);
+        
+        // Autres colonnes
+        doc.text(quantite, 100, yPosition + 4);
+        doc.text(prix, 130, yPosition + 4);
+        doc.text(total, 160, yPosition + 4);
+        
+        // Ligne séparatrice
+        doc.setDrawColor(200, 200, 200);
+        doc.line(20, yPosition + 8, 190, yPosition + 8);
+        
+        yPosition += 12;
+      });
+    } else {
+      doc.text('Aucun article', 25, yPosition + 4);
+      yPosition += 12;
+    }
+    
+    // Totaux
+    doc.setFontSize(10);
+    doc.setTextColor(60, 60, 60);
+    
+    doc.text('Total HT:', 130, yPosition + 10);
+    doc.text(formatCurrency(montantHT), 160, yPosition + 10, { align: 'right' });
+    
+    doc.text('TVA:', 130, yPosition + 20);
+    doc.text(formatCurrency(montantTVA), 160, yPosition + 20, { align: 'right' });
+    
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.text('Total TTC:', 130, yPosition + 30);
+    doc.text(formatCurrency(montantTTC), 160, yPosition + 30, { align: 'right' });
+    
+    // Informations de statut
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(9);
+    doc.text(`Statut: ${facture.statut_paiement || 'Inconnu'}`, 20, yPosition + 50);
+    
+    if (facture.date_echeance) {
+      doc.text(`Date d'échéance: ${formatDate(facture.date_echeance)}`, 20, yPosition + 60);
+    }
+    
+    // Notes
+    if (facture.notes) {
+      const notesLines = doc.splitTextToSize(`Notes: ${facture.notes}`, 170);
+      doc.text(notesLines, 20, yPosition + 70);
+    }
+    
+    // Pied de page
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Facture générée le ${new Date().toLocaleDateString('fr-FR')} | Invoice App`, 105, 280, { align: 'center' });
+    
+    // Sauvegarder le PDF
+    const fileName = `facture-${facture.numero || factureId}.pdf`;
+    doc.save(fileName);
+    
+    } catch (error) {
+      console.error('Erreur lors de la génération du PDF:', error);
+      // Fallback: utiliser la méthode d'impression HTML
+      generatePDFClientSide(factureData, factureId);
+    }
+  };
+
+  // Fonction pour générer le PDF côté client
+  const generatePDFClientSide = (factureData, factureId) => {
+    const facture = factureData;
+    
+    // Calculer les totaux si nécessaire
+    const montantHT = facture.montant_ht || facture.totals?.montantHT || 
+      (facture.lignesFacture ? facture.lignesFacture.reduce((sum, ligne) => 
+        sum + ((ligne.prix_unitaire_ht || 0) * (ligne.quantite || 0)), 0) : 0);
+    
+    const montantTVA = facture.montant_tva || facture.totals?.tva || 0;
+    const montantTTC = facture.montant_ttc || facture.totals?.montantTTC || montantHT + montantTVA;
+
+    // Créer un contenu HTML pour l'impression/PDF
+    const content = `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Facture ${facture.numero || factureId}</title>
+        <style>
+          body { 
+            font-family: 'Arial', sans-serif; 
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+          }
+          .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #ddd;
+            padding: 30px;
+            background: white;
+          }
+          .header { 
+            text-align: center; 
+            margin-bottom: 30px;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 20px;
+          }
+          .header h1 { 
+            color: #2c3e50; 
+            margin: 0;
+            font-size: 28px;
+          }
+          .company-info {
+            margin-bottom: 30px;
+          }
+          .section { 
+            margin-bottom: 25px; 
+          }
+          .section-title { 
+            font-weight: bold; 
+            border-bottom: 1px solid #ddd; 
+            padding-bottom: 8px; 
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 18px;
+          }
+          .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+          }
+          .info-item {
+            margin-bottom: 10px;
+          }
+          .info-label {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            font-size: 14px;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+          }
+          th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #2c3e50;
+          }
+          .total-row {
+            font-weight: bold;
+            background-color: #f8f9fa;
+          }
+          .text-right {
+            text-align: right;
+          }
+          .amounts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+          }
+          .amount-item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+          }
+          .amount-label {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+          }
+          .total {
+            background-color: #e8f5e8;
+            border-color: #4caf50;
+          }
+          .paid {
+            color: #4caf50;
+          }
+          .remaining {
+            color: #f44336;
+          }
+          .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            color: #777;
+            font-size: 12px;
+          }
+          @media print {
+            body {
+              padding: 0;
+              margin: 0;
+            }
+            .invoice-container {
+              border: none;
+              padding: 0;
+            }
+            .no-print {
+              display: none !important;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-container">
+          <div class="header">
+            <h1>FACTURE</h1>
+            <h2>${facture.numero || factureId}</h2>
+            <p>Date d'émission: ${formatDate(facture.date_emission)}</p>
+          </div>
+          
+          <div class="info-grid">
+            <div class="section">
+              <div class="section-title">Émetteur</div>
+              ${facture.entreprise ? `
+                <div class="info-item">
+                  <div class="info-label">Entreprise:</div>
+                  <div>${facture.entreprise.nom || 'Non spécifié'}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Adresse:</div>
+                  <div>${facture.entreprise.adresse || 'Non spécifié'}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Téléphone:</div>
+                  <div>${facture.entreprise.telephone || 'Non spécifié'}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Email:</div>
+                  <div>${facture.entreprise.email || 'Non spécifié'}</div>
+                </div>
+              ` : ''}
+            </div>
+            
+            <div class="section">
+              <div class="section-title">Client</div>
+              <div class="info-item">
+                <div class="info-label">Nom:</div>
+                <div>${facture.client_name || 'Non spécifié'}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="section">
+            <div class="section-title">Détails de la facture</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Quantité</th>
+                  <th>Prix unitaire HT</th>
+                  <th>Total HT</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${facture.lignesFacture ? facture.lignesFacture.map((ligne, index) => {
+                  const totalHT = (ligne.prix_unitaire_ht || 0) * (ligne.quantite || 0);
+                  return `
+                    <tr>
+                      <td>${ligne.description || 'Article sans description'}</td>
+                      <td>${ligne.quantite || 0} ${ligne.unite || 'unité'}</td>
+                      <td>${formatCurrency(ligne.prix_unitaire_ht || 0)}</td>
+                      <td>${formatCurrency(totalHT)}</td>
+                    </tr>
+                  `;
+                }).join('') : '<tr><td colspan="4">Aucun article</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="amounts-grid">
+            <div class="amount-item">
+              <div class="amount-label">Total HT:</div>
+              <div>${formatCurrency(montantHT)}</div>
+            </div>
+            
+            <div class="amount-item">
+              <div class="amount-label">TVA:</div>
+              <div>${formatCurrency(montantTVA)}</div>
+            </div>
+            
+            <div class="amount-item total">
+              <div class="amount-label">Total TTC:</div>
+              <div>${formatCurrency(montantTTC)}</div>
+            </div>
+            
+            <div class="amount-item">
+              <div class="amount-label">Statut:</div>
+              <div>${facture.statut_paiement || 'Inconnu'}</div>
+            </div>
+          </div>
+          
+          ${facture.date_echeance ? `
+            <div class="section">
+              <div class="section-title">Échéance</div>
+              <p>Date d'échéance: ${formatDate(facture.date_echeance)}</p>
+            </div>
+          ` : ''}
+          
+          ${facture.notes ? `
+            <div class="section">
+              <div class="section-title">Notes</div>
+              <p>${facture.notes}</p>
+            </div>
+          ` : ''}
+          
+          <div class="footer">
+            <p>Facture générée le ${new Date().toLocaleDateString('fr-FR')} | Invoice App</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    // Ouvrir une nouvelle fenêtre pour impression/téléchargement
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(content);
+    printWindow.document.close();
+    
+    // Attendre que le contenu soit chargé
+    printWindow.onload = () => {
+      // Donner le temps au CSS de s'appliquer
+      setTimeout(() => {
+        printWindow.print();
+        // Fermer la fenêtre après impression
+        setTimeout(() => {
+          printWindow.close();
+        }, 500);
+      }, 500);
+    };
   };
 
   const generateAiInsights = (facture) => {
@@ -252,7 +752,7 @@ const Facture = () => {
 
   const getStatusIcon = (status) => {
     if (!status) return <FiInfo />;
-    
+    /*
     switch (status.toLowerCase()) {
       case 'payé':
       case 'payee':
@@ -266,7 +766,7 @@ const Facture = () => {
         return <FiEdit />;
       default:
         return <FiInfo />;
-    }
+    }*/
   };
 
   const closeDetails = () => {
@@ -403,7 +903,7 @@ const Facture = () => {
                   </button>
                   <button
                     className={`btn-icon btn-pdf ${darkMode ? 'dark' : ''}`}
-                    onClick={() => navigate(`/dash-entr/factures/${facture.id}/pdf`)}
+                    onClick={() => downloadFacturePDF(facture.id)}
                     title="Télécharger PDF"
                   >
                     <FiDownloadCloud className="icon" />
@@ -754,24 +1254,17 @@ const Facture = () => {
               </div>
             </div>
             
-            <div className="modal-footer">
-              {/* Remplacer l'ancien bouton par le nouveau composant */}
-              <FactureTelechargement facture={selectedFacture} />
-  
+            {/* Boutons d'action dans le modal */}
+            <div className="modal-actions">
               <button 
-                className={`btn-action btn-primary ${darkMode ? 'dark' : ''}`}
-                onClick={() => window.print()}
+                className={`btn-download-pdf ${darkMode ? 'dark' : ''}`}
+                onClick={() => downloadFacturePDF(selectedFacture.id)}
               >
-                <FiPrinter />
+                <FiDownload /> Télécharger PDF
               </button>
-              {selectedFacture.statut_paiement === 'brouillon' && (
-                <button 
-                  className={`btn-action btn-warning ${darkMode ? 'dark' : ''}`}
-                  onClick={() => navigate(`/dash-entr/factures/${selectedFacture.id}/edit`)}
-                >
-                  <FiEdit />
-                </button>
-              )}
+              <button className={`btn-print ${darkMode ? 'dark' : ''}`}>
+                <FiPrinter /> Imprimer
+              </button>
             </div>
           </div>
           
