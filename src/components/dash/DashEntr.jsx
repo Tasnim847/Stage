@@ -134,7 +134,7 @@ const DashEntr = ({ setIsAuthenticated }) => {
             <div className="sidebar-avatar">
               <img 
                 src={userData?.logo || defaultAvatar} 
-                alt={`Logo de ${userData.entreprise || userData.username || 'entreprise'}`}
+                alt={`Logo de ${userData.entreprise || userData.username }`}
                 onError={(e) => {
                   e.target.onerror = null; 
                   e.target.src = defaultAvatar;
@@ -142,8 +142,7 @@ const DashEntr = ({ setIsAuthenticated }) => {
               />
             </div>
             <div className="sidebar-user-info">
-              <h4>{userData.entreprise || userData.username || 'Entreprise'}</h4>
-              <p>Entreprise</p>
+              <h4>{userData.entreprise || userData.username }</h4>
             </div>
           </div>
           

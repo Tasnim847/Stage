@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import { FiEdit2, FiTrash2, FiLoader, FiPlus, FiSearch, FiDownload, FiEye, FiFileText } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiLoader, FiPlus, FiSearch, FiDownload, FiEye, FiFileText, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import './comptable.css';
 
 const Factures = () => {
@@ -13,6 +13,10 @@ const Factures = () => {
     payees: 0,
     impayees: 0
   });
+  
+  // États pour la pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(8); // 8 lignes par page
 
   // Token handling
   const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
@@ -82,6 +86,29 @@ const Factures = () => {
     facture.statut?.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredFactures.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredFactures.length / itemsPerPage);
+
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Go to next page
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // Go to previous page
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -112,6 +139,11 @@ const Factures = () => {
     }
   };
 
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
   return (
     <div className="factures-container">
       <div className="factures-header">
@@ -131,9 +163,6 @@ const Factures = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <button className="add-button">
-            <FiPlus /> Nouvelle facture
-          </button>
         </div>
       </div>
 
@@ -178,73 +207,104 @@ const Factures = () => {
           <p>{error}</p>
         </div>
       ) : (
-        <div className="factures-table-container">
-          <table className="factures-table">
-            <thead>
-              <tr>
-                <th>Numéro</th>
-                <th>Client</th>
-                <th>Date</th>
-                <th>Montant</th>
-                <th>Statut</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredFactures.length > 0 ? (
-                filteredFactures.map((facture) => (
-                  <tr key={facture.id}>
-                    <td>
-                      <strong>#{facture.numero || facture.id}</strong>
-                    </td>
-                    <td>
-                      <div className="client-cell">
-                        <div className="client-avatar">
-                          {facture.client_name?.charAt(0).toUpperCase() || 'C'}
+        <>
+          <div className="factures-table-container">
+            <table className="factures-table">
+              <thead>
+                <tr>
+                  <th>Numéro</th>
+                  <th>Client</th>
+                  <th>Date</th>
+                  <th>Montant</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentItems.length > 0 ? (
+                  currentItems.map((facture) => (
+                    <tr key={facture.id}>
+                      <td>
+                        <strong>#{facture.numero || facture.id}</strong>
+                      </td>
+                      <td>
+                        <div className="client-cell">
+                          <div className="client-avatar">
+                            {facture.client_name?.charAt(0).toUpperCase() || 'C'}
+                          </div>
+                          <span>{facture.client_name || 'N/A'}</span>
                         </div>
-                        <span>{facture.client_name || 'N/A'}</span>
+                      </td>
+                      <td>{formatDate(facture.date_emission)}</td>
+                      <td className="amount-cell">{formatCurrency(facture.montant_ttc)}</td>
+                      <td className="actions">
+                        <button className="action-btn view" title="Voir">
+                          <FiEye />
+                        </button>
+                        <button className="action-btn download" title="Télécharger">
+                          <FiDownload />
+                        </button>
+                        <button className="action-btn edit" title="Modifier">
+                          <FiEdit2 />
+                        </button>
+                        <button className="action-btn delete" title="Supprimer">
+                          <FiTrash2 />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="no-results">
+                      <div className="empty-state">
+                        <FiFileText size={48} />
+                        <p>Aucune facture trouvée</p>
+                        {search && (
+                          <button 
+                            className="clear-search" 
+                            onClick={() => setSearch('')}
+                          >
+                            Effacer la recherche
+                          </button>
+                        )}
                       </div>
                     </td>
-                    <td>{formatDate(facture.date_emission)}</td>
-                    <td className="amount-cell">{formatCurrency(facture.montant_ttc)}</td>
-                    <td>{getStatusBadge(facture.statut)}</td>
-                    <td className="actions">
-                      <button className="action-btn view" title="Voir">
-                        <FiEye />
-                      </button>
-                      <button className="action-btn download" title="Télécharger">
-                        <FiDownload />
-                      </button>
-                      <button className="action-btn edit" title="Modifier">
-                        <FiEdit2 />
-                      </button>
-                      <button className="action-btn delete" title="Supprimer">
-                        <FiTrash2 />
-                      </button>
-                    </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6" className="no-results">
-                    <div className="empty-state">
-                      <FiFileText size={48} />
-                      <p>Aucune facture trouvée</p>
-                      {search && (
-                        <button 
-                          className="clear-search" 
-                          onClick={() => setSearch('')}
-                        >
-                          Effacer la recherche
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {filteredFactures.length > itemsPerPage && (
+            <div className="pagination">
+              <button 
+                onClick={prevPage} 
+                disabled={currentPage === 1}
+                className="pagination-btn"
+              >
+                <FiChevronLeft />
+              </button>
+              
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+                <button
+                  key={number}
+                  onClick={() => paginate(number)}
+                  className={`pagination-btn ${currentPage === number ? 'active' : ''}`}
+                >
+                  {number}
+                </button>
+              ))}
+              
+              <button 
+                onClick={nextPage} 
+                disabled={currentPage === totalPages}
+                className="pagination-btn"
+              >
+                <FiChevronRight />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
