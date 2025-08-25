@@ -13,7 +13,7 @@ import DashbComp from './components/Comptable/dashb_comp';
 import DashbEntre from './components/Entreprise/dashb_entre';
 import Factures from './components/Comptable/Factures';
 import Notifications from './components/Comptable/Notifications';
-import MyFullCalendar from './components/Entreprise/MyFullCalendar';
+import EventCalendar from './components/Entreprise/MyFullCalendar';
 import './App.css';
 
 function App() {
@@ -128,7 +128,7 @@ function App() {
           <Route path="devis" element={<Devis />} />
           <Route path="factures" element={<Facture />} />
           <Route path="dashb_entre" element={<DashbEntre />} />
-          <Route path="calendriers" element={<MyFullCalendar />} />
+          <Route path="calendriers" element={<EventCalendar />} />
           <Route path="profile" element={<Profile handleLogout={handleLogout} />} />
         </Route>
 
