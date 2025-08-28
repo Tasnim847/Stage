@@ -279,8 +279,72 @@ export const authComptable = async (req, res, next) => {
     }
 };
 
+// middleware/auth.js - Version corrigée
+export const authEntreprise = async (req, res, next) => {
+    try {
+        const authHeader = req.headers['authorization'];
+
+        if (!authHeader) {
+            return res.status(401).json({
+                success: false,
+                message: 'Authorization header is required'
+            });
+        }
+
+        const token = authHeader.split(' ')[1];
+
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: 'Token must be in format: Bearer <token>'
+            });
+        }
+
+        // Vérifier le token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        // Vérifier si l'utilisateur a le rôle entreprise
+        if (decoded.role !== 'entreprise') {
+            return res.status(403).json({
+                success: false,
+                message: 'Access reserved for entreprises only'
+            });
+        }
+
+        // Stocker les informations utilisateur
+        req.user = {
+            id: decoded.id,
+            email: decoded.email,
+            role: decoded.role
+        };
+
+        next();
+    } catch (error) {
+        console.error('Erreur auth entreprise:', error);
+
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                success: false,
+                message: 'Token expired'
+            });
+        }
+
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid token'
+            });
+        }
+
+        res.status(500).json({
+            success: false,
+            message: 'Authentication error'
+        });
+    }
+};
 
 // === Exports groupés ===
+
 export default {
     authenticate: authenticateToken,
     generateToken,
@@ -289,5 +353,6 @@ export default {
     verifyToken: verifyTokenMiddleware,
     softAuthenticate,
     authenticateComptable,
-    authComptable
+    authComptable,
+    authEntreprise
 };
