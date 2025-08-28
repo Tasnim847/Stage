@@ -17,7 +17,8 @@ import {
   FiX,
   FiSun,
   FiMoon,
-  FiCalendar
+  FiCalendar,
+  FiMessageSquare
 } from 'react-icons/fi';
 import defaultAvatar from '../../assets/default-avatar.png';
 import DashboardHome from './DashboardHome';
@@ -204,6 +205,13 @@ const DashEntr = ({ setIsAuthenticated }) => {
                 >
                   <FiUser className="icon" /> 
                   <span>Profil</span>
+                </li>
+                <li 
+                  className={location.pathname.includes('/dash-entr/chatbot') ? 'active' : ''} 
+                  onClick={() => handleNavigation('/dash-entr/chatbot')}
+                >
+                  <FiMessageSquare className="icon" />
+                  <span>chatbot</span>
                 </li>
               </ul>
             </div>

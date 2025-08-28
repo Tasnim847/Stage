@@ -14,6 +14,7 @@ import DashbEntre from './components/Entreprise/dashb_entre';
 import Factures from './components/Comptable/Factures';
 import Notifications from './components/Comptable/Notifications';
 import EventCalendar from './components/Entreprise/MyFullCalendar';
+import Chatbot from './components/Entreprise/Chatbot';
 import './App.css';
 
 function App() {
@@ -126,6 +127,7 @@ function App() {
         }>
           <Route index element={<DashboardHome />} />
           <Route path="devis" element={<Devis />} />
+          <Route path="chatbot" element={<Chatbot />} />
           <Route path="factures" element={<Facture />} />
           <Route path="dashb_entre" element={<DashbEntre />} />
           <Route path="calendriers" element={<EventCalendar />} />

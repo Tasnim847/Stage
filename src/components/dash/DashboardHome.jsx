@@ -1,170 +1,171 @@
-import React, { useState, useRef, useEffect } from 'react';
-import './Chatbot.css';
+import React, { useState, useEffect } from 'react';
+import './Dashboard.css';
 
-const DashboardHome  = () => {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: "Bonjour ! Je suis votre assistant virtuel. Comment puis-je vous aider aujourd'hui ?",
-      sender: 'bot',
-      timestamp: new Date()
-    }
-  ]);
-  const [inputValue, setInputValue] = useState('');
-  const messagesEndRef = useRef(null);
+const DashboardHome = () => {
+  const [user, setUser] = useState({ name: 'Jean Dupont', role: 'Administrateur' });
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fonction pour faire défiler vers le dernier message
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
+  // Simulation de données récupérées depuis une API
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    // Simulation du chargement de données
+    const timer = setTimeout(() => {
+      setAiSuggestions([
+        { id: 1, text: 'Optimiser le processus de validation des documents', priority: 'high' },
+        { id: 2, text: 'Revoir les autorisations d\'accès de l\'équipe marketing', priority: 'medium' },
+        { id: 3, text: 'Planifier une sauvegarde des données critiques', priority: 'low' }
+      ]);
 
-  // Réponses prédéfinies du bot
-  const botResponses = {
-    'salut': 'Bonjour ! Comment puis-je vous aider ?',
-    'bonjour': 'Bonjour ! Comment allez-vous aujourd\'hui ?',
-    'aide': 'Je suis là pour vous aider. Dites-moi ce dont vous avez besoin.',
-    'merci': 'Je vous en prie ! N\'hésitez pas si vous avez d\'autres questions.',
-    'au revoir': 'Au revoir ! À bientôt !',
-    'heure': `Il est ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
-    'date': `Nous sommes le ${new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`,
-    'default': 'Je ne suis pas sûr de comprendre. Pouvez-vous reformuler votre question ?'
-  };
+      setRecentActivity([
+        { id: 1, action: 'Connexion', time: 'Il y a 2 minutes', user: 'Vous' },
+        { id: 2, action: 'Mise à jour du profil', time: 'Il y a 10 minutes', user: 'Vous' },
+        { id: 3, action: 'Nouveau fichier partagé', time: 'Il y a 15 minutes', user: 'Marie Lambert' }
+      ]);
 
-  const handleSendMessage = () => {
-    if (inputValue.trim() === '') return;
+      setIsLoading(false);
+    }, 1500);
 
-    // Ajouter le message de l'utilisateur
-    const userMessage = {
-      id: messages.length + 1,
-      text: inputValue,
-      sender: 'user',
-      timestamp: new Date()
-    };
-
-    setMessages([...messages, userMessage]);
-    setInputValue('');
-
-    // Simuler une réponse du bot après un court délai
-    setTimeout(() => {
-      const userText = inputValue.toLowerCase();
-      let botResponse = botResponses.default;
-
-      // Chercher une réponse correspondante
-      Object.keys(botResponses).forEach(key => {
-        if (userText.includes(key)) {
-          botResponse = botResponses[key];
-        }
-      });
-
-      const botMessage = {
-        id: messages.length + 2,
-        text: botResponse,
-        sender: 'bot',
-        timestamp: new Date()
-      };
-
-      setMessages(prevMessages => [...prevMessages, botMessage]);
-    }, 1000);
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSendMessage();
-    }
-  };
-
-  // Formater l'heure pour l'affichage
-  const formatTime = (date) => {
-    return new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  };
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <div className="messenger-container">
-      <div className="messenger-header">
-        <div className="chatbot-info">
-          <div className="chatbot-avatar">
-            <span>🤖</span>
-          </div>
-          <div className="chatbot-details">
-            <h2>Assistant Virtuel</h2>
-            <p>En ligne • Répond instantanément</p>
+    <div className="homepage-container">
+      {/* En-tête */}
+      <header className="homepage-header">
+        <div className="welcome-section">
+          <h1>Bonjour, {user.name}!</h1>
+          <p>Heureux de vous revoir. Voici ce qui s'est passé depuis votre dernière connexion.</p>
+        </div>
+        <div className="user-info">
+          <span className="user-role">{user.role}</span>
+          <div className="user-avatar">
+            {user.name.charAt(0)}
           </div>
         </div>
-        <div className="header-actions">
-          <button className="icon-button">
-            <i className="fas fa-video"></i>
-          </button>
-          <button className="icon-button">
-            <i className="fas fa-phone"></i>
-          </button>
-          <button className="icon-button">
-            <i className="fas fa-ellipsis-v"></i>
-          </button>
-        </div>
-      </div>
+      </header>
 
-      <div className="messenger-chat">
-        <div className="chat-date-indicator">
-          <span>Aujourd'hui</span>
-        </div>
-        
-        <div className="messages-container">
-          {messages.map(message => (
-            <div 
-              key={message.id} 
-              className={`message ${message.sender === 'bot' ? 'bot-message' : 'user-message'}`}
-            >
-              <div className="message-content">
-                <p>{message.text}</p>
-                <span className="message-time">{formatTime(message.timestamp)}</span>
-              </div>
+      {/* Tableaux de bord principaux */}
+      <div className="dashboard-grid">
+        {/* Carte des suggestions IA */}
+        <div className="dashboard-card ai-suggestions">
+          <h2>
+            Suggestions de l'IA 
+            <span className="badge">{aiSuggestions.length}</span>
+          </h2>
+          {isLoading ? (
+            <div className="loading-placeholder">
+              <div className="loading-spinner"></div>
+              <p>Analyse en cours...</p>
             </div>
-          ))}
-          <div ref={messagesEndRef} />
+          ) : (
+            <ul className="suggestions-list">
+              {aiSuggestions.map(suggestion => (
+                <li key={suggestion.id} className={`suggestion-item ${suggestion.priority}`}>
+                  <span className="suggestion-text">{suggestion.text}</span>
+                  <span className="priority-indicator"></span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button className="action-button">Voir toutes les suggestions</button>
+        </div>
+
+        {/* Carte d'activité récente */}
+        <div className="dashboard-card recent-activity">
+          <h2>Activité récente</h2>
+          {isLoading ? (
+            <div className="loading-placeholder">
+              <div className="loading-spinner"></div>
+              <p>Chargement...</p>
+            </div>
+          ) : (
+            <ul className="activity-list">
+              {recentActivity.map(activity => (
+                <li key={activity.id} className="activity-item">
+                  <div className="activity-content">
+                    <p className="activity-action">{activity.action}</p>
+                    <span className="activity-user">{activity.user}</span>
+                  </div>
+                  <span className="activity-time">{activity.time}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button className="action-button">Voir toute l'activité</button>
+        </div>
+
+        {/* Carte de statistiques */}
+        <div className="dashboard-card stats">
+          <h2>Vue d'ensemble</h2>
+          <div className="stats-grid">
+            <div className="stat-item">
+              <span className="stat-value">128</span>
+              <span className="stat-label">Documents traités</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">24</span>
+              <span className="stat-label">Tâches en cours</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">92%</span>
+              <span className="stat-label">Efficacité</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">7</span>
+              <span className="stat-label">Notifications</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Carte d'actions rapides */}
+        <div className="dashboard-card quick-actions">
+          <h2>Actions rapides</h2>
+          <div className="actions-grid">
+            <button className="quick-action-button">
+              <span className="action-icon">📊</span>
+              <span>Rapports</span>
+            </button>
+            <button className="quick-action-button">
+              <span className="action-icon">📁</span>
+              <span>Fichiers</span>
+            </button>
+            <button className="quick-action-button">
+              <span className="action-icon">👥</span>
+              <span>Équipe</span>
+            </button>
+            <button className="quick-action-button">
+              <span className="action-icon">⚙️</span>
+              <span>Paramètres</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="messenger-input">
-        <div className="input-actions">
-          <button className="icon-button">
-            <i className="fas fa-plus"></i>
-          </button>
-          <button className="icon-button">
-            <i className="fas fa-paperclip"></i>
-          </button>
-          <button className="icon-button">
-            <i className="fas fa-image"></i>
-          </button>
-        </div>
-        <div className="text-input-container">
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Tapez votre message..."
-            className="message-input"
-          />
-        </div>
-        <div className="send-actions">
-          <button className="icon-button">
-            <i className="fas fa-microphone"></i>
-          </button>
-          <button 
-            onClick={handleSendMessage}
-            className="send-button"
-            disabled={inputValue.trim() === ''}
-          >
-            <i className="fas fa-paper-plane"></i>
-          </button>
+      {/* Section de personnalisation de l'IA */}
+      <div className="ai-customization">
+        <h2>Personnalisez votre assistant IA</h2>
+        <p>Adaptez les suggestions de l'IA à vos préférences de travail</p>
+        <div className="preference-options">
+          <label className="preference-toggle">
+            <input type="checkbox" defaultChecked />
+            <span className="toggle-slider"></span>
+            <span className="toggle-label">Suggestions automatisées</span>
+          </label>
+          <label className="preference-toggle">
+            <input type="checkbox" defaultChecked />
+            <span className="toggle-slider"></span>
+            <span className="toggle-label">Analyses prédictives</span>
+          </label>
+          <label className="preference-toggle">
+            <input type="checkbox" />
+            <span className="toggle-slider"></span>
+            <span className="toggle-label">Notifications quotidiennes</span>
+          </label>
         </div>
       </div>
     </div>
   );
 };
 
-export default DashboardHome ;
+export default DashboardHome;
