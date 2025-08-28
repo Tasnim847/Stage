@@ -334,8 +334,6 @@ function Home() {
       return "Excellent ! En tant qu'entreprise, voici comment rejoindre FacturaPro :\n\n1. Demandez à votre comptable de créer un compte sur notre plateforme\n2. Votre comptable vous ajoutera ensuite à son espace client\n3. Vous recevrez un email d'invitation avec vos identifiants\n4. Connectez-vous et commencez à créer devis et factures !\n\nSi vous n'avez pas de comptable, vous pouvez aussi créer un compte directement et gérer votre facturation en autonomie.";
     } else if (lowerMessage.includes('facture') || lowerMessage.includes('devis')) {
       return "FacturaPro vous permet de créer des devis et factures professionnels en quelques clics. Souhaitez-vous en savoir plus sur cette fonctionnalité ?";
-    } else if (lowerMessage.includes('prix') || lowerMessage.includes('tarif') || lowerMessage.includes('coût') || lowerMessage.includes('abonnement')) {
-      return "FacturaPro propose différents forfaits adaptés à vos besoins :\n\n• Gratuit : Création de devis et factures basiques\n• Premium (9,99€/mois) : Fonctionnalités avancées, templates personnalisés\n• Professionnel (19,99€/mois) : Multi-utilisateurs, analytiques détaillées\n\nVoulez-vous que je vous en dise plus sur nos formules ?";
     } else if (lowerMessage.includes('aide') || lowerMessage.includes('support') || lowerMessage.includes('problème')) {
       return "Notre équipe de support est disponible du lundi au vendredi de 9h à 18h au 01 23 45 67 89. Vous pouvez aussi consulter notre centre d'aide en ligne pour des guides détaillés ou envoyer un email à support@facturapro.fr.";
     } else if (lowerMessage.includes('merci')) {
@@ -348,8 +346,7 @@ function Home() {
   const quickSuggestions = [
     { text: "Comment rejoindre la plateforme?", emoji: "🚀" },
     { text: "Je suis comptable", emoji: "🧮" },
-    { text: "Je suis une entreprise", emoji: "🏢" },
-    { text: "Tarifs et abonnements", emoji: "💰" }
+    { text: "Je suis une entreprise", emoji: "🏢" }
   ];
 
   const handleSuggestionClick = (suggestion) => {

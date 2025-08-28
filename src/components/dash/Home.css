@@ -1,0 +1,338 @@
+/* Home.css - Version améliorée */
+.home-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Icône IA */
+.ai-icon {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  z-index: 10;
+}
+
+.ai-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, #6a6b8c, #8586b1);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.3),
+    inset 0 -10px 20px rgba(0, 0, 0, 0.2),
+    inset 0 10px 20px rgba(255, 255, 255, 0.1);
+  transition: all 0.4s ease;
+  overflow: hidden;
+}
+
+.ai-face::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to bottom right,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  transform: rotate(45deg);
+  animation: shine 6s infinite linear;
+}
+
+@keyframes shine {
+  0% {
+    top: -50%;
+    left: -50%;
+  }
+  100% {
+    top: 150%;
+    left: 150%;
+  }
+}
+
+/* Effet de pulsation amélioré */
+.pulse-ring {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border: 2px solid rgba(0, 255, 255, 0.3);
+  border-radius: 50%;
+  animation: pulse 3s infinite;
+  top: -10px;
+  left: -10px;
+  z-index: -1;
+}
+
+.ring-2 {
+  animation: pulse 3s infinite 1.5s;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+/* Effet de lueur */
+.glow-effect {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 255, 255, 0.2) 0%, rgba(0, 255, 255, 0) 70%);
+  top: -20px;
+  left: -20px;
+  z-index: -2;
+  animation: glow 4s infinite alternate;
+}
+
+@keyframes glow {
+  0% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0.7;
+  }
+}
+
+/* Yeux de l'IA améliorés */
+.ai-eye {
+  width: 24px;
+  height: 24px;
+  background: radial-gradient(circle, #00ffff, #00cccc);
+  border-radius: 50%;
+  position: absolute;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
+  animation: blink 5s infinite, glow-eye 2s infinite alternate;
+}
+
+@keyframes glow-eye {
+  0% {
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.9);
+  }
+}
+
+.left-eye {
+  top: 45px;
+  left: 35px;
+}
+
+.right-eye {
+  top: 45px;
+  right: 35px;
+}
+
+@keyframes blink {
+  0%, 40%, 44%, 48%, 52%, 96%, 100% {
+    height: 24px;
+  }
+  42%, 46%, 50%, 98% {
+    height: 2px;
+  }
+}
+
+/* Bouche de l'IA améliorée */
+.ai-mouth {
+  width: 35px;
+  height: 12px;
+  background: radial-gradient(ellipse, #00ffff, #00cccc);
+  border-radius: 0 0 15px 15px;
+  margin-top: 70px;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+/* Animation de parole améliorée */
+.speaking .ai-mouth {
+  animation: speak 0.6s infinite alternate;
+}
+
+@keyframes speak {
+  from {
+    height: 8px;
+    width: 25px;
+    border-radius: 0 0 10px 10px;
+  }
+  to {
+    height: 18px;
+    width: 45px;
+    border-radius: 0 0 20px 20px;
+  }
+}
+
+/* Bulles de message améliorées */
+.message-bubble {
+  position: absolute;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(245, 245, 255, 0.95));
+  padding: 15px 20px;
+  border-radius: 22px;
+  max-width: 220px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.5s, float 4s ease-in-out infinite;
+  z-index: 5;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #2c3e50;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.5;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.bubble-tail {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 15px solid rgba(255, 255, 255, 0.95);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px) scale(0.9); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0.5deg); }
+  33% { transform: translateY(-8px) rotate(-0.5deg); }
+  66% { transform: translateY(-4px) rotate(0.5deg); }
+}
+
+/* Particules flottantes */
+.floating-particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  width: var(--size);
+  height: var(--size);
+  bottom: -20px;
+  left: var(--left);
+  animation: float-up var(--duration) infinite var(--delay);
+  opacity: 0;
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Texte de bienvenue */
+.welcome-text {
+  position: absolute;
+  bottom: 40px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.welcome-text h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  font-weight: 300;
+  letter-spacing: 2px;
+}
+
+.welcome-text p {
+  font-size: 1.1rem;
+  opacity: 0.8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ai-icon {
+    width: 130px;
+    height: 130px;
+  }
+  
+  .pulse-ring {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .message-bubble {
+    max-width: 180px;
+    font-size: 14px;
+    padding: 12px 16px;
+  }
+  
+  .left-eye {
+    top: 35px;
+    left: 30px;
+  }
+  
+  .right-eye {
+    top: 35px;
+    right: 30px;
+  }
+  
+  .ai-mouth {
+    margin-top: 55px;
+  }
+  
+  .welcome-text h1 {
+    font-size: 2rem;
+  }
+  
+  .welcome-text p {
+    font-size: 1rem;
+  }
+}
