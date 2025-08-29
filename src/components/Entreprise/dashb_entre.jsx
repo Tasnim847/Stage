@@ -326,7 +326,7 @@ const DashboardEntreprise = () => {
 
         <div className="stat-card revenue">
           <div className="stat-icon">💰</div>
-          <div className="stat-value">{formatNumber(stats.chiffreAffaire || 0)} €</div>
+          <div className="stat-value">{formatNumber(stats.chiffreAffaire || 0)} DT</div>
           <div className="stat-label">Chiffre d'Affaires</div>
         </div>
       </div>
@@ -335,7 +335,10 @@ const DashboardEntreprise = () => {
         <div className="recent-section">
           <div className="section-header-with-action">
             <h2>Dernières Factures</h2>
-            <button className="btn-view-all">Voir tout</button>
+            <button 
+              className="btn-view-all" 
+              onClick={() => window.location.href = '/dash-entr/factures'}
+            >Voir tout</button>
           </div>
           <div className="recent-list">
             {recent.factures && recent.factures.length > 0 ? (
@@ -348,7 +351,7 @@ const DashboardEntreprise = () => {
                     </span>
                   </div>
                   <div className="item-details">
-                    <span className="item-amount">{formatNumber(facture.montant_ttc)} €</span>
+                    <span className="item-amount">{formatNumber(facture.montant_ttc)} DT</span>
                     <span className={`item-status status-${facture.statut_paiement}`}>
                       {facture.statut_paiement}
                     </span>
@@ -364,7 +367,10 @@ const DashboardEntreprise = () => {
         <div className="recent-section">
           <div className="section-header-with-action">
             <h2>Derniers Devis</h2>
-            <button className="btn-view-all">Voir tout</button>
+            <button 
+              className="btn-view-all" 
+              onClick={() => window.location.href = '/dash-entr/devis'}
+            >Voir tout</button>
           </div>
           <div className="recent-list">
             {recent.devis && recent.devis.length > 0 ? (
@@ -377,7 +383,7 @@ const DashboardEntreprise = () => {
                     </span>
                   </div>
                   <div className="item-details">
-                    <span className="item-amount">{formatNumber(devis.montant_ttc)} €</span>
+                    <span className="item-amount">{formatNumber(devis.montant_ttc)} DT</span>
                     <span className={`item-status status-${devis.status}`}>
                       {devis.status}
                     </span>

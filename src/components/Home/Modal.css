@@ -237,3 +237,88 @@
   font-size: 16px;
   margin-bottom: 4px;
 }
+
+/* Animation pour le champ de confirmation de mot de passe */
+.confirm-password-container {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.5s ease-in-out;
+  transform: translateY(-10px);
+}
+
+.confirm-password-container.visible {
+  max-height: 100px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Indicateur de correspondance des mots de passe */
+.input-success {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  min-height: 1rem;
+  color: var(--success-color);
+}
+
+/* Indicateur de force du mot de passe */
+.password-strength {
+  margin-top: 0.5rem;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.strength-bar {
+  height: 100%;
+  width: 0;
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+.strength-weak {
+  background: #ef4444;
+}
+
+.strength-medium {
+  background: #f59e0b;
+}
+
+.strength-strong {
+  background: #10b981;
+}
+
+.password-strength-text {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  text-align: right;
+  color: var(--text-secondary);
+}
+
+.confirm-password-container {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.confirm-password-container.visible {
+  max-height: 100px; /* Ajustez cette valeur selon la hauteur de votre champ */
+}
+
+.input-feedback {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.input-success {
+  color: #27ae60;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.invalid {
+  border-color: #e74c3c !important;
+}

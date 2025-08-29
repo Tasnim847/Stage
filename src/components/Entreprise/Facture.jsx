@@ -970,7 +970,7 @@ const Facture = () => {
                 <FiFileText className="modal-title-icon" />
                 <div>
                   <h3>Facture #{selectedFacture.numero || selectedFacture.id}</h3>
-                  <p className="modal-subtitle">Détails complets avec analyse intelligente</p>
+                  <p className="modal-subtitle">Détails complets</p>
                 </div>
               </div>
               
@@ -1046,21 +1046,6 @@ const Facture = () => {
                       <div className="detail-value">{formatDate(selectedFacture.date_emission)}</div>
                     </div>
                     
-                    <div className="detail-item">
-                      <div className="detail-label">
-                        <FiClock />
-                        <span>Date d'échéance</span>
-                      </div>
-                      <div className="detail-value">{formatDate(selectedFacture.date_echeance)}</div>
-                    </div>
-                    
-                    <div className="detail-item">
-                      <div className="detail-label">
-                        <FiCalendar />
-                        <span>Date de paiement</span>
-                      </div>
-                      <div className="detail-value">{formatDate(selectedFacture.date_paiement)}</div>
-                    </div>
                     
                     <div className="detail-item">
                       <div className="detail-label">
@@ -1072,13 +1057,6 @@ const Facture = () => {
                       </div>
                     </div>
                     
-                    <div className="detail-item">
-                      <div className="detail-label">
-                        <FiInfo />
-                        <span>Mode de paiement</span>
-                      </div>
-                      <div className="detail-value">{selectedFacture.mode_paiement || 'Non spécifié'}</div>
-                    </div>
                     
                     <div className="detail-item">
                       <div className="detail-label">

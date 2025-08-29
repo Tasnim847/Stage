@@ -557,22 +557,22 @@
 [data-theme="dark"] .form-section,
 [data-theme="dark"] .comptable-card {
   background: var(--dark-card);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 20px rgba(114, 114, 114, 0.2);
 }
 
 [data-theme="dark"] .detail-value {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(86, 86, 86, 0.2);
   color: var(--text);
 }
 
 [data-theme="dark"] .form-control {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(74, 74, 74, 0.2);
   color: var(--text);
   border-color: var(--dark-border);
 }
 
 [data-theme="dark"] .form-control:focus {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(96, 96, 96, 0.3);
 }
 
 [data-theme="dark"] .cancel-button {

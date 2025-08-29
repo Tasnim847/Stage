@@ -5,7 +5,6 @@ const DashboardHome = () => {
   const [messages, setMessages] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Messages que l'IA peut afficher
   const greetings = [
     "Bonjour ! Comment puis-je vous aider aujourd'hui ?",
     "Bon retour parmi nous !",
@@ -19,7 +18,6 @@ const DashboardHome = () => {
     "Comment puis-je vous aider aujourd'hui ?"
   ];
 
-  // Ajouter un nouveau message aléatoire
   const addMessage = () => {
     const randomMessage = greetings[Math.floor(Math.random() * greetings.length)];
     const newMessage = {
@@ -34,11 +32,9 @@ const DashboardHome = () => {
     setMessages(prev => [...prev, newMessage]);
     setIsSpeaking(true);
     
-    // Réinitialiser l'animation de parole après un délai
     setTimeout(() => setIsSpeaking(false), 1500);
   };
 
-  // Effacer les messages après un certain temps
   useEffect(() => {
     if (messages.length > 0) {
       const timer = setTimeout(() => {
@@ -49,14 +45,11 @@ const DashboardHome = () => {
     }
   }, [messages]);
 
-  // Ajouter des messages automatiquement
   useEffect(() => {
-    // Premier message après 1 seconde
     const initialTimer = setTimeout(() => {
       addMessage();
     }, 1000);
     
-    // Messages périodiques toutes les 8-12 secondes
     const interval = setInterval(() => {
       addMessage();
     }, 8000 + Math.random() * 4000);
@@ -71,9 +64,13 @@ const DashboardHome = () => {
     <div className="home-container">
       <div className="ai-icon">
         <div className={`ai-face ${isSpeaking ? 'speaking' : ''}`}>
-          <div className="ai-eye left-eye"></div>
-          <div className="ai-eye right-eye"></div>
-          <div className="ai-mouth"></div>
+          <div className="ai-head">
+            <div className="ai-eye left-eye"></div>
+            <div className="ai-eye right-eye"></div>
+            <div className="ai-antenna left-antenna"></div>
+            <div className="ai-antenna right-antenna"></div>
+            <div className="ai-mouth"></div>
+          </div>
         </div>
         <div className="pulse-ring"></div>
         <div className="pulse-ring ring-2"></div>
@@ -102,10 +99,6 @@ const DashboardHome = () => {
         ))}
       </div>
       
-      <div className="welcome-text">
-        <h1>Intelligence Artificielle</h1>
-        <p>Votre assistant personnel</p>
-      </div>
     </div>
   );
 };

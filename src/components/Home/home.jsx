@@ -9,11 +9,14 @@ function Home() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirmPassword: '',
     name: '',
     lastname: '',
+    username: '',
     rememberMe: false
   });
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
@@ -26,6 +29,10 @@ function Home() {
     }
   ]);
   const [userMessage, setUserMessage] = useState('');
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordMatch, setPasswordMatch] = useState(true);
+  const [passwordStrength, setPasswordStrength] = useState({ strength: 0, text: '' });
+  
   const isScrolling = useRef(false);
   const currentSection = useRef(0);
   const chatContainerRef = useRef(null);
@@ -46,8 +53,17 @@ function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
       });
+      
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Échec de l\'inscription');
+      
+      if (!res.ok) {
+        if (data.errors && Array.isArray(data.errors)) {
+          const errorMessages = data.errors.join(', ');
+          throw new Error(`Erreur de validation: ${errorMessages}`);
+        }
+        throw new Error(data.message || 'Échec de l\'inscription');
+      }
+      
       return data;
     } catch (err) {
       console.error('Erreur d\'inscription:', err);
@@ -77,6 +93,27 @@ function Home() {
       return data;
     } catch (error) {
       console.error('Erreur de connexion:', error);
+      throw error;
+    }
+  };
+
+  const resetPasswordAPI = async (resetData) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(resetData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Erreur ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Erreur de réinitialisation:', error);
       throw error;
     }
   };
@@ -149,6 +186,86 @@ function Home() {
     }
   }, [chatMessages]);
 
+  // Vérifier la correspondance des mots de passe
+  useEffect(() => {
+    if ((isForgotPassword || !isLogin) && formData.password && formData.confirmPassword) {
+      setPasswordMatch(formData.password === formData.confirmPassword);
+    } else {
+      setPasswordMatch(true);
+    }
+  }, [formData.password, formData.confirmPassword, isLogin, isForgotPassword]);
+
+  // Calculer la force du mot de passe
+  useEffect(() => {
+    if ((!isLogin || isForgotPassword) && formData.password) {
+      const strength = calculatePasswordStrength(formData.password);
+      setPasswordStrength(strength);
+    } else {
+      setPasswordStrength({ strength: 0, text: '' });
+    }
+  }, [formData.password, isLogin, isForgotPassword]);
+
+  const calculatePasswordStrength = (password) => {
+    let strength = 0;
+    let text = '';
+    
+    if (password.length >= 8) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/[0-9]/.test(password)) strength += 1;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+    
+    switch (strength) {
+      case 0:
+      case 1:
+        text = 'Faible';
+        break;
+      case 2:
+        text = 'Moyen';
+        break;
+      case 3:
+        text = 'Fort';
+        break;
+      case 4:
+        text = 'Très fort';
+        break;
+      default:
+        text = '';
+    }
+    
+    return { strength, text };
+  };
+
+  const validateFormData = (data) => {
+    const errors = [];
+    
+    // Validation de l'email
+    if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      errors.push('Format email invalide');
+    }
+    
+    // Validation du mot de passe
+    if (!data.password || data.password.length < 6) {
+      errors.push('Le mot de passe doit contenir au moins 6 caractères');
+    }
+    
+    // Validation du nom
+    if (!data.name || data.name.trim().length < 2) {
+      errors.push('Le nom doit contenir au moins 2 caractères');
+    }
+    
+    // Validation du prénom
+    if (!data.lastname || data.lastname.trim().length < 2) {
+      errors.push('Le prénom doit contenir au moins 2 caractères');
+    }
+    
+    // Validation du username
+    if (!data.username || data.username.trim().length < 3) {
+      errors.push('Le nom d\'utilisateur doit contenir au moins 3 caractères');
+    }
+    
+    return errors;
+  };
+
   const scrollToSection = (id) => {
     isScrolling.current = true;
     const element = document.getElementById(id);
@@ -177,10 +294,15 @@ function Home() {
       setFormData({
         email: '',
         password: '',
+        confirmPassword: '',
         name: '',
         lastname: '',
+        username: '',
         rememberMe: false
       });
+      setShowConfirmPassword(false);
+      setIsForgotPassword(false);
+      setIsLogin(true);
     }
   };
 
@@ -192,6 +314,25 @@ function Home() {
       [name]: type === 'checkbox' ? checked : value
     }));
     setErrorMessage(''); // Effacer les erreurs quand l'utilisateur tape
+
+    // Afficher le champ de confirmation quand on commence à taper le mot de passe
+    if (name === 'password' && value.length > 0 && (isForgotPassword || !isLogin)) {
+      setShowConfirmPassword(true);
+    }
+
+    // Générer automatiquement le username à partir du nom
+    if (name === 'name' && value && !isLogin && !isForgotPassword && !formData.username) {
+      setFormData(prev => ({
+        ...prev,
+        username: value.toLowerCase().replace(/\s+/g, '') + Math.floor(Math.random() * 1000)
+      }));
+    }
+  };
+
+  const handlePasswordFocus = () => {
+    if ((isForgotPassword || !isLogin) && formData.password.length === 0) {
+      setShowConfirmPassword(true);
+    }
   };
 
   // Soumission du formulaire
@@ -199,9 +340,48 @@ function Home() {
     e.preventDefault();
     setIsLoading(true);
     setErrorMessage('');
-  
+
     try {
-      if (isLogin) {
+      if (isForgotPassword) {
+        // Validation pour la réinitialisation
+        if (!formData.email || !formData.password || !formData.confirmPassword) {
+          throw new Error('Veuillez remplir tous les champs');
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error('Les mots de passe ne correspondent pas');
+        }
+
+        if (formData.password.length < 6) {
+          throw new Error('Le mot de passe doit contenir au moins 6 caractères');
+        }
+
+        // Réinitialisation du mot de passe
+        const response = await resetPasswordAPI({
+          email: formData.email.trim(),
+          newPassword: formData.password,
+          confirmPassword: formData.confirmPassword
+        });
+
+        setErrorMessage('Mot de passe réinitialisé avec succès!');
+        
+        // Revenir à la connexion après un délai
+        setTimeout(() => {
+          setIsForgotPassword(false);
+          setIsLogin(true);
+          setFormData({
+            email: formData.email,
+            password: '',
+            confirmPassword: '',
+            name: '',
+            lastname: '',
+            username: '',
+            rememberMe: false
+          });
+          setErrorMessage('');
+        }, 2000);
+        
+      } else if (isLogin) {
         // Validation pour la connexion
         if (!formData.email || !formData.password) {
           throw new Error('Veuillez remplir tous les champs');
@@ -220,7 +400,7 @@ function Home() {
       
         toggleAuthForm();
       
-        // Forcer un rechargement complet de la page pour mettre à jour l'état d'authentification
+        // Redirection
         setTimeout(() => {
           if (response.user.role === 'comptable') {
             window.location.href = '/dash-comp';
@@ -231,7 +411,7 @@ function Home() {
       
       } else {
         // Validation pour l'inscription
-        if (!formData.name || !formData.email || !formData.password) {
+        if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword || !formData.username) {
           throw new Error('Veuillez remplir tous les champs obligatoires');
         }
 
@@ -239,22 +419,45 @@ function Home() {
           throw new Error('Le mot de passe doit contenir au moins 6 caractères');
         }
 
-        // Inscription
-        const response = await registerAPI({
+        if (formData.password !== formData.confirmPassword) {
+          throw new Error('Les mots de passe ne correspondent pas');
+        }
+
+        // Validation supplémentaire côté client
+        const validationErrors = validateFormData({
+          username: formData.username,
           email: formData.email.trim(),
           password: formData.password,
           name: formData.name,
           lastname: formData.lastname || formData.name
         });
+
+        if (validationErrors.length > 0) {
+          throw new Error(validationErrors.join(', '));
+        }
+
+        // Préparer les données pour l'envoi
+        const userData = {
+          username: formData.username,
+          email: formData.email.trim(),
+          password: formData.password,
+          name: formData.name,
+          lastname: formData.lastname || formData.name
+        };
+
+        console.log('Données envoyées au backend:', userData);
+
+        // Inscription
+        const response = await registerAPI(userData);
       
-         // Stocker les données d'authentification
+        // Stocker les données d'authentification
         const storage = formData.rememberMe ? localStorage : sessionStorage;
         storage.setItem('authToken', response.token);
         storage.setItem('userData', JSON.stringify(response.user));
       
         toggleAuthForm();
       
-         // Forcer un rechargement complet de la page pour mettre à jour l'état d'authentification
+        // Redirection
         setTimeout(() => {
           if (response.user.role === 'comptable') {
             window.location.href = '/dash-comp';
@@ -275,14 +478,52 @@ function Home() {
   // Basculer entre connexion et inscription
   const toggleAuthMode = () => {
     setIsLogin(!isLogin);
+    setIsForgotPassword(false);
     setErrorMessage('');
     // Réinitialiser les données du formulaire
     setFormData({
       email: formData.email, // Garder l'email
       password: '',
+      confirmPassword: '',
       name: '',
       lastname: '',
+      username: '',
       rememberMe: formData.rememberMe
+    });
+    setShowConfirmPassword(false);
+  };
+
+  // Fonction pour basculer vers le mode "mot de passe oublié"
+  const handleForgotPassword = (e) => {
+    if (e) e.preventDefault(); // Empêche le comportement par défaut du lien
+    setIsForgotPassword(true);
+    setIsLogin(false);
+    setErrorMessage('');
+    setShowConfirmPassword(false); // Réinitialiser l'état de visibilité
+    setFormData({
+      email: formData.email, // Garder l'email
+      password: '',
+      confirmPassword: '',
+      name: '',
+      lastname: '',
+      username: '',
+      rememberMe: false
+    });
+  };
+
+  // Fonction pour revenir à la connexion
+  const backToLogin = () => {
+    setIsForgotPassword(false);
+    setIsLogin(true);
+    setErrorMessage('');
+    setFormData({
+      email: formData.email, // Garder l'email
+      password: '',
+      confirmPassword: '',
+      name: '',
+      lastname: '',
+      username: '',
+      rememberMe: false
     });
   };
 
@@ -327,7 +568,7 @@ function Home() {
     } else if (lowerMessage.includes('rejoindre') || lowerMessage.includes('inscrire') || 
                lowerMessage.includes('compte') || lowerMessage.includes('s\'inscrire') ||
                lowerMessage.includes('inscription') || lowerMessage.includes('comment faire')) {
-      return "Je peux vous aider à rejoindre notre plateforme ! Dites-moi, êtes-vous :\n\n1. 🧮 Un comptable qui souhaite gérer plusieurs clients\n2. 🏢 Une entreprise qui veut utiliser nos services de facturation\n\nRépondez par 'comptable' ou 'entreprise' pour que je puisse vous guider au mieux.";
+      return "Je peux vous aider à rejoindre notre plateforme ! Dites-moi, êtes-vous :\n\n1. 🧮 Un comptable qui souhaite gérer plusieurs clients\n2. 🏢 Une entreprise qui veut utiliser nos services de facturation\n\nRépondez par 'comptable' or 'entreprise' pour que je puise vous guider au mieux.";
     } else if (lowerMessage.includes('comptable')) {
       return "Parfait ! En tant que comptable, voici comment procéder :\n\n1. Cliquez sur 'Connexion' en haut à droite\n2. Choisissez 'Créer un compte'\n3. Remplissez le formulaire avec vos informations professionnelles\n4. Une fois inscrit, vous pourrez inviter vos clients entreprises à rejoindre la plateforme\n\nVous pourrez ensuite gérer tous vos clients depuis un tableau de bord unique !";
     } else if (lowerMessage.includes('entreprise')) {
@@ -350,7 +591,7 @@ function Home() {
   ];
 
   const handleSuggestionClick = (suggestion) => {
-    setUserMessage(suggestion);
+    setUserMessage(suggestion.text);
   };
 
   return (
@@ -395,16 +636,27 @@ function Home() {
               </div>
             
               <div className="ai-message">
-                <p>Bonjour ! Je suis là pour vous guider dans votre {isLogin ? 'connexion' : 'inscription'}.</p>
+                <p>
+                  {isForgotPassword 
+                    ? "Je vous assiste pour réinitialiser votre mot de passe en toute sécurité."
+                    : isLogin 
+                      ? "Bonjour ! Je détecte que vous souhaitez accéder à votre compte. Laissez-moi vous guider."
+                      : "Bienvenue ! Je vous assiste pour créer votre compte et optimiser votre expérience de facturation."
+                  }
+                </p>
               </div>
             
               <div className="ai-suggestions">
-                <div className="suggestion-chip" onClick={() => console.log('Mot de passe oublié')}>
-                  <span>💡 Mot de passe oublié ?</span>
-                </div>
-                <div className="suggestion-chip" onClick={toggleAuthMode}>
-                  <span>🚀 {isLogin ? 'Créer un compte' : 'Se connecter'}</span>
-                </div>
+                {!isForgotPassword && isLogin && (
+                  <div className="suggestion-chip" onClick={handleForgotPassword}>
+                    <span>💡 Mot de passe oublié ?</span>
+                  </div>
+                )}
+                {!isForgotPassword && (
+                  <div className="suggestion-chip" onClick={toggleAuthMode}>
+                    <span>🚀 {isLogin ? 'Créer un compte' : 'Se connecter'}</span>
+                  </div>
+                )}
                 <div className="suggestion-chip" onClick={() => console.log('Sécurité')}>
                   <span>🔐 Sécurité renforcée</span>
                 </div>
@@ -413,41 +665,64 @@ function Home() {
 
             {/* Formulaire d'authentification */}
             <form className="auth-form" onSubmit={handleSubmit}>
-              <h2>{isLogin ? 'Connexion' : 'Inscription'}</h2>
+              <h2>
+                {isForgotPassword ? 'Réinitialisation du mot de passe' : 
+                 isLogin ? 'Connexion' : 'Inscription'}
+              </h2>
               
               {errorMessage && (
-                <div className="error-message" style={{color: 'red', marginBottom: '15px'}}>
+                <div className="error-message" style={{color: errorMessage.includes('succès') ? 'green' : 'red', marginBottom: '15px'}}>
                   {errorMessage}
                 </div>
               )}
               
-              {!isLogin && (
-                <div className="form-group">
-                  <label htmlFor="name">Nom complet *</label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Votre nom complet"
-                  />
+              {isForgotPassword && (
+                <div className="forgot-password-info">
+                  <p>Entrez votre email et votre nouveau mot de passe.</p>
                 </div>
               )}
               
-              {!isLogin && (
-                <div className="form-group">
-                  <label htmlFor="lastname">Nom de famille</label>
-                  <input
-                    type="text"
-                    id="lastname"
-                    name="lastname"
-                    value={formData.lastname}
-                    onChange={handleInputChange}
-                    placeholder="Votre nom de famille (optionnel)"
-                  />
-                </div>
+              {!isLogin && !isForgotPassword && (
+                <>
+                  <div className="form-group">
+                    <label htmlFor="name">Nom complet *</label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Votre nom complet"
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="lastname">Nom de famille *</label>
+                    <input
+                      type="text"
+                      id="lastname"
+                      name="lastname"
+                      value={formData.lastname}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Votre nom de famille"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="username">Nom d'utilisateur *</label>
+                    <input
+                      type="text"
+                      id="username"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Choisissez un nom d'utilisateur"
+                    />
+                  </div>
+                </>
               )}
               
               <div className="form-group">
@@ -463,21 +738,71 @@ function Home() {
                 />
               </div>
               
+              {/* Champ de mot de passe - Toujours affiché avec le label approprié */}
               <div className="form-group">
-                <label htmlFor="password">Mot de passe *</label>
+                <label htmlFor="password">
+                  {isForgotPassword ? 'Nouveau mot de passe *' : 'Mot de passe *'}
+                </label>
                 <input
                   type="password"
                   id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
+                  onFocus={handlePasswordFocus}
                   required
-                  placeholder={isLogin ? 'Votre mot de passe' : 'Minimum 6 caractères'}
+                  placeholder={
+                    isForgotPassword ? 'Votre nouveau mot de passe' : 
+                    isLogin ? 'Votre mot de passe' : 'Minimum 6 caractères'
+                  }
                 />
+                {!isLogin && formData.password && (
+                  <div className="password-strength">
+                    <div 
+                      className={`strength-bar ${
+                        passwordStrength.strength <= 1 ? 'strength-weak' :
+                        passwordStrength.strength === 2 ? 'strength-medium' : 'strength-strong'
+                      }`}
+                      style={{ width: `${(passwordStrength.strength / 4) * 100}%` }}
+                    ></div>
+                    <div className="password-strength-text">{passwordStrength.text}</div>
+                  </div>
+                )}
               </div>
               
-              <div className="form-options">
-                {isLogin && (
+              {/* Champ de confirmation de mot de passe */}
+              {(isForgotPassword || !isLogin) && (
+                <div className={`confirm-password-container ${showConfirmPassword ? 'visible' : ''}`}>
+                  <div className="form-group">
+                    <label htmlFor="confirmPassword">
+                      {isForgotPassword ? 'Confirmer le nouveau mot de passe *' : 'Confirmer le mot de passe *'}
+                    </label>
+                    <input
+                      type="password"
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      required
+                      placeholder={isForgotPassword ? 'Confirmez votre nouveau mot de passe' : 'Confirmez votre mot de passe'}
+                      className={!passwordMatch ? 'invalid' : ''}
+                    />
+                    {formData.confirmPassword && !passwordMatch && (
+                      <div className="input-feedback">
+                        Les mots de passe ne correspondent pas
+                      </div>
+                    )}
+                    {formData.confirmPassword && passwordMatch && (
+                      <div className="input-success">
+                        ✓ Les mots de passe correspondent
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {isLogin && !isForgotPassword && (
+                <div className="form-options">
                   <div className="remember-me">
                     <input
                       type="checkbox"
@@ -488,14 +813,11 @@ function Home() {
                     />
                     <label htmlFor="rememberMe">Se souvenir de moi</label>
                   </div>
-                )}
-                
-                {isLogin && (
-                  <a href="#forgot-password" className="forgot-password">
+                  <a href="#forgot-password" className="forgot-password" onClick={handleForgotPassword}>
                     Mot de passe oublié?
                   </a>
-                )}
-              </div>
+                </div>
+              )}
               
               <button 
                 type="submit" 
@@ -505,17 +827,27 @@ function Home() {
                 {isLoading ? (
                   <span>Chargement...</span>
                 ) : (
+                  isForgotPassword ? 'Réinitialiser le mot de passe' :
                   isLogin ? 'Se connecter' : 'Créer un compte'
                 )}
               </button>
               
               <div className="auth-switch">
-                <p>
-                  {isLogin ? 'Pas encore de compte? ' : 'Déjà un compte? '}
-                  <span onClick={toggleAuthMode} className="auth-switch-link">
-                    {isLogin ? 'Inscrivez-vous' : 'Connectez-vous'}
-                  </span>
-                </p>
+                {isForgotPassword ? (
+                  <p>
+                    Retour à la{' '}
+                    <span onClick={backToLogin} className="auth-switch-link">
+                      connexion
+                    </span>
+                  </p>
+                ) : (
+                  <p>
+                    {isLogin ? 'Pas encore de compte? ' : 'Déjà un compte? '}
+                    <span onClick={toggleAuthMode} className="auth-switch-link">
+                      {isLogin ? 'Inscrivez-vous' : 'Connectez-vous'}
+                    </span>
+                  </p>
+                )}
               </div>
             </form>
             
@@ -604,7 +936,7 @@ function Home() {
                 <div className="feature-icon">📈</div>
                 <h3>Analyses Avancées</h3>
                 <p>Visualisez vos performances financières avec des tableaux de bord intuitifs.</p>
-                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -775,7 +1107,7 @@ function Home() {
                 <p>Accédez à vos documents depuis n'importe quel appareil, à tout moment, même hors connexion.</p>
                 <div className="advantage-stats">
                   <span className="stat-value">100% </span>
-                  <span className="stat-label"> disponible</span>
+                  <span className ="stat-label"> disponible</span>
                 </div>
               </div>
               
@@ -868,52 +1200,51 @@ function Home() {
             {chatMessages.map((message) => (
               <div key={message.id} className={`message ${message.sender}`}>
                 <div className="message-content">
-                   {/* Remplacer les sauts de ligne par des balises <br /> */}
                   {message.text.split('\n').map((line, i) => (
-                      <React.Fragment key={i}>
+                    <React.Fragment key={i}>
                       {line}
                       {i < message.text.split('\n').length - 1 && <br />}
                     </React.Fragment>
                   ))}
                   <span className="message-time">
-                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
       
-      {/* Suggestions rapides */}
-      <div className="chatbot-suggestions">
-        {quickSuggestions.map((suggestion, index) => (
-          <button
-            key={index}
-            className="suggestion-chip"
-            onClick={() => handleSuggestionClick(suggestion.text)}
-          >
-            <span className="suggestion-emoji">{suggestion.emoji}</span>
-            {suggestion.text}
-          </button>
-        ))}
-      </div>
+          {/* Suggestions rapides */}
+          <div className="chatbot-suggestions">
+            {quickSuggestions.map((suggestion, index) => (
+              <button
+                key={index}
+                className="suggestion-chip"
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                <span className="suggestion-emoji">{suggestion.emoji}</span>
+                {suggestion.text}
+              </button>
+            ))}
+          </div>
       
-      <form className="chatbot-input" onSubmit={handleMessageSubmit}>
-        <input
-          type="text"
-          placeholder="Tapez votre message..."
-          value={userMessage}
-          onChange={(e) => setUserMessage(e.target.value)}
-        />
-        <button type="submit">➤</button>
-      </form>
-    </div>
+          <form className="chatbot-input" onSubmit={handleMessageSubmit}>
+            <input
+              type="text"
+              placeholder="Tapez votre message..."
+              value={userMessage}
+              onChange={(e) => setUserMessage(e.target.value)}
+            />
+            <button type="submit">➤</button>
+          </form>
+        </div>
         ) : (
-    <button className="chatbot-toggle" onClick={toggleChatbot}>
-      <span className="chatbot-icon">💬</span>
-      <span className="chatbot-label">Assistant</span>
-    </button>
-  )}
-</div>
+          <button className="chatbot-toggle" onClick={toggleChatbot}>
+            <span className="chatbot-icon">💬</span>
+            <span className="chatbot-label">Assistant</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 }

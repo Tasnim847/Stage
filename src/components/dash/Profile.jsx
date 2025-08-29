@@ -28,8 +28,17 @@ const Profile = ({ handleLogout }) => {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        setProfile(response.data);
-        setFormData(response.data);
+        // Assurez-vous que tous les champs sont initialisés
+        const profileData = {
+          ville: '',
+          region: '',
+          codePostal: '',
+          ...response.data
+        };
+        
+        setProfile(profileData);
+        setFormData(profileData);
+        
         if (response.data.image || response.data.logo) {
           setImagePreview(response.data.image || response.data.logo);
         }
@@ -75,8 +84,15 @@ const Profile = ({ handleLogout }) => {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const formDataToSend = new FormData();
       
-      Object.keys(formData).forEach(key => {
-        if (key !== 'image' && key !== 'logo') {
+      // Inclure tous les champs nécessaires
+      const fieldsToSend = [
+        'nom', 'name', 'lastname', 'email', 'password', 
+        'adresse', 'ville', 'region', 'codePostal', 
+        'telephone', 'siteWeb', 'numeroIdentificationFiscale'
+      ];
+      
+      fieldsToSend.forEach(key => {
+        if (formData[key] !== undefined) {
           formDataToSend.append(key, formData[key]);
         }
       });
@@ -92,9 +108,18 @@ const Profile = ({ handleLogout }) => {
         }
       });
       
-      setProfile(response.data);
+      // Mettre à jour le state avec la réponse
+      const updatedProfile = {
+        ville: '',
+        region: '',
+        codePostal: '',
+        ...response.data
+      };
+      
+      setProfile(updatedProfile);
       setIsEditing(false);
       setError(null);
+      
       if (response.data.image || response.data.logo) {
         setImagePreview(response.data.image || response.data.logo);
       }

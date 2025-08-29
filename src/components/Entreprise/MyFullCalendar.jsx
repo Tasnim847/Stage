@@ -272,8 +272,7 @@ useEffect(() => {
   return (
     <div className="calendar-compact">
       <div className="calendar-header">
-        <h1>Calendrier <span className="ai-text">Intelligent</span></h1>
-        <p>Avec gestion des échéances de devis</p>
+        <h1>Calendrier </h1>
         {error && <div className="error-banner">{error}</div>}
       </div>
       
@@ -347,18 +346,6 @@ useEffect(() => {
             </div>
           </div>
           
-          <div className="ai-suggestions-section">
-            <h3>
-              <span className="ai-icon">🤖</span> Suggestions de l'IA
-            </h3>
-            <div className="suggestions-list">
-              {aiSuggestions.map((suggestion, index) => (
-                <div key={index} className="suggestion-item">
-                  <div className="suggestion-text">{suggestion}</div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
