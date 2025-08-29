@@ -39,6 +39,25 @@ const Entreprise = sequelize.define('Entreprise', {
             isEmail: true
         }
     },
+    ville: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: 'Non spécifiée' // Optionnel : ajouter une valeur par défaut
+    },
+    region: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: 'Non spécifiée'
+    },
+    codePostal: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: '00000',
+        validate: {
+            // Validation basique pour un code postal (peut être adapté selon le pays)
+            is: /^\d{5}(-\d{4})?$/
+        }
+    },
     telephone: {
         type: DataTypes.STRING,
         allowNull: true

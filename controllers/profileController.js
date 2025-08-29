@@ -5,7 +5,6 @@ import User from '../models/User.js';
 
 export const getProfile = async (req, res) => {
     try {
-
         const userId = req.user.id;
         const userRole = req.user.role;
 
@@ -15,15 +14,16 @@ export const getProfile = async (req, res) => {
         });
 
         if (!user) {
-           return res.status(404).json({ message: 'Utilisateur non trouvé' });
+            return res.status(404).json({ message: 'Utilisateur non trouvé' });
         }
 
         let profileData;
 
         if (userRole === 'comptable') {
+            // Pour les comptables - inclure maintenant le champ adresse
             profileData = await Comptable.findOne({
                 where: { userId: userId },
-                attributes: ['id', 'name', 'lastname', 'username', 'email', 'image']
+                attributes: ['id', 'name', 'lastname', 'username', 'email', 'image', 'ville', 'region', 'codePostal', 'adresse', 'telephone']
             });
 
             if (!profileData) {
@@ -35,7 +35,7 @@ export const getProfile = async (req, res) => {
         } else if (userRole === 'entreprise') {
             profileData = await Entreprise.findOne({
                 where: { userId: userId },
-                attributes: ['id', 'nom', 'adresse', 'numeroIdentificationFiscale', 'logo', 'telephone'],
+                attributes: ['id', 'nom', 'adresse', 'numeroIdentificationFiscale', 'logo', 'telephone', 'ville', 'region', 'codePostal', 'siteWeb'],
                 include: [{
                     model: Comptable,
                     as: 'comptableAttitre',
@@ -63,6 +63,12 @@ export const getProfile = async (req, res) => {
             email: user.email
         };
 
+        // Renommer comptableAttitre en comptable pour le frontend
+        if (userRole === 'entreprise' && response.comptableAttitre) {
+            response.comptable = response.comptableAttitre;
+            delete response.comptableAttitre;
+        }
+
         res.json(response);
 
     } catch (error) {
@@ -81,7 +87,6 @@ export const getProfile = async (req, res) => {
         });
     }
 };
-
 
 export const updateProfile = async (req, res) => {
     try {
@@ -134,7 +139,17 @@ export const updateProfile = async (req, res) => {
         // Mise à jour selon le rôle (validation Sequelize désactivée)
         let updatedProfile;
         if (userRole === 'comptable') {
-            const [affectedRows] = await Comptable.update(updateData, {
+            // Filtrer les champs pour n'inclure que ceux existants dans le modèle Comptable
+            const validComptableFields = ['name', 'lastname', 'username', 'email', 'image', 'ville', 'region', 'codePostal', 'adresse', 'telephone'];
+            const filteredUpdateData = {};
+
+            Object.keys(updateData).forEach(key => {
+                if (validComptableFields.includes(key)) {
+                    filteredUpdateData[key] = updateData[key];
+                }
+            });
+
+            const [affectedRows] = await Comptable.update(filteredUpdateData, {
                 where: { userId: userId },
                 validate: false // Désactive la validation Sequelize
             });
@@ -145,7 +160,7 @@ export const updateProfile = async (req, res) => {
 
             updatedProfile = await Comptable.findOne({
                 where: { userId: userId },
-                attributes: ['id', 'name', 'lastname', 'username', 'email', 'image']
+                attributes: ['id', 'name', 'lastname', 'username', 'email', 'image', 'ville', 'region', 'codePostal', 'adresse', 'telephone']
             });
         } else if (userRole === 'entreprise') {
             const [affectedRows] = await Entreprise.update(updateData, {
@@ -159,16 +174,27 @@ export const updateProfile = async (req, res) => {
 
             updatedProfile = await Entreprise.findOne({
                 where: { userId: userId },
-                attributes: ['id', 'nom', 'adresse', 'numeroIdentificationFiscale', 'logo', 'telephone']
+                attributes: ['id', 'nom', 'adresse', 'numeroIdentificationFiscale', 'logo', 'telephone', 'ville', 'region', 'codePostal', 'siteWeb'],
+                include: [{
+                    model: Comptable,
+                    as: 'comptableAttitre',
+                    attributes: ['id', 'name', 'lastname', 'email']
+                }]
             });
         }
 
-        // Réponse
+        // Formate la réponse
         const response = {
             ...updatedProfile.get({ plain: true }),
             role: userRole,
             email: user.email
         };
+
+        // Renommer comptableAttitre en comptable pour le frontend
+        if (userRole === 'entreprise' && response.comptableAttitre) {
+            response.comptable = response.comptableAttitre;
+            delete response.comptableAttitre;
+        }
 
         res.json(response);
 

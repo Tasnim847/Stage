@@ -236,6 +236,10 @@ export const updateDevis = async (req, res) => {
                     id: req.params.id,
                     entreprise_id: entreprise.id
                 },
+                include: [{
+                    model: LigneDevis,
+                    as: 'lignesDevis'
+                }],
                 transaction
             });
 
@@ -243,47 +247,83 @@ export const updateDevis = async (req, res) => {
                 throw new Error('Devis non trouvé ou accès non autorisé');
             }
 
-            // Calcul des nouveaux montants
+            // Calcul des nouveaux montants basés sur les lignes existantes ou nouvelles
             const lignes = req.body.lignes || [];
             const montantHT = lignes.reduce((sum, ligne) =>
                 sum + (parseFloat(ligne.prix_unitaire_ht || 0) * parseFloat(ligne.quantite || 0)), 0);
 
-            const remise = parseFloat(req.body.remise || 0);
-            const tva = parseFloat(req.body.tva || 20);
+            const remise = parseFloat(req.body.remise || devis.remise);
+            const tva = parseFloat(req.body.tva || devis.tva);
 
             const montantApresRemise = montantHT - (montantHT * (remise / 100));
             const montantTTC = montantApresRemise * (1 + (tva / 100));
 
             // Mise à jour du devis
             await devis.update({
-                date_validite: req.body.date_validite,
-                client_name: req.body.client_name,
+                numero: req.body.numero || devis.numero,
+                date_creation: req.body.date_creation || devis.date_creation,
+                date_validite: req.body.date_validite !== undefined ? req.body.date_validite : devis.date_validite,
+                client_name: req.body.client_name || devis.client_name,
                 remise: remise,
                 tva: tva,
-                statut: req.body.statut,
+                statut: req.body.statut || devis.statut,
                 montant_ht: parseFloat(montantHT.toFixed(2)),
                 montant_ttc: parseFloat(montantTTC.toFixed(2))
             }, { transaction });
 
-            // Suppression des anciennes lignes
-            await LigneDevis.destroy({
+            // Gestion des lignes - Mise à jour au lieu de supprimer et recréer
+            if (lignes.length > 0) {
+                // Récupérer les IDs des lignes existantes
+                const existingLineIds = devis.lignesDevis.map(line => line.id);
+                const newLineIds = [];
+
+                // Traiter chaque ligne
+                for (const ligne of lignes) {
+                    if (ligne.id && existingLineIds.includes(ligne.id)) {
+                        // Mettre à jour une ligne existante
+                        await LigneDevis.update({
+                            description: ligne.description,
+                            prix_unitaire_ht: parseFloat(ligne.prix_unitaire_ht) || 0,
+                            quantite: parseInt(ligne.quantite) || 1,
+                            unite: ligne.unite || 'unité'
+                        }, {
+                            where: { id: ligne.id },
+                            transaction
+                        });
+                        newLineIds.push(ligne.id);
+                    } else {
+                        // Créer une nouvelle ligne
+                        const newLine = await LigneDevis.create({
+                            description: ligne.description,
+                            prix_unitaire_ht: parseFloat(ligne.prix_unitaire_ht) || 0,
+                            quantite: parseInt(ligne.quantite) || 1,
+                            unite: ligne.unite || 'unité',
+                            devis_id: devis.id
+                        }, { transaction });
+                        newLineIds.push(newLine.id);
+                    }
+                }
+
+                // Supprimer les lignes qui n'existent plus
+                const linesToDelete = existingLineIds.filter(id => !newLineIds.includes(id));
+                if (linesToDelete.length > 0) {
+                    await LigneDevis.destroy({
+                        where: {
+                            id: linesToDelete,
+                            devis_id: devis.id
+                        },
+                        transaction
+                    });
+                }
+            }
+
+            // Récupérer les lignes mises à jour
+            const updatedLignes = await LigneDevis.findAll({
                 where: { devis_id: devis.id },
                 transaction
             });
 
-            // Création des nouvelles lignes
-            const lignesDevis = await LigneDevis.bulkCreate(
-                lignes.map(ligne => ({
-                    description: ligne.description,
-                    prix_unitaire_ht: parseFloat(ligne.prix_unitaire_ht) || 0,
-                    quantite: parseInt(ligne.quantite) || 1,
-                    unite: ligne.unite || 'unité',
-                    devis_id: devis.id
-                })),
-                { transaction }
-            );
-
-            return { devis, lignesDevis };
+            return { devis, lignesDevis: updatedLignes };
         });
 
         res.json({
