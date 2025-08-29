@@ -213,26 +213,40 @@ const Devis = () => {
 
   const handleEditDevis = (devis) => {
     checkAuth();
+    console.log('Devis à éditer:', devis); // ← Ajoutez cette ligne
+  
     setCurrentDevis(devis);
     setFormData({
-        numero: devis.numero,
-        date_creation: devis.date_creation.split('T')[0],
-        date_validite: devis.date_validite?.split('T')[0] || '',
-        remise: devis.remise,
-        tva: devis.tva,
-        statut: devis.statut,
-        client_name: devis.client_name,
-        montant_ht: parseFloat(devis.montant_ht) || 0,
-        montant_ttc: parseFloat(devis.montant_ttc) || 0,
-        lignes: devis.lignes?.length > 0 ? devis.lignes : [{
-            description: '',
-            prix_unitaire_ht: 0,
-            quantite: 1,
-            unite: 'unité'
-        }]
+      numero: devis.numero,
+      date_creation: devis.date_creation.split('T')[0],
+      date_validite: devis.date_validite?.split('T')[0] || '',
+      remise: devis.remise,
+      tva: devis.tva,
+      statut: devis.statut,
+      client_name: devis.client_name,
+      montant_ht: parseFloat(devis.montant_ht) || 0,
+      montant_ttc: parseFloat(devis.montant_ttc) || 0,
+      lignes: devis.lignesDevis?.length > 0 ? devis.lignesDevis.map(line => ({
+          id: line.id,
+          description: line.description,
+          prix_unitaire_ht: line.prix_unitaire_ht,
+          quantite: line.quantite,
+          unite: line.unite || 'unité'
+      })) : devis.lignes?.length > 0 ? devis.lignes.map(line => ({
+          id: line.id,
+          description: line.description,
+          prix_unitaire_ht: line.prix_unitaire_ht,
+          quantite: line.quantite,
+          unite: line.unite || 'unité'
+      })) : [{
+          description: '',
+          prix_unitaire_ht: 0,
+          quantite: 1,
+          unite: 'unité'
+      }]
     });
     setShowModal(true);
-};
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -332,9 +346,10 @@ const Devis = () => {
         ...formData,
         remise: parseFloat(formData.remise) || 0,
         tva: parseFloat(formData.tva) || 20,
-        montant_ht: totals.montant_ht, // Ajouté
-        montant_ttc: totals.montant_ttc, // Ajouté
+        montant_ht: totals.montant_ht,
+        montant_ttc: totals.montant_ttc,
         lignes: formData.lignes.map(l => ({
+            id: l.id, // ← Inclure l'ID si disponible
             description: l.description,
             prix_unitaire_ht: parseFloat(l.prix_unitaire_ht) || 0,
             quantite: parseInt(l.quantite) || 1,
@@ -356,7 +371,7 @@ const Devis = () => {
     });
 
     return response;
-  };
+};
 
   // Gestion de la soumission du formulaire
   const handleSubmit = async (e) => {
