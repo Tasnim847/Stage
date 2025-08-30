@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import { FiEdit2, FiTrash2, FiLoader, FiPlus, FiSearch, FiDownload, FiEye, FiFileText, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import InvoicePDF from './InvoicePDF';
 import './comptable.css';
 
 const Factures = () => {
@@ -13,6 +14,7 @@ const Factures = () => {
     payees: 0,
     impayees: 0
   });
+  const [entreprise, setEntreprise] = useState(null);
   
   // States for pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -63,11 +65,30 @@ const Factures = () => {
         const data = result.data?.factures || result.data || [];
         setFactures(data);
         
+        // Récupérer les informations de l'entreprise si l'utilisateur est une entreprise
+        if (role === 'entreprise') {
+          try {
+            const entrepriseResponse = await fetch('http://localhost:5000/api/entreprise/mon-profil', {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (entrepriseResponse.ok) {
+              const entrepriseData = await entrepriseResponse.json();
+              setEntreprise(entrepriseData.data);
+            }
+          } catch (err) {
+            console.error('Error fetching entreprise data:', err);
+          }
+        }
+        
         // Calculate statistics
         setStats({
           total: data.length,
-          payees: data.filter(f => f.statut?.toLowerCase() === 'payé').length,
-          impayees: data.filter(f => f.statut?.toLowerCase() === 'impayé').length
+          payees: data.filter(f => f.statut_paiement?.toLowerCase() === 'payé').length,
+          impayees: data.filter(f => f.statut_paiement?.toLowerCase() === 'impayé').length
         });
       } catch (err) {
         console.error('Error fetchFactures:', err);
@@ -83,7 +104,7 @@ const Factures = () => {
   const filteredFactures = factures.filter(facture =>
     facture.client_name?.toLowerCase().includes(search.toLowerCase()) ||
     facture.numero?.toLowerCase().includes(search.toLowerCase()) ||
-    facture.statut?.toLowerCase().includes(search.toLowerCase())
+    facture.statut_paiement?.toLowerCase().includes(search.toLowerCase())
   );
 
   // Pagination logic
@@ -216,6 +237,7 @@ const Factures = () => {
                   <th>Client</th>
                   <th>Date</th>
                   <th>Amount</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -236,19 +258,16 @@ const Factures = () => {
                       </td>
                       <td>{formatDate(facture.date_emission)}</td>
                       <td className="amount-cell">{formatCurrency(facture.montant_ttc)}</td>
+                      <td>{getStatusBadge(facture.statut_paiement)}</td>
                       <td className="actions">
                         <button className="action-btn view" title="View">
                           <FiEye />
                         </button>
-                        <button className="action-btn download" title="Download">
-                          <FiDownload />
-                        </button>
-                        <button className="action-btn edit" title="Edit">
-                          <FiEdit2 />
-                        </button>
-                        <button className="action-btn delete" title="Delete">
-                          <FiTrash2 />
-                        </button>
+                        <InvoicePDF 
+                          facture={facture} 
+                          entreprise={entreprise} 
+                          onDownloadComplete={() => console.log('Téléchargement terminé')}
+                        />
                       </td>
                     </tr>
                   ))
