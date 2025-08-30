@@ -47,19 +47,19 @@ const EntrepriseList = () => {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || 'Erreur de récupération des entreprises');
+          throw new Error(errorData.message || 'Error fetching businesses');
         }
 
         const data = await response.json();
         setEntreprises(data);
       } catch (error) {
-        console.error("Erreur:", error);
+        console.error("Error:", error);
         setError(error.message);
         
-        if (error.message.includes('authentification') || error.message.includes('token')) {
+        if (error.message.includes('authentication') || error.message.includes('token')) {
           localStorage.clear();
           sessionStorage.clear();
-          navigate('/login', { state: { error: 'Session expirée. Veuillez vous reconnecter.' } });
+          navigate('/login', { state: { error: 'Session expired. Please log in again.' } });
         }
       } finally {
         setLoading(false);
@@ -96,23 +96,23 @@ const EntrepriseList = () => {
     const nifRegex = /^[A-Za-z0-9]{8,15}$/;
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 
-    if (!newEntreprise.nom.trim()) errors.nom = 'Le nom est requis';
+    if (!newEntreprise.nom.trim()) errors.nom = 'Name is required';
     if (!newEntreprise.email) {
-      errors.email = 'Email requis';
+      errors.email = 'Email required';
     } else if (!emailRegex.test(newEntreprise.email)) {
-      errors.email = 'Email invalide';
+      errors.email = 'Invalid email';
     }
-    if (!newEntreprise.adresse.trim()) errors.adresse = 'Adresse requise';
+    if (!newEntreprise.adresse.trim()) errors.adresse = 'Address required';
     if (!newEntreprise.numeroIdentificationFiscale) {
-      errors.numeroIdentificationFiscale = 'NIF requis';
+      errors.numeroIdentificationFiscale = 'NIF required';
     } else if (!nifRegex.test(newEntreprise.numeroIdentificationFiscale)) {
-      errors.numeroIdentificationFiscale = 'Format NIF invalide';
+      errors.numeroIdentificationFiscale = 'Invalid NIF format';
     }
     
     if (!editingEntreprise && !newEntreprise.motDePasse) {
-      errors.motDePasse = 'Mot de passe requis';
+      errors.motDePasse = 'Password required';
     } else if (newEntreprise.motDePasse && !passwordRegex.test(newEntreprise.motDePasse)) {
-      errors.motDePasse = '8 caractères minimum avec chiffres et lettres';
+      errors.motDePasse = 'Minimum 8 characters with numbers and letters';
     }
 
     setFormErrors(errors);
@@ -127,7 +127,7 @@ const EntrepriseList = () => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (!token) {
-        toast.error('Session expirée, veuillez vous reconnecter');
+        toast.error('Session expired, please log in again');
         navigate('/login');
         return;
       }
@@ -155,13 +155,13 @@ const EntrepriseList = () => {
       });
 
       if (response.status === 404) {
-        throw new Error('Entreprise non trouvée (404) - Actualisez la liste');
+        throw new Error('Business not found (404) - Refresh the list');
       }
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || `Erreur ${response.status}`);
+        throw new Error(data.message || `Error ${response.status}`);
       }
 
       setEntreprises(prev => 
@@ -172,19 +172,19 @@ const EntrepriseList = () => {
 
       toast.success(
         editingEntreprise 
-          ? 'Entreprise modifiée avec succès!' 
-          : 'Entreprise créée avec succès!',
+          ? 'Business updated successfully!' 
+          : 'Business created successfully!',
         { position: "top-center", autoClose: 3000 }
       );
 
       setShowAddModal(false);
       resetForm();
     } catch (error) {
-      console.error("Erreur:", error);
+      console.error("Error:", error);
       toast.error(
         error.message.includes('404') 
-          ? 'Entreprise introuvable - Actualisez la liste et réessayez'
-          : error.message || 'Erreur lors de la requête',
+          ? 'Business not found - Refresh the list and try again'
+          : error.message || 'Request error',
         { position: "top-center" }
       );
     } finally {
@@ -220,7 +220,7 @@ const EntrepriseList = () => {
   };
 
   const handleDelete = async (entrepriseId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette entreprise ?')) return;
+    if (!window.confirm('Are you sure you want to delete this business?')) return;
     
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
@@ -232,17 +232,17 @@ const EntrepriseList = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la suppression');
+        throw new Error('Error during deletion');
       }
 
       setEntreprises(prev => prev.filter(e => e.id !== entrepriseId));
-      toast.success('Entreprise supprimée avec succès', {
+      toast.success('Business deleted successfully', {
         position: "top-center",
         autoClose: 3000,
       });
     } catch (error) {
-      console.error("Erreur:", error);
-      toast.error(error.message || 'Erreur lors de la suppression', {
+      console.error("Error:", error);
+      toast.error(error.message || 'Error during deletion', {
         position: "top-center",
       });
     }
@@ -253,7 +253,7 @@ const EntrepriseList = () => {
     setShowDetailModal(true);
   };
 
-  // Fonction pour générer des couleurs uniques basées sur le nom
+  // Function to generate unique colors based on name
   const getColorFromName = (name) => {
     if (!name) return '#72ac8d';
     const colors = ['#72ac8d', '#4c9f70', '#3d8b63', '#2e7656', '#1f6249'];
@@ -272,7 +272,7 @@ const EntrepriseList = () => {
         background: '#f8fafc'
       }}>
         <FiLoader className="spinner" size={32} style={{ animation: 'spin 1s linear infinite', color: '#72ac8d' }} />
-        <p style={{ marginTop: '1rem', color: '#4a5568' }}>Chargement en cours...</p>
+        <p style={{ marginTop: '1rem', color: '#4a5568' }}>Loading...</p>
       </div>
     );
   }
@@ -297,7 +297,7 @@ const EntrepriseList = () => {
           maxWidth: '500px',
           width: '100%'
         }}>
-          <h3 style={{ color: '#f72585', marginBottom: '1rem' }}>Erreur</h3>
+          <h3 style={{ color: '#f72585', marginBottom: '1rem' }}>Error</h3>
           <p style={{ color: '#4a5568', marginBottom: '2rem' }}>{error}</p>
           <button 
             onClick={() => {
@@ -320,7 +320,7 @@ const EntrepriseList = () => {
               }
             }}
           >
-            Se reconnecter
+            Log in again
           </button>
         </div>
       </div>
@@ -356,10 +356,10 @@ const EntrepriseList = () => {
             alignItems: 'center',
             gap: '0.5rem'
           }}>
-            <FiUser size={24} /> Gestion des Entreprises
+            <FiUser size={24} /> Business Management
           </h1>
           <p style={{ margin: '0.25rem 0 0', color: '#718096', fontSize: '0.95rem' }}>
-            {entreprises.length} entreprise{entreprises.length !== 1 ? 's' : ''} enregistrée{entreprises.length !== 1 ? 's' : ''}
+            {entreprises.length} business{entreprises.length !== 1 ? 'es' : ''} registered
           </p>
         </div>
         
@@ -376,7 +376,7 @@ const EntrepriseList = () => {
             }} />
             <input
               type="text"
-              placeholder="Rechercher..."
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -415,12 +415,12 @@ const EntrepriseList = () => {
               }
             }}
           >
-            <FiPlus /> Ajouter
+            <FiPlus /> Add
           </button>
         </div>
       </div>
 
-      {/* Statistiques */}
+      {/* Statistics */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
@@ -457,7 +457,7 @@ const EntrepriseList = () => {
             }}>
               <FiUser size={20} />
             </div>
-            <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>Total Entreprises</span>
+            <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>Total Businesses</span>
           </div>
           <p style={{ 
             margin: 0, 
@@ -499,7 +499,7 @@ const EntrepriseList = () => {
             }}>
               <FiDollarSign size={20} />
             </div>
-            <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>Entreprises Actives</span>
+            <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>Active Businesses</span>
           </div>
           <p style={{ 
             margin: 0, 
@@ -512,7 +512,7 @@ const EntrepriseList = () => {
         </div>
       </div>
 
-      {/* Liste des entreprises */}
+      {/* Business list */}
       {filteredEntreprises.length === 0 ? (
         <div style={{ 
           textAlign: 'center', 
@@ -526,7 +526,7 @@ const EntrepriseList = () => {
             marginBottom: '1.5rem',
             fontSize: '1.1rem'
           }}>
-            {searchTerm ? `Aucune entreprise trouvée pour "${searchTerm}"` : 'Aucune entreprise enregistrée'}
+            {searchTerm ? `No business found for "${searchTerm}"` : 'No business registered'}
           </p>
           {searchTerm ? (
             <button 
@@ -546,7 +546,7 @@ const EntrepriseList = () => {
                 }
               }}
             >
-              Effacer la recherche
+              Clear search
             </button>
           ) : (
             <button 
@@ -570,7 +570,7 @@ const EntrepriseList = () => {
                 }
               }}
             >
-              <FiPlus /> Ajouter une entreprise
+              <FiPlus /> Add a business
             </button>
           )}
         </div>
@@ -594,7 +594,7 @@ const EntrepriseList = () => {
                   transform: 'translateY(-5px)',
                   boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)'
                 }
-              }}
+            }}
             >
               <div style={{ 
                 height: '6px',
@@ -732,7 +732,7 @@ const EntrepriseList = () => {
                       marginBottom: '0.25rem',
                       display: 'block'
                     }}>
-                      Adresse
+                      Address
                     </span>
                     <span style={{ 
                       fontSize: '0.95rem',
@@ -753,7 +753,7 @@ const EntrepriseList = () => {
                       marginBottom: '0.25rem',
                       display: 'block'
                     }}>
-                      Téléphone
+                      Phone
                     </span>
                     <span style={{ 
                       fontSize: '0.95rem',
@@ -773,7 +773,7 @@ const EntrepriseList = () => {
                       marginBottom: '0.25rem',
                       display: 'block'
                     }}>
-                      Statut
+                      Status
                     </span>
                     <span style={{ 
                       fontSize: '0.95rem',
@@ -784,7 +784,7 @@ const EntrepriseList = () => {
                       fontWeight: '500',
                       display: 'inline-block'
                     }}>
-                      Actif
+                      Active
                     </span>
                   </div>
                 </div>
@@ -802,7 +802,7 @@ const EntrepriseList = () => {
                   fontSize: '0.8rem',
                   color: '#718096'
                 }}>
-                  Créé le: {new Date(entreprise.createdAt).toLocaleDateString('fr-FR', {
+                  Created: {new Date(entreprise.createdAt).toLocaleDateString('fr-FR', {
                     day: '2-digit',
                     month: 'short',
                     year: 'numeric'
@@ -829,7 +829,7 @@ const EntrepriseList = () => {
                     }
                   }}
                 >
-                  <FiExternalLink /> Détails
+                  <FiExternalLink /> Details
                 </button>
               </div>
             </div>
@@ -837,7 +837,7 @@ const EntrepriseList = () => {
         </div>
       )}
 
-      {/* Modal d'ajout/modification */}
+      {/* Add/Edit modal */}
       {showAddModal && (
         <div style={{
           position: 'fixed',
@@ -869,7 +869,7 @@ const EntrepriseList = () => {
               alignItems: 'center'
             }}>
               <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600', color: '#2d3748' }}>
-                {editingEntreprise ? 'Modifier Entreprise' : 'Nouvelle Entreprise'}
+                {editingEntreprise ? 'Edit Business' : 'New Business'}
               </h3>
               <button
                 style={{
@@ -903,7 +903,7 @@ const EntrepriseList = () => {
                       fontWeight: '500',
                       color: '#4a5568'
                     }}>
-                      {field === 'motDePasse' ? 'Mot de passe' : 
+                      {field === 'motDePasse' ? 'Password' : 
                        field === 'numeroIdentificationFiscale' ? 'NIF' :
                        field.charAt(0).toUpperCase() + field.slice(1)}
                       {['nom', 'email', 'adresse', 'numeroIdentificationFiscale'].includes(field) && (
@@ -934,8 +934,8 @@ const EntrepriseList = () => {
                       }}
                       disabled={isSubmitting}
                       placeholder={
-                        field === 'motDePasse' ? 'Laisser vide pour ne pas modifier' :
-                        field === 'telephone' ? 'Optionnel' : ''
+                        field === 'motDePasse' ? 'Leave empty to not modify' :
+                        field === 'telephone' ? 'Optional' : ''
                       }
                     />
                     {formErrors[field] && (
@@ -983,7 +983,7 @@ const EntrepriseList = () => {
                 onClick={() => setShowAddModal(false)}
                 disabled={isSubmitting}
               >
-                Annuler
+                Cancel
               </button>
               <button
                 type="submit"
@@ -1014,16 +1014,16 @@ const EntrepriseList = () => {
                 {isSubmitting ? (
                   <>
                     <FiLoader className="spinner" size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                    {editingEntreprise ? 'Enregistrement...' : 'Création...'}
+                    {editingEntreprise ? 'Saving...' : 'Creating...'}
                   </>
-                ) : editingEntreprise ? 'Enregistrer' : 'Créer'}
+                ) : editingEntreprise ? 'Save' : 'Create'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de détails */}
+      {/* Details modal */}
       {showDetailModal && selectedEntreprise && (
         <div style={{
           position: 'fixed',
@@ -1055,7 +1055,7 @@ const EntrepriseList = () => {
               alignItems: 'center'
             }}>
               <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600', color: '#2d3748' }}>
-                Détails de l'entreprise
+                Business Details
               </h3>
               <button
                 style={{
@@ -1155,7 +1155,7 @@ const EntrepriseList = () => {
                     marginBottom: '0.5rem',
                     display: 'block'
                   }}>
-                    Adresse
+                    Address
                   </span>
                   <span style={{ 
                     fontSize: '1rem',
@@ -1176,7 +1176,7 @@ const EntrepriseList = () => {
                     marginBottom: '0.5rem',
                     display: 'block'
                   }}>
-                    Téléphone
+                    Phone
                   </span>
                   <span style={{ 
                     fontSize: '1rem',
@@ -1196,7 +1196,7 @@ const EntrepriseList = () => {
                     marginBottom: '0.5rem',
                     display: 'block'
                   }}>
-                    Statut
+                    Status
                   </span>
                   <span style={{ 
                     fontSize: '1rem',
@@ -1207,7 +1207,7 @@ const EntrepriseList = () => {
                     fontWeight: '500',
                     display: 'inline-block'
                   }}>
-                    Actif
+                    Active
                   </span>
                 </div>
                 
@@ -1220,7 +1220,7 @@ const EntrepriseList = () => {
                     marginBottom: '0.5rem',
                     display: 'block'
                   }}>
-                    Date de création
+                    Creation Date
                   </span>
                   <span style={{ 
                     fontSize: '1rem',
@@ -1263,7 +1263,7 @@ const EntrepriseList = () => {
                 }}
                 onClick={() => setShowDetailModal(false)}
               >
-                Fermer
+                Close
               </button>
             </div>
           </div>

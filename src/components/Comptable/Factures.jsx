@@ -14,9 +14,9 @@ const Factures = () => {
     impayees: 0
   });
   
-  // États pour la pagination
+  // States for pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(8); // 8 lignes par page
+  const [itemsPerPage] = useState(8); // 8 rows per page
 
   // Token handling
   const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
@@ -34,7 +34,7 @@ const Factures = () => {
   useEffect(() => {
     if (!token || !role) {
       setLoading(false);
-      setError('Utilisateur non authentifié');
+      setError('User not authenticated');
       return;
     }
 
@@ -56,21 +56,21 @@ const Factures = () => {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || 'Erreur lors du chargement des factures');
+          throw new Error(errorData.message || 'Error loading invoices');
         }
 
         const result = await response.json();
         const data = result.data?.factures || result.data || [];
         setFactures(data);
         
-        // Calcul des statistiques
+        // Calculate statistics
         setStats({
           total: data.length,
           payees: data.filter(f => f.statut?.toLowerCase() === 'payé').length,
           impayees: data.filter(f => f.statut?.toLowerCase() === 'impayé').length
         });
       } catch (err) {
-        console.error('Erreur fetchFactures:', err);
+        console.error('Error fetchFactures:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -129,13 +129,13 @@ const Factures = () => {
   const getStatusBadge = (status) => {
     switch (status?.toLowerCase()) {
       case 'payé':
-        return <span className="status-badge payé">Payé</span>;
+        return <span className="status-badge payé">Paid</span>;
       case 'impayé':
-        return <span className="status-badge impayé">Impayé</span>;
+        return <span className="status-badge impayé">Unpaid</span>;
       case 'partiel':
-        return <span className="status-badge partiel">Paiement partiel</span>;
+        return <span className="status-badge partiel">Partial payment</span>;
       default:
-        return <span className="status-badge">Inconnu</span>;
+        return <span className="status-badge">Unknown</span>;
     }
   };
 
@@ -148,9 +148,9 @@ const Factures = () => {
     <div className="factures-container">
       <div className="factures-header">
         <div>
-          <h1>Gestion des Factures</h1>
+          <h1>Invoice Management</h1>
           <p className="factures-subtitle">
-            {stats.total} facture{stats.total !== 1 ? 's' : ''} au total
+            {stats.total} invoice{stats.total !== 1 ? 's' : ''} total
           </p>
         </div>
         <div className="factures-controls">
@@ -158,7 +158,7 @@ const Factures = () => {
             <FiSearch className="search-icon" />
             <input
               type="text"
-              placeholder="Rechercher par client, numéro ou statut..."
+              placeholder="Search by client, number or status..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -166,7 +166,7 @@ const Factures = () => {
         </div>
       </div>
 
-      {/* Statistiques */}
+      {/* Statistics */}
       <div className="stats-container">
         <div className="stat-card total">
           <div className="stat-icon">
@@ -182,7 +182,7 @@ const Factures = () => {
             <FiFileText />
           </div>
           <div className="stat-content">
-            <span className="stat-label">Payées</span>
+            <span className="stat-label">Paid</span>
             <span className="stat-value">{stats.payees}</span>
           </div>
         </div>
@@ -191,7 +191,7 @@ const Factures = () => {
             <FiFileText />
           </div>
           <div className="stat-content">
-            <span className="stat-label">Impayées</span>
+            <span className="stat-label">Unpaid</span>
             <span className="stat-value">{stats.impayees}</span>
           </div>
         </div>
@@ -200,7 +200,7 @@ const Factures = () => {
       {loading ? (
         <div className="loading">
           <FiLoader className="spin" size={24} />
-          <p>Chargement des factures...</p>
+          <p>Loading invoices...</p>
         </div>
       ) : error ? (
         <div className="error">
@@ -212,10 +212,10 @@ const Factures = () => {
             <table className="factures-table">
               <thead>
                 <tr>
-                  <th>Numéro</th>
+                  <th>Number</th>
                   <th>Client</th>
                   <th>Date</th>
-                  <th>Montant</th>
+                  <th>Amount</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -237,16 +237,16 @@ const Factures = () => {
                       <td>{formatDate(facture.date_emission)}</td>
                       <td className="amount-cell">{formatCurrency(facture.montant_ttc)}</td>
                       <td className="actions">
-                        <button className="action-btn view" title="Voir">
+                        <button className="action-btn view" title="View">
                           <FiEye />
                         </button>
-                        <button className="action-btn download" title="Télécharger">
+                        <button className="action-btn download" title="Download">
                           <FiDownload />
                         </button>
-                        <button className="action-btn edit" title="Modifier">
+                        <button className="action-btn edit" title="Edit">
                           <FiEdit2 />
                         </button>
-                        <button className="action-btn delete" title="Supprimer">
+                        <button className="action-btn delete" title="Delete">
                           <FiTrash2 />
                         </button>
                       </td>
@@ -257,13 +257,13 @@ const Factures = () => {
                     <td colSpan="6" className="no-results">
                       <div className="empty-state">
                         <FiFileText size={48} />
-                        <p>Aucune facture trouvée</p>
+                        <p>No invoices found</p>
                         {search && (
                           <button 
                             className="clear-search" 
                             onClick={() => setSearch('')}
                           >
-                            Effacer la recherche
+                            Clear search
                           </button>
                         )}
                       </div>

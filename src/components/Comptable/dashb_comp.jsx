@@ -17,7 +17,7 @@ const DashbComp = () => {
         const userData = JSON.parse(localStorage.getItem('userData') || sessionStorage.getItem('userData') || 'null');
         
         if (!token || !userData || userData.role !== 'comptable') {
-          console.warn('[DASHB_COMP] Redirection vers /login - Authentification invalide');
+          console.warn('[DASHB_COMP] Redirecting to /login - Invalid authentication');
           navigate('/login');
           return;
         }
@@ -30,13 +30,13 @@ const DashbComp = () => {
         });
 
         if (!response.data.success) {
-          throw new Error(response.data.message || 'Erreur de chargement des données');
+          throw new Error(response.data.message || 'Error loading data');
         }
         
         setData(response.data.data);
         setError(null);
       } catch (err) {
-        console.error('[DASHB_COMP] Erreur:', err);
+        console.error('[DASHB_COMP] Error:', err);
         setError(err.response?.data?.message || err.message);
         
         if (err.response?.status === 401 || err.response?.status === 403) {
@@ -54,15 +54,15 @@ const DashbComp = () => {
     fetchDashboardData();
 
     return () => {
-      console.log('[DASHB_COMP] Nettoyage de l\'effet');
+      console.log('[DASHB_COMP] Cleaning up effect');
     };
   }, [navigate]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('fr-FR', { 
       style: 'currency', 
-      currency: 'TND',  // TND pour Dinar Tunisien
-      minimumFractionDigits: 3  // Format standard en Tunisie (3 décimales)
+      currency: 'TND',  // TND for Tunisian Dinar
+      minimumFractionDigits: 3  // Standard format in Tunisia (3 decimals)
     }).format(value);
   };
 
@@ -71,7 +71,7 @@ const DashbComp = () => {
       <div className="dashboard-comptable">
         <div className="loading-container">
           <div className="spinner">⏳</div>
-          <p>Chargement en cours...</p>
+          <p>Loading...</p>
         </div>
       </div>
     );
@@ -83,7 +83,7 @@ const DashbComp = () => {
         <div className="error-container">
           <p className="error-message">{error}</p>
           <button className="error-button" onClick={() => window.location.reload()}>
-            Réessayer
+            Try Again
           </button>
         </div>
       </div>
@@ -94,9 +94,9 @@ const DashbComp = () => {
     return (
       <div className="dashboard-comptable">
         <div className="empty-state">
-          <p>Aucune donnée disponible</p>
+          <p>No data available</p>
           <button className="error-button" onClick={() => window.location.reload()}>
-            Actualiser
+            Refresh
           </button>
         </div>
       </div>
@@ -108,15 +108,15 @@ const DashbComp = () => {
       <header className="dashboard-header">
         <h1>
           <span className="header-icon">📊</span>
-          Tableau de Bord Comptable
+          Accountant Dashboard
         </h1>
         <div className="header-actions">
           <div className="search-container">
             <span className="search-icon">🔍</span>
-            <input type="text" placeholder="Rechercher..." />
+            <input type="text" placeholder="Search..." />
           </div>
           <button className="refresh-button">
-            <span>🔄</span> Actualiser
+            <span>🔄</span> Refresh
           </button>
         </div>
       </header>
@@ -127,7 +127,7 @@ const DashbComp = () => {
           <div className="card-header">
             <div className="company-logo">📄</div>
             <div className="company-info">
-              <h3>Total Factures</h3>
+              <h3>Total Invoices</h3>
               <p>{data.totals?.totalFactures || 0}</p>
             </div>
           </div>
@@ -138,7 +138,7 @@ const DashbComp = () => {
           <div className="card-header">
             <div className="company-logo">DT</div>
             <div className="company-info">
-              <h3>Montant TTC</h3>
+              <h3>Amount TTC</h3>
               <p>{formatCurrency(data.totals?.totalTTC || 0)}</p>
             </div>
           </div>
@@ -149,7 +149,7 @@ const DashbComp = () => {
           <div className="card-header">
             <div className="company-logo">DT</div>
             <div className="company-info">
-              <h3>Montant HT</h3>
+              <h3>Amount HT</h3>
               <p>{formatCurrency(data.totals?.totalHT || 0)}</p>
             </div>
           </div>
@@ -160,7 +160,7 @@ const DashbComp = () => {
         <div className="chart-section">
           <h2>
             <span className="section-icon">📈</span>
-            Répartition par Entreprise
+            Distribution by Business
           </h2>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart 
@@ -179,7 +179,7 @@ const DashbComp = () => {
               />
               <Tooltip 
                 formatter={(value) => formatCurrency(value)}
-                labelFormatter={(value) => `Entreprise: ${value}`}
+                labelFormatter={(value) => `Business: ${value}`}
                 contentStyle={{
                   background: 'white',
                   border: 'none',
@@ -195,13 +195,13 @@ const DashbComp = () => {
               <Bar 
                 dataKey="montantTTC" 
                 fill="#72ac8d" 
-                name="Montant TTC" 
+                name="Amount TTC" 
                 radius={[4, 4, 0, 0]}
               />
               <Bar 
                 dataKey="montantHT" 
                 fill="#b2d2c1" 
-                name="Montant HT" 
+                name="Amount HT" 
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
@@ -211,24 +211,24 @@ const DashbComp = () => {
         <div className="factures-section">
           <h2>
             <span className="section-icon">🧾</span>
-            Dernières Factures
+            Recent Invoices
           </h2>
           {data.factures?.length > 0 ? (
             <div className="factures-table-container">
               <table className="factures-table">
                 <thead>
                   <tr>
-                    <th>N° Facture</th>
-                    <th>Entreprise</th>
+                    <th>Invoice No.</th>
+                    <th>Business</th>
                     <th>Date</th>
-                    <th>Montant TTC</th>
+                    <th>Amount TTC</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.factures.map((facture) => (
                     <tr key={facture.id}>
                       <td>{facture.numero || 'N/A'}</td>
-                      <td>{facture.entrepriseFacturee?.nom || 'Inconnu'}</td>
+                      <td>{facture.entrepriseFacturee?.nom || 'Unknown'}</td>
                       <td>{new Date(facture.date_emission).toLocaleDateString('fr-FR')}</td>
                       <td className="currency">{formatCurrency(facture.montant_ttc)}</td>
                     </tr>
@@ -238,7 +238,7 @@ const DashbComp = () => {
             </div>
           ) : (
             <div className="empty-state">
-              <p>Aucune facture disponible</p>
+              <p>No invoices available</p>
             </div>
           )}
         </div>

@@ -139,9 +139,9 @@ const Notifications = () => {
     const date = new Date(dateString);
     const diffInMinutes = Math.floor((now - date) / (1000 * 60));
     
-    if (diffInMinutes < 1) return 'À l\'instant';
-    if (diffInMinutes < 60) return `Il y a ${diffInMinutes} min`;
-    if (diffInMinutes < 1440) return `Il y a ${Math.floor(diffInMinutes / 60)} h`;
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} h ago`;
     return date.toLocaleDateString('fr-FR');
   };
 
@@ -162,7 +162,7 @@ const Notifications = () => {
       <div className="notifications-container">
         <div className="loading-spinner">
           <div className="spin"></div>
-          <p>Chargement des notifications...</p>
+          <p>Loading notifications...</p>
         </div>
       </div>
     );
@@ -174,7 +174,7 @@ const Notifications = () => {
         <div className="error-message">
           <p>{error}</p>
           <button className="error-button" onClick={() => window.location.reload()}>
-            Réessayer
+            Try Again
           </button>
         </div>
       </div>
@@ -191,7 +191,7 @@ const Notifications = () => {
         </div>
         {unreadCount > 0 && (
           <button onClick={markAllAsRead} className="mark-all-btn">
-            <FiCheck /> Tout marquer comme lu
+            <FiCheck /> Mark all as read
           </button>
         )}
       </div>
@@ -202,8 +202,8 @@ const Notifications = () => {
             <div className="empty-icon">
               <FiBell />
             </div>
-            <h3>Aucune notification</h3>
-            <p>Vous n'avez aucune notification pour le moment</p>
+            <h3>No notifications</h3>
+            <p>You don't have any notifications at the moment</p>
           </div>
         ) : (
           <div className="notifications-grid">
@@ -222,7 +222,7 @@ const Notifications = () => {
                   <p className="notification-message">{notification.message}</p>
                   <div className="notification-footer">
                     <span className="notification-sender">
-                      {notification.comptable ? `${notification.comptable.prenom} ${notification.comptable.nom}` : 'Système'}
+                      {notification.comptable ? `${notification.comptable.prenom} ${notification.comptable.nom}` : 'System'}
                     </span>
                     <FiChevronRight className="notification-arrow" />
                   </div>
