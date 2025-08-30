@@ -6,16 +6,16 @@ const DashboardHome = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   const greetings = [
-    "Bonjour ! Comment puis-je vous aider aujourd'hui ?",
-    "Bon retour parmi nous !",
-    "Salutations ! Je suis là pour vous assister.",
-    "Ravi de vous revoir !",
-    "Hello ! Prêt à explorer de nouvelles idées ?",
-    "Bienvenue ! Comment s'est passée votre journée ?",
-    "Enchanté de vous revoir !",
-    "Content de vous voir de retour !",
-    "Je suis à votre service !",
-    "Comment puis-je vous aider aujourd'hui ?"
+    "Hello! How can I help you today?",
+    "Welcome back among us!",
+    "Greetings! I'm here to assist you.",
+    "Glad to see you again!",
+    "Hello! Ready to explore new ideas?",
+    "Welcome! How was your day?",
+    "Pleased to see you again!",
+    "Happy to see you back!",
+    "I'm at your service!",
+    "How can I help you today?"
   ];
 
   const addMessage = () => {

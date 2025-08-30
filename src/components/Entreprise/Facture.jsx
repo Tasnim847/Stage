@@ -28,7 +28,7 @@ const Facture = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const modalBodyRef = useRef(null);
 
-  // Récupération du contexte
+  // Get context
   const context = useOutletContext();
   const { darkMode } = context || {};
   
@@ -36,7 +36,7 @@ const Facture = () => {
     return (
       <div className={`loading-container ${darkMode ? 'dark' : ''}`}>
         <div className="spinner"></div>
-        <p>Chargement des données utilisateur...</p>
+        <p>Loading user data...</p>
       </div>
     );
   }
@@ -73,11 +73,11 @@ const Facture = () => {
           totalItems: response.data.data.pagination.totalItems
         });
       } else {
-        throw new Error(response.data?.message || "Données invalides reçues du serveur");
+        throw new Error(response.data?.message || "Invalid data received from server");
       }
     } catch (err) {
-      console.error('Erreur:', err);
-      setError(err.response?.data?.message || err.message || "Erreur lors du chargement des factures");
+      console.error('Error:', err);
+      setError(err.response?.data?.message || err.message || "Error loading invoices");
       
       if (err.response?.status === 401) {
         localStorage.removeItem('authToken');
@@ -108,14 +108,14 @@ const Facture = () => {
         setSelectedFacture(factureData);
         setShowDetails(true);
         
-        // Générer des insights IA basés sur les données de la facture
+        // Generate AI insights based on invoice data
         generateAiInsights(factureData);
       } else {
-        throw new Error(response.data?.message || "Données invalides reçues du serveur");
+        throw new Error(response.data?.message || "Invalid data received from server");
       }
     } catch (err) {
-      console.error('Erreur:', err);
-      setError(err.response?.data?.message || err.message || "Erreur lors du chargement des détails de la facture");
+      console.error('Error:', err);
+      setError(err.response?.data?.message || err.message || "Error loading invoice details");
     }
   };
 
@@ -129,7 +129,7 @@ const Facture = () => {
 
       setLoading(true);
     
-      // Essayer d'abord l'endpoint spécifique pour le PDF
+      // First try the specific endpoint for PDF
       try {
         const response = await axios.get(`/api/factures/${factureId}/pdf`, {
           headers: {
@@ -138,14 +138,14 @@ const Facture = () => {
           responseType: 'blob'
         });
       
-        // Vérifier si c'est bien un PDF
+        // Check if it's really a PDF
         if (response.headers['content-type'] === 'application/pdf') {
           const blob = new Blob([response.data], { type: 'application/pdf' });
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
         
-          // Nom du fichier avec le numéro de facture
+          // File name with invoice number
           const facture = factures.find(f => f.id === factureId);
           const fileName = `facture-${facture?.numero || factureId}.pdf`;
           link.setAttribute('download', fileName);
@@ -153,16 +153,16 @@ const Facture = () => {
           document.body.appendChild(link);
           link.click();
         
-          // Nettoyer
+          // Clean up
           link.remove();
           window.URL.revokeObjectURL(url);
           return;
         }
       } catch (pdfError) {
-        console.log('Endpoint PDF spécifique non disponible, génération côté client...');
+        console.log('Specific PDF endpoint not available, client-side generation...');
       }
     
-      // Si l'endpoint PDF n'est pas disponible, récupérer les données et générer le PDF côté client
+      // If PDF endpoint is not available, get data and generate PDF client-side
       try {
         const response = await axios.get(`/api/factures/${factureId}`, {
           headers: {
@@ -174,26 +174,26 @@ const Facture = () => {
           const factureData = response.data.data;
           await generateAndDownloadPDF(factureData, factureId);
         } else {
-          throw new Error("Impossible de récupérer les données de la facture");
+          throw new Error("Unable to retrieve invoice data");
         }
       } catch (dataError) {
-        console.error('Erreur récupération données facture:', dataError);
-        setError("Erreur lors de la récupération des données de la facture");
+        console.error('Error retrieving invoice data:', dataError);
+        setError("Error retrieving invoice data");
       }
     
     } catch (err) {
-      console.error('Erreur lors du téléchargement:', err);
-      setError(err.response?.data?.message || err.message || "Erreur lors du téléchargement du PDF");
+      console.error('Download error:', err);
+      setError(err.response?.data?.message || err.message || "Error downloading PDF");
     } finally {
       setLoading(false);
     }
   };
 
-  // Fonction pour générer et télécharger un vrai PDF
+  // Function to generate and download a real PDF
   const generateAndDownloadPDF = async (factureData, factureId) => {
     const facture = factureData;
   
-    // Calculer les totaux si nécessaire
+    // Calculate totals if necessary
     const montantHT = facture.montant_ht || facture.totals?.montantHT || 
       (facture.lignesFacture ? facture.lignesFacture.reduce((sum, ligne) => 
       sum + ((ligne.prix_unitaire_ht || 0) * (ligne.quantite || 0)), 0) : 0);
@@ -202,67 +202,67 @@ const Facture = () => {
     const montantTTC = facture.montant_ttc || facture.totals?.montantTTC || montantHT + montantTVA;
 
     try {
-      // Importer jsPDF
+      // Import jsPDF
       const { jsPDF } = await import('jspdf');
     
-      // Créer un nouveau document PDF
+      // Create a new PDF document
       const doc = new jsPDF();
     
-      // Ajouter le logo ou titre
+      // Add logo or title
       doc.setFontSize(20);
       doc.setTextColor(40, 40, 40);
-      doc.text('FACTURE', 105, 20, { align: 'center' });
+      doc.text('INVOICE', 105, 20, { align: 'center' });
     
       doc.setFontSize(14);
-      doc.text(`N° ${facture.numero || factureId}`, 105, 30, { align: 'center' });
+      doc.text(`No. ${facture.numero || factureId}`, 105, 30, { align: 'center' });
     
       doc.setFontSize(10);
-      doc.text(`Date d'émission: ${formatDate(facture.date_emission)}`, 105, 40, { align: 'center' });
+      doc.text(`Issue date: ${formatDate(facture.date_emission)}`, 105, 40, { align: 'center' });
     
-      // Informations de l'entreprise
+      // Company information
       doc.setFontSize(12);
       doc.setTextColor(60, 60, 60);
-      doc.text('ÉMETTEUR', 20, 60);
+      doc.text('ISSUER', 20, 60);
     
       doc.setFontSize(10);
       if (facture.entreprise) {
-        doc.text(facture.entreprise.nom || 'Non spécifié', 20, 70);
+        doc.text(facture.entreprise.nom || 'Not specified', 20, 70);
         doc.text(facture.entreprise.adresse || '', 20, 80);
-        doc.text(`Tél: ${facture.entreprise.telephone || ''}`, 20, 90);
+        doc.text(`Tel: ${facture.entreprise.telephone || ''}`, 20, 90);
         doc.text(`Email: ${facture.entreprise.email || ''}`, 20, 100);
       }
     
-      // Informations du client
+      // Client information
       doc.setFontSize(12);
       doc.text('CLIENT', 140, 60);
     
       doc.setFontSize(10);
-      doc.text(facture.client_name || 'Non spécifié', 140, 70);
+      doc.text(facture.client_name || 'Not specified', 140, 70);
     
-      // Ligne séparatrice
+      // Separator line
       doc.setDrawColor(200, 200, 200);
       doc.line(20, 110, 190, 110);
     
-      // Détails des articles
+      // Item details
       doc.setFontSize(12);
-      doc.text('DÉTAILS DE LA FACTURE', 20, 125);
+      doc.text('INVOICE DETAILS', 20, 125);
     
-      // Préparer les données du tableau - version simple sans autoTable
+      // Prepare table data - simple version without autoTable
       let yPosition = 140;
     
-      // En-tête du tableau
+      // Table header
       doc.setFillColor(44, 62, 80);
       doc.setTextColor(255, 255, 255);
       doc.setFont(undefined, 'bold');
       doc.rect(20, yPosition, 170, 10, 'F');
       doc.text('Description', 25, yPosition + 7);
-      doc.text('Quantité', 100, yPosition + 7);
-      doc.text('Prix HT', 130, yPosition + 7);
+      doc.text('Quantity', 100, yPosition + 7);
+      doc.text('Price HT', 130, yPosition + 7);
       doc.text('Total HT', 160, yPosition + 7);
     
       yPosition += 12;
     
-      // Données du tableau
+      // Table data
       doc.setTextColor(0, 0, 0);
       doc.setFont(undefined, 'normal');
     
@@ -273,40 +273,40 @@ const Facture = () => {
             yPosition = 20;
           }
         
-        const description = ligne.description || 'Article sans description';
-        const quantite = `${ligne.quantite || 0} ${ligne.unite || 'unité'}`;
+        const description = ligne.description || 'Item without description';
+        const quantite = `${ligne.quantite || 0} ${ligne.unite || 'unit'}`;
         const prix = formatCurrency(ligne.prix_unitaire_ht || 0);
         const total = formatCurrency((ligne.prix_unitaire_ht || 0) * (ligne.quantite || 0));
         
-        // Description (avec gestion du texte trop long)
+        // Description (with long text handling)
         const maxWidth = 70;
         let descLines = doc.splitTextToSize(description, maxWidth);
         doc.text(descLines, 25, yPosition + 4);
         
-        // Autres colonnes
+        // Other columns
         doc.text(quantite, 100, yPosition + 4);
         doc.text(prix, 130, yPosition + 4);
         doc.text(total, 160, yPosition + 4);
         
-        // Ligne séparatrice
+        // Separator line
         doc.setDrawColor(200, 200, 200);
         doc.line(20, yPosition + 8, 190, yPosition + 8);
         
         yPosition += 12;
       });
     } else {
-      doc.text('Aucun article', 25, yPosition + 4);
+      doc.text('No items', 25, yPosition + 4);
       yPosition += 12;
     }
     
-    // Totaux
+    // Totals
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
     
     doc.text('Total HT:', 130, yPosition + 10);
     doc.text(formatCurrency(montantHT), 160, yPosition + 10, { align: 'right' });
     
-    doc.text('TVA:', 130, yPosition + 20);
+    doc.text('VAT:', 130, yPosition + 20);
     doc.text(formatCurrency(montantTVA), 160, yPosition + 20, { align: 'right' });
     
     doc.setFontSize(11);
@@ -314,13 +314,13 @@ const Facture = () => {
     doc.text('Total TTC:', 130, yPosition + 30);
     doc.text(formatCurrency(montantTTC), 160, yPosition + 30, { align: 'right' });
     
-    // Informations de statut
+    // Status information
     doc.setFont(undefined, 'normal');
     doc.setFontSize(9);
-    doc.text(`Statut: ${facture.statut_paiement || 'Inconnu'}`, 20, yPosition + 50);
+    doc.text(`Status: ${facture.statut_paiement || 'Unknown'}`, 20, yPosition + 50);
     
     if (facture.date_echeance) {
-      doc.text(`Date d'échéance: ${formatDate(facture.date_echeance)}`, 20, yPosition + 60);
+      doc.text(`Due date: ${formatDate(facture.date_echeance)}`, 20, yPosition + 60);
     }
     
     // Notes
@@ -329,27 +329,27 @@ const Facture = () => {
       doc.text(notesLines, 20, yPosition + 70);
     }
     
-    // Pied de page
+    // Footer
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Facture générée le ${new Date().toLocaleDateString('fr-FR')} | Invoice App`, 105, 280, { align: 'center' });
+    doc.text(`Invoice generated on ${new Date().toLocaleDateString('fr-FR')} | Invoice App`, 105, 280, { align: 'center' });
     
-    // Sauvegarder le PDF
+    // Save PDF
     const fileName = `facture-${facture.numero || factureId}.pdf`;
     doc.save(fileName);
     
     } catch (error) {
-      console.error('Erreur lors de la génération du PDF:', error);
-      // Fallback: utiliser la méthode d'impression HTML
+      console.error('Error generating PDF:', error);
+      // Fallback: use HTML printing method
       generatePDFClientSide(factureData, factureId);
     }
   };
 
-  // Fonction pour générer le PDF côté client
+  // Function to generate PDF client-side
   const generatePDFClientSide = (factureData, factureId) => {
     const facture = factureData;
     
-    // Calculer les totaux si nécessaire
+    // Calculate totals if necessary
     const montantHT = facture.montant_ht || facture.totals?.montantHT || 
       (facture.lignesFacture ? facture.lignesFacture.reduce((sum, ligne) => 
         sum + ((ligne.prix_unitaire_ht || 0) * (ligne.quantite || 0)), 0) : 0);
@@ -357,14 +357,14 @@ const Facture = () => {
     const montantTVA = facture.montant_tva || facture.totals?.tva || 0;
     const montantTTC = facture.montant_ttc || facture.totals?.montantTTC || montantHT + montantTVA;
 
-    // Créer un contenu HTML pour l'impression/PDF
+    // Create HTML content for printing/PDF
     const content = `
       <!DOCTYPE html>
       <html lang="fr">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Facture ${facture.numero || factureId}</title>
+        <title>Invoice ${facture.numero || factureId}</title>
         <style>
           body { 
             font-family: 'Arial', sans-serif; 
@@ -418,6 +418,7 @@ const Facture = () => {
             font-weight: bold;
             color: #555;
             margin-bottom: 5px;
+            font-size: 12px;
           }
           table {
             width: 100%;
@@ -494,30 +495,30 @@ const Facture = () => {
       <body>
         <div class="invoice-container">
           <div class="header">
-            <h1>FACTURE</h1>
+            <h1>INVOICE</h1>
             <h2>${facture.numero || factureId}</h2>
-            <p>Date d'émission: ${formatDate(facture.date_emission)}</p>
+            <p>Issue date: ${formatDate(facture.date_emission)}</p>
           </div>
           
           <div class="info-grid">
             <div class="section">
-              <div class="section-title">Émetteur</div>
+              <div class="section-title">Issuer</div>
               ${facture.entreprise ? `
                 <div class="info-item">
-                  <div class="info-label">Entreprise:</div>
-                  <div>${facture.entreprise.nom || 'Non spécifié'}</div>
+                  <div class="info-label">Company:</div>
+                  <div>${facture.entreprise.nom || 'Not specified'}</div>
                 </div>
                 <div class="info-item">
-                  <div class="info-label">Adresse:</div>
-                  <div>${facture.entreprise.adresse || 'Non spécifié'}</div>
+                  <div class="info-label">Address:</div>
+                  <div>${facture.entreprise.adresse || 'Not specified'}</div>
                 </div>
                 <div class="info-item">
-                  <div class="info-label">Téléphone:</div>
-                  <div>${facture.entreprise.telephone || 'Non spécifié'}</div>
+                  <div class="info-label">Phone:</div>
+                  <div>${facture.entreprise.telephone || 'Not specified'}</div>
                 </div>
                 <div class="info-item">
                   <div class="info-label">Email:</div>
-                  <div>${facture.entreprise.email || 'Non spécifié'}</div>
+                  <div>${facture.entreprise.email || 'Not specified'}</div>
                 </div>
               ` : ''}
             </div>
@@ -525,20 +526,20 @@ const Facture = () => {
             <div class="section">
               <div class="section-title">Client</div>
               <div class="info-item">
-                <div class="info-label">Nom:</div>
-                <div>${facture.client_name || 'Non spécifié'}</div>
+                <div class="info-label">Name:</div>
+                <div>${facture.client_name || 'Not specified'}</div>
               </div>
             </div>
           </div>
           
           <div class="section">
-            <div class="section-title">Détails de la facture</div>
+            <div class="section-title">Invoice Details</div>
             <table>
               <thead>
                 <tr>
                   <th>Description</th>
-                  <th>Quantité</th>
-                  <th>Prix unitaire HT</th>
+                  <th>Quantity</th>
+                  <th>Unit price HT</th>
                   <th>Total HT</th>
                 </tr>
               </thead>
@@ -547,13 +548,13 @@ const Facture = () => {
                   const totalHT = (ligne.prix_unitaire_ht || 0) * (ligne.quantite || 0);
                   return `
                     <tr>
-                      <td>${ligne.description || 'Article sans description'}</td>
-                      <td>${ligne.quantite || 0} ${ligne.unite || 'unité'}</td>
+                      <td>${ligne.description || 'Item without description'}</td>
+                      <td>${ligne.quantite || 0} ${ligne.unite || 'unit'}</td>
                       <td>${formatCurrency(ligne.prix_unitaire_ht || 0)}</td>
                       <td>${formatCurrency(totalHT)}</td>
                     </tr>
                   `;
-                }).join('') : '<tr><td colspan="4">Aucun article</td></tr>'}
+                }).join('') : '<tr><td colspan="4">No items</td></tr>'}
               </tbody>
             </table>
           </div>
@@ -565,7 +566,7 @@ const Facture = () => {
             </div>
             
             <div class="amount-item">
-              <div class="amount-label">TVA:</div>
+              <div class="amount-label">VAT:</div>
               <div>${formatCurrency(montantTVA)}</div>
             </div>
             
@@ -575,15 +576,15 @@ const Facture = () => {
             </div>
             
             <div class="amount-item">
-              <div class="amount-label">Statut:</div>
-              <div>${facture.statut_paiement || 'Inconnu'}</div>
+              <div class="amount-label">Status:</div>
+              <div>${facture.statut_paiement || 'Unknown'}</div>
             </div>
           </div>
           
           ${facture.date_echeance ? `
             <div class="section">
-              <div class="section-title">Échéance</div>
-              <p>Date d'échéance: ${formatDate(facture.date_echeance)}</p>
+              <div class="section-title">Due Date</div>
+              <p>Due date: ${formatDate(facture.date_echeance)}</p>
             </div>
           ` : ''}
           
@@ -595,24 +596,24 @@ const Facture = () => {
           ` : ''}
           
           <div class="footer">
-            <p>Facture générée le ${new Date().toLocaleDateString('fr-FR')} | Invoice App</p>
+            <p>Invoice generated on ${new Date().toLocaleDateString('fr-FR')} | Invoice App</p>
           </div>
         </div>
       </body>
       </html>
     `;
     
-    // Ouvrir une nouvelle fenêtre pour impression/téléchargement
+    // Open a new window for printing/downloading
     const printWindow = window.open('', '_blank');
     printWindow.document.write(content);
     printWindow.document.close();
     
-    // Attendre que le contenu soit chargé
+    // Wait for content to load
     printWindow.onload = () => {
-      // Donner le temps au CSS de s'appliquer
+      // Give time for CSS to apply
       setTimeout(() => {
         printWindow.print();
-        // Fermer la fenêtre après impression
+        // Close window after printing
         setTimeout(() => {
           printWindow.close();
         }, 500);
@@ -623,44 +624,44 @@ const Facture = () => {
   const generateAiInsights = (facture) => {
     const insights = [];
     
-    // Analyse du statut de paiement
+    // Payment status analysis
     if (facture.statut_paiement === 'impayé') {
       const joursImpayes = Math.floor((new Date() - new Date(facture.date_echeance)) / (1000 * 60 * 60 * 24));
       if (joursImpayes > 30) {
         insights.push({
           type: 'warning',
-          message: `Facture impayée depuis ${joursImpayes} jours. Considérer un rappel urgent.`,
+          message: `Invoice unpaid for ${joursImpayes} days. Consider urgent reminder.`,
           icon: <FiAlertCircle />
         });
       }
     }
     
-    // Analyse des délais de paiement
+    // Payment delay analysis
     if (facture.statut_paiement === 'payé' && facture.date_paiement) {
       const delaiPaiement = Math.floor((new Date(facture.date_paiement) - new Date(facture.date_emission)) / (1000 * 60 * 60 * 24));
       if (delaiPaiement <= 15) {
         insights.push({
           type: 'success',
-          message: `Excellent délai de paiement: ${delaiPaiement} jours.`,
+          message: `Excellent payment delay: ${delaiPaiement} days.`,
           icon: <FiCheckCircle />
         });
       }
     }
     
-    // Analyse du montant
+    // Amount analysis
     if (facture.montant_ttc > 10000) {
       insights.push({
         type: 'info',
-        message: 'Facture importante. Vérifier les conditions de paiement.',
+        message: 'Important invoice. Check payment conditions.',
         icon: <FiInfo />
       });
     }
     
-    // Suggestion de prochaines actions
+    // Next actions suggestion
     if (facture.statut_paiement === 'brouillon') {
       insights.push({
         type: 'info',
-        message: 'Facture en brouillon. Finaliser et envoyer au client.',
+        message: 'Invoice in draft. Finalize and send to client.',
         icon: <FiEdit />
       });
     }
@@ -668,7 +669,7 @@ const Facture = () => {
     setAiInsights(insights);
   };
 
-  // Observer les sections pour l'animation au défilement
+  // Observe sections for scroll animation
   useEffect(() => {
     if (showDetails && modalBodyRef.current) {
       const observer = new IntersectionObserver(
@@ -693,7 +694,7 @@ const Facture = () => {
     }
   }, [showDetails]);
 
-  // Gérer l'affichage du bouton "Retour en haut"
+  // Handle display of "Back to top" button
   useEffect(() => {
     const handleScroll = () => {
       if (modalBodyRef.current) {
@@ -726,7 +727,7 @@ const Facture = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Non spécifiée';
+    if (!dateString) return 'Not specified';
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('fr-FR', options);
   };
@@ -798,7 +799,7 @@ const Facture = () => {
     return (
       <div className={`loading-container ${darkMode ? 'dark' : ''}`}>
         <div className="spinner"></div>
-        <p>Chargement des factures...</p>
+        <p>Loading invoices...</p>
       </div>
     );
   }
@@ -807,12 +808,12 @@ const Facture = () => {
     return (
       <div className={`error-container ${darkMode ? 'dark' : ''}`}>
         <div className="error-alert">
-          <p>Erreur: {error}</p>
+          <p>Error: {error}</p>
           <button 
             className={`btn-retry ${darkMode ? 'dark' : ''}`}
             onClick={() => fetchFactures()}
           >
-            <FiRefreshCw /> Réessayer
+            <FiRefreshCw /> Try again
           </button>
         </div>
       </div>
@@ -822,24 +823,24 @@ const Facture = () => {
   return (
     <div className={`facture-container ${darkMode ? 'dark' : ''}`}>
       <div className="facture-header-container">
-        <h2>Gestion des Factures</h2>
+        <h2>Invoice Management</h2>
       
         <div className={`facture-filters ${darkMode ? 'dark' : ''}`}>
           <div className="search-box">
             <input 
               type="text" 
-              placeholder="Rechercher par client, numéro..." 
+              placeholder="Search by client, number..." 
               className={darkMode ? 'dark' : ''}
             />
-            <button className={`btn-search ${darkMode ? 'dark' : ''}`}>Rechercher</button>
+            <button className={`btn-search ${darkMode ? 'dark' : ''}`}>Search</button>
           </div>
           <div className="filter-options">
             <select className={darkMode ? 'dark' : ''}>
-              <option value="">Tous les statuts</option>
-              <option value="payé">Payé</option>
-              <option value="impayé">Impayé</option>
-              <option value="partiel">Paiement partiel</option>
-              <option value="brouillon">Brouillon</option>
+              <option value="">All statuses</option>
+              <option value="payé">Paid</option>
+              <option value="impayé">Unpaid</option>
+              <option value="partiel">Partial payment</option>
+              <option value="brouillon">Draft</option>
             </select>
           </div>
         </div>
@@ -847,12 +848,12 @@ const Facture = () => {
 
       {factures.length === 0 ? (
         <div className={`no-data ${darkMode ? 'dark' : ''}`}>
-          <p>Aucune facture trouvée</p>
+          <p>No invoices found</p>
           <button 
             className={`btn-refresh ${darkMode ? 'dark' : ''}`}
             onClick={() => fetchFactures()}
           >
-            <FiRefreshCw /> Actualiser
+            <FiRefreshCw /> Refresh
           </button>
         </div>
       ) : (
@@ -867,27 +868,27 @@ const Facture = () => {
                   </div>
                   <span className={`status-badge ${getStatusClass(facture.statut_paiement)} ${darkMode ? 'dark' : ''}`}>
                     {getStatusIcon(facture.statut_paiement)}
-                    {facture.statut_paiement || 'Inconnu'}
+                    {facture.statut_paiement || 'Unknown'}
                   </span>
                 </div>
                 
                 <div className="card-client">
                   <FiUser className="client-icon" />
-                  <p>{facture.client_name || 'Client non spécifié'}</p>
+                  <p>{facture.client_name || 'Client not specified'}</p>
                 </div>
                 
                 <div className="card-dates">
                   <div className="date-item">
                     <FiCalendar className="date-icon" />
                     <div>
-                      <small>Émission</small>
+                      <small>Issue</small>
                       <p>{formatDate(facture.date_emission)}</p>
                     </div>
                   </div>
                   <div className="date-item">
                     <FiDollarSign className="amount-icon" />
                     <div>
-                      <small>Montant TTC</small>
+                      <small>Amount TTC</small>
                       <p>{formatCurrency(facture.montant_ttc || facture.totals?.montantTTC)}</p>
                     </div>
                   </div>
@@ -897,14 +898,14 @@ const Facture = () => {
                   <button
                     className={`btn-icon btn-view ${darkMode ? 'dark' : ''}`}
                     onClick={() => fetchFactureDetails(facture.id)}
-                    title="Voir détails"
+                    title="View details"
                   >
                     <FiEye className="icon" />
                   </button>
                   <button
                     className={`btn-icon btn-pdf ${darkMode ? 'dark' : ''}`}
                     onClick={() => downloadFacturePDF(facture.id)}
-                    title="Télécharger PDF"
+                    title="Download PDF"
                   >
                     <FiDownloadCloud className="icon" />
                   </button>
@@ -919,7 +920,7 @@ const Facture = () => {
                 className={`btn-pagination ${darkMode ? 'dark' : ''}`}
                 disabled={pagination.currentPage === 1}
                 onClick={() => fetchFactures(pagination.currentPage - 1)}
-                aria-label="Page précédente"
+                aria-label="Previous page"
               >
                 <FiChevronLeft />
               </button>
@@ -953,7 +954,7 @@ const Facture = () => {
                 className={`btn-pagination ${darkMode ? 'dark' : ''}`}
                 disabled={pagination.currentPage === pagination.totalPages}
                 onClick={() => fetchFactures(pagination.currentPage + 1)}
-                aria-label="Page suivante"
+                aria-label="Next page"
               >
                 <FiChevronRight />
               </button>
@@ -969,25 +970,25 @@ const Facture = () => {
               <div className="modal-title-section">
                 <FiFileText className="modal-title-icon" />
                 <div>
-                  <h3>Facture #{selectedFacture.numero || selectedFacture.id}</h3>
-                  <p className="modal-subtitle">Détails complets</p>
+                  <h3>Invoice #{selectedFacture.numero || selectedFacture.id}</h3>
+                  <p className="modal-subtitle">Complete details</p>
                 </div>
               </div>
               
-              {/* Menu de navigation rapide */}
+              {/* Quick navigation menu */}
               <div className="quick-nav">
-                <button onClick={() => scrollToSection('info')}>Informations</button>
+                <button onClick={() => scrollToSection('info')}>Information</button>
                 <button onClick={() => scrollToSection('finance')}>Finances</button>
                 {selectedFacture.lignesFacture && selectedFacture.lignesFacture.length > 0 && (
-                  <button onClick={() => scrollToSection('articles')}>Articles</button>
+                  <button onClick={() => scrollToSection('articles')}>Items</button>
                 )}
                 {selectedFacture.entreprise && (
-                  <button onClick={() => scrollToSection('entreprise')}>Entreprise</button>
+                  <button onClick={() => scrollToSection('entreprise')}>Company</button>
                 )}
                 {selectedFacture.notes && (
                   <button onClick={() => scrollToSection('notes')}>Notes</button>
                 )}
-                <button onClick={() => scrollToSection('tracking')}>Suivi</button>
+                <button onClick={() => scrollToSection('tracking')}>Tracking</button>
               </div>
               
               <button className="modal-close" onClick={closeDetails}>
@@ -996,7 +997,7 @@ const Facture = () => {
             </div>
             
             <div className="modal-body" ref={modalBodyRef}>
-              {/* Insights IA */}
+              {/* AI Insights */}
               {aiInsights.length > 0 && (
                 <div 
                   className={`detail-section ${visibleSections.includes('ai') ? 'visible' : ''}`}
@@ -1020,14 +1021,14 @@ const Facture = () => {
               )}
 
               <div className="facture-details-grid">
-                {/* Informations générales COMPLÈTES */}
+                {/* COMPLETE General Information */}
                 <div 
                   className={`detail-section info-section ${visibleSections.includes('info') ? 'visible' : ''}`}
                   data-section="info"
                 >
                   <div className="section-header">
                     <FiInfo className="section-icon" />
-                    <h4>Informations Générales</h4>
+                    <h4>General Information</h4>
                   </div>
                   <div className="detail-grid">
                     <div className="detail-item">
@@ -1035,13 +1036,13 @@ const Facture = () => {
                         <FiUser />
                         <span>Client</span>
                       </div>
-                      <div className="detail-value">{selectedFacture.client_name || 'Non spécifié'}</div>
+                      <div className="detail-value">{selectedFacture.client_name || 'Not specified'}</div>
                     </div>
                     
                     <div className="detail-item">
                       <div className="detail-label">
                         <FiCalendar />
-                        <span>Date d'émission</span>
+                        <span>Issue date</span>
                       </div>
                       <div className="detail-value">{formatDate(selectedFacture.date_emission)}</div>
                     </div>
@@ -1050,10 +1051,10 @@ const Facture = () => {
                     <div className="detail-item">
                       <div className="detail-label">
                         {getStatusIcon(selectedFacture.statut_paiement)}
-                        <span>Statut</span>
+                        <span>Status</span>
                       </div>
                       <div className={`detail-value status-indicator ${getStatusClass(selectedFacture.statut_paiement)}`}>
-                        {selectedFacture.statut_paiement || 'Inconnu'}
+                        {selectedFacture.statut_paiement || 'Unknown'}
                       </div>
                     </div>
                     
@@ -1061,50 +1062,46 @@ const Facture = () => {
                     <div className="detail-item">
                       <div className="detail-label">
                         <FiFileText />
-                        <span>Référence</span>
+                        <span>Reference</span>
                       </div>
                       <div className="detail-value">{selectedFacture.numero || selectedFacture.id}</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Montants DÉTAILLÉS */}
+                {/* DETAILED Amounts */}
                 <div 
                   className={`detail-section amount-section ${visibleSections.includes('finance') ? 'visible' : ''}`}
                   data-section="finance"
                 >
                   <div className="section-header">
                     <FiDollarSign className="section-icon" />
-                    <h4>Détails Financiers</h4>
+                    <h4>Financial Details</h4>
                   </div>
                   <div className="amount-grid">
                     <div className="amount-item">
-                      <div className="amount-label">Montant HT</div>
+                      <div className="amount-label">Amount HT</div>
                       <div className="amount-value">{formatCurrency(selectedFacture.montant_ht || selectedFacture.totals?.montantHT)}</div>
                     </div>
                     
                     <div className="amount-item">
-                      <div className="amount-label">TVA</div>
+                      <div className="amount-label">VAT</div>
                       <div className="amount-value">{formatCurrency(selectedFacture.montant_tva || selectedFacture.totals?.tva)}</div>
                     </div>
                     
                     <div className="amount-item">
-                      <div className="amount-label">Remise</div>
+                      <div className="amount-label">Discount</div>
                       <div className="amount-value">{formatCurrency(selectedFacture.remise || 0)}</div>
                     </div>
                     
                     <div className="amount-item total">
-                      <div className="amount-label">Montant TTC</div>
+                      <div className="amount-label">Amount TTC</div>
                       <div className="amount-value">{formatCurrency(selectedFacture.montant_ttc || selectedFacture.totals?.montantTTC)}</div>
                     </div>
                     
-                    <div className="amount-item">
-                      <div className="amount-label">Montant payé</div>
-                      <div className="amount-value paid">{formatCurrency(selectedFacture.montant_paye || 0)}</div>
-                    </div>
                     
                     <div className="amount-item">
-                      <div className="amount-label">Reste à payer</div>
+                      <div className="amount-label">Remaining to pay</div>
                       <div className="amount-value remaining">
                         {formatCurrency(
                           (selectedFacture.montant_ttc || selectedFacture.totals?.montantTTC || 0) - 
@@ -1115,7 +1112,7 @@ const Facture = () => {
                   </div>
                 </div>
 
-                {/* Articles DÉTAILLÉS */}
+                {/* DETAILED Items */}
                 {selectedFacture.lignesFacture && selectedFacture.lignesFacture.length > 0 && (
                   <div 
                     className={`detail-section articles-section ${visibleSections.includes('articles') ? 'visible' : ''}`}
@@ -1123,14 +1120,14 @@ const Facture = () => {
                   >
                     <div className="section-header">
                       <FiFileText className="section-icon" />
-                      <h4>Articles ({selectedFacture.lignesFacture.length})</h4>
+                      <h4>Items ({selectedFacture.lignesFacture.length})</h4>
                     </div>
                     <div className="articles-table">
                       <div className="table-header">
                         <div className="table-col description">Description</div>
-                        <div className="table-col quantity">Quantité</div>
-                        <div className="table-col price">Prix unitaire HT</div>
-                        <div className="table-col tva">TVA</div>
+                        <div className="table-col quantity">Quantity</div>
+                        <div className="table-col price">Unit price HT</div>
+                        <div className="table-col tva">VAT</div>
                         <div className="table-col total">Total TTC</div>
                       </div>
                       {selectedFacture.lignesFacture.map((ligne, index) => {
@@ -1140,8 +1137,8 @@ const Facture = () => {
                         
                         return (
                           <div key={index} className="table-row">
-                            <div className="table-col description">{ligne.description || 'Article sans description'}</div>
-                            <div className="table-col quantity">{ligne.quantite || 0} {ligne.unite || 'unité'}</div>
+                            <div className="table-col description">{ligne.description || 'Item without description'}</div>
+                            <div className="table-col quantity">{ligne.quantite || 0} {ligne.unite || 'unit'}</div>
                             <div className="table-col price">{formatCurrency(ligne.prix_unitaire_ht || 0)}</div>
                             <div className="table-col tva">{ligne.taux_tva || 19}%</div>
                             <div className="table-col total">
@@ -1151,9 +1148,9 @@ const Facture = () => {
                         );
                       })}
                       
-                      {/* Totaux des articles */}
+                      {/* Items totals */}
                       <div className="table-row total-row">
-                        <div className="table-col description" colSpan="4">Total général</div>
+                        <div className="table-col description" colSpan="4">Total general</div>
                         <div className="table-col total">
                           {formatCurrency(selectedFacture.montant_ttc || selectedFacture.totals?.montantTTC)}
                         </div>
@@ -1162,7 +1159,7 @@ const Facture = () => {
                   </div>
                 )}
 
-                {/* Informations entreprise */}
+                {/* Company information */}
                 {selectedFacture.entreprise && (
                   <div 
                     className={`detail-section entreprise-section ${visibleSections.includes('entreprise') ? 'visible' : ''}`}
@@ -1170,19 +1167,19 @@ const Facture = () => {
                   >
                     <div className="section-header">
                       <FiUser className="section-icon" />
-                      <h4>Informations Entreprise</h4>
+                      <h4>Company Information</h4>
                     </div>
                     <div className="detail-grid">
                       <div className="detail-item">
-                        <div className="detail-label">Nom</div>
+                        <div className="detail-label">Name</div>
                         <div className="detail-value">{selectedFacture.entreprise.nom}</div>
                       </div>
                       <div className="detail-item">
-                        <div className="detail-label">Adresse</div>
+                        <div className="detail-label">Address</div>
                         <div className="detail-value">{selectedFacture.entreprise.adresse}</div>
                       </div>
                       <div className="detail-item">
-                        <div className="detail-label">Téléphone</div>
+                        <div className="detail-label">Phone</div>
                         <div className="detail-value">{selectedFacture.entreprise.telephone}</div>
                       </div>
                       <div className="detail-item">
@@ -1201,7 +1198,7 @@ const Facture = () => {
                   >
                     <div className="section-header">
                       <FiEdit className="section-icon" />
-                      <h4>Notes & Commentaires</h4>
+                      <h4>Notes & Comments</h4>
                     </div>
                     <div className="notes-content">
                       <p>{selectedFacture.notes}</p>
@@ -1209,22 +1206,22 @@ const Facture = () => {
                   </div>
                 )}
 
-                {/* Informations de suivi */}
+                {/* Tracking information */}
                 <div 
                   className={`detail-section tracking-section ${visibleSections.includes('tracking') ? 'visible' : ''}`}
                   data-section="tracking"
                 >
                   <div className="section-header">
                     <FiClock className="section-icon" />
-                    <h4>Suivi de la facture</h4>
+                    <h4>Invoice Tracking</h4>
                   </div>
                   <div className="tracking-grid">
                     <div className="tracking-item">
-                      <div className="tracking-label">Créée le</div>
+                      <div className="tracking-label">Created on</div>
                       <div className="tracking-value">{formatDate(selectedFacture.createdAt)}</div>
                     </div>
                     <div className="tracking-item">
-                      <div className="tracking-label">Modifiée le</div>
+                      <div className="tracking-label">Modified on</div>
                       <div className="tracking-value">{formatDate(selectedFacture.updatedAt)}</div>
                     </div>
                   </div>
@@ -1232,25 +1229,25 @@ const Facture = () => {
               </div>
             </div>
             
-            {/* Boutons d'action dans le modal */}
+            {/* Action buttons in modal */}
             <div className="modal-actions">
               <button 
                 className={`btn-download-pdf ${darkMode ? 'dark' : ''}`}
                 onClick={() => downloadFacturePDF(selectedFacture.id)}
               >
-                <FiDownload /> Télécharger PDF
+                <FiDownload /> Download PDF
               </button>
               <button className={`btn-print ${darkMode ? 'dark' : ''}`}>
-                <FiPrinter /> Imprimer
+                <FiPrinter /> Print
               </button>
             </div>
           </div>
           
-          {/* Bouton de retour en haut */}
+          {/* Back to top button */}
           <div 
             className={`back-to-top ${showBackToTop ? 'visible' : ''} ${darkMode ? 'dark' : ''}`}
             onClick={scrollToTop}
-            title="Retour en haut"
+            title="Back to top"
           >
             <FiChevronUp size={24} />
           </div>

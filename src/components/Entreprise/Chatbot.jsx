@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './Chatbot.css';
 
-const DashboardHome  = () => {
+const Chatbot= () => {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: "Bonjour ! Je suis votre assistant virtuel. Comment puis-je vous aider aujourd'hui ?",
+      text: "Hello! I am your virtual assistant. How can I help you today?",
       sender: 'bot',
       timestamp: new Date()
     }
@@ -13,7 +13,7 @@ const DashboardHome  = () => {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef(null);
 
-  // Fonction pour faire défiler vers le dernier message
+  // Function to scroll to the last message
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -22,22 +22,22 @@ const DashboardHome  = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Réponses prédéfinies du bot
+  // Predefined bot responses
   const botResponses = {
-    'salut': 'Bonjour ! Comment puis-je vous aider ?',
-    'bonjour': 'Bonjour ! Comment allez-vous aujourd\'hui ?',
-    'aide': 'Je suis là pour vous aider. Dites-moi ce dont vous avez besoin.',
-    'merci': 'Je vous en prie ! N\'hésitez pas si vous avez d\'autres questions.',
-    'au revoir': 'Au revoir ! À bientôt !',
-    'heure': `Il est ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
-    'date': `Nous sommes le ${new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`,
-    'default': 'Je ne suis pas sûr de comprendre. Pouvez-vous reformuler votre question ?'
+    'hi': 'Hello! How can I help you?',
+    'hello': 'Hello! How are you today?',
+    'help': 'I am here to help. Tell me what you need.',
+    'thank you': 'You\'re welcome! Don\'t hesitate if you have other questions.',
+    'goodbye': 'Goodbye! See you soon!',
+    'time': `It is ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`,
+    'date': `Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`,
+    'default': 'I\'m not sure I understand. Could you rephrase your question?'
   };
 
   const handleSendMessage = () => {
     if (inputValue.trim() === '') return;
 
-    // Ajouter le message de l'utilisateur
+    // Add user message
     const userMessage = {
       id: messages.length + 1,
       text: inputValue,
@@ -48,12 +48,12 @@ const DashboardHome  = () => {
     setMessages([...messages, userMessage]);
     setInputValue('');
 
-    // Simuler une réponse du bot après un court délai
+    // Simulate bot response after a short delay
     setTimeout(() => {
       const userText = inputValue.toLowerCase();
       let botResponse = botResponses.default;
 
-      // Chercher une réponse correspondante
+      // Find a matching response
       Object.keys(botResponses).forEach(key => {
         if (userText.includes(key)) {
           botResponse = botResponses[key];
@@ -77,9 +77,9 @@ const DashboardHome  = () => {
     }
   };
 
-  // Formater l'heure pour l'affichage
+  // Format time for display
   const formatTime = (date) => {
-    return new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    return new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -90,8 +90,8 @@ const DashboardHome  = () => {
             <span>🤖</span>
           </div>
           <div className="chatbot-details">
-            <h2>Assistant Virtuel</h2>
-            <p>En ligne • Répond instantanément</p>
+            <h2>Virtual Assistant</h2>
+            <p>Online • Responds instantly</p>
           </div>
         </div>
         <div className="header-actions">
@@ -109,7 +109,7 @@ const DashboardHome  = () => {
 
       <div className="messenger-chat">
         <div className="chat-date-indicator">
-          <span>Aujourd'hui</span>
+          <span>Today</span>
         </div>
         
         <div className="messages-container">
@@ -146,7 +146,7 @@ const DashboardHome  = () => {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Tapez votre message..."
+            placeholder="Type your message..."
             className="message-input"
           />
         </div>
@@ -167,4 +167,4 @@ const DashboardHome  = () => {
   );
 };
 
-export default DashboardHome ;
+export default Chatbot;

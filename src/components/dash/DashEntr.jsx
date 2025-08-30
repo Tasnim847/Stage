@@ -18,28 +18,41 @@ import {
   FiSun,
   FiMoon,
   FiCalendar,
-  FiMessageSquare
+  FiMessageSquare,
+  FiImage
 } from 'react-icons/fi';
 import defaultAvatar from '../../assets/default-avatar.png';
-import DashboardHome from './DashboardHome';
 import './Dashboard.css';
 
 const DashEntr = ({ setIsAuthenticated }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const userData = JSON.parse(localStorage.getItem('userData')) || {};
+  const [userData, setUserData] = useState({});
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [darkMode, setDarkMode] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   const profileDropdownRef = useRef(null);
   const notificationsDropdownRef = useRef(null);
   const sidebarRef = useRef(null);
 
   useEffect(() => {
-    // Vérifier le thème au chargement
+    // Load user data
+    const loadUserData = () => {
+      try {
+        const data = JSON.parse(localStorage.getItem('userData')) || {};
+        setUserData(data);
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      }
+    };
+
+    loadUserData();
+
+    // Check theme on load
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
       setDarkMode(true);
@@ -98,16 +111,10 @@ const DashEntr = ({ setIsAuthenticated }) => {
       
       window.location.href = '/';
     } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
+      console.error('Error during logout:', error);
       window.location.href = '/';
     }
   };
-
-  const notifications = [
-    { id: 1, text: "Nouvelle commande reçue", time: "10 min ago", read: false },
-    { id: 2, text: "Paiement reçu", time: "1h ago", read: true },
-    { id: 3, text: "Nouveau client", time: "2h ago", read: true }
-  ];
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -118,32 +125,36 @@ const DashEntr = ({ setIsAuthenticated }) => {
     setShowNotifications(false);
   };
 
-  const markAllAsRead = () => {
-    // Logique pour marquer toutes les notifications comme lues
-    setShowNotifications(false);
+  const handleLogoError = () => {
+    setLogoError(true);
   };
-
-  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <div className={`ai-dashboard ${mobileMenuOpen ? 'mobile-menu-open' : ''}`}>
-      {/* Sidebar Entreprise */}
+      {/* Business Sidebar */}
       <div className="ai-sidebar" ref={sidebarRef}>
         <div className="sidebar-header">
-          {/* Profil Entreprise en haut */}
+          {/* Business Profile at top */}
           <div className="sidebar-profile">
             <div className="sidebar-avatar">
-              <img 
-                src={userData?.logo || defaultAvatar} 
-                alt={`Logo de ${userData.entreprise || userData.username }`}
-                onError={(e) => {
-                  e.target.onerror = null; 
-                  e.target.src = defaultAvatar;
-                }}
-              />
+              {userData?.logo && !logoError ? (
+                <img 
+                  src={userData.logo} 
+                  alt={`Logo of ${userData.entreprise || userData.username || userData.nom || 'Business'}`}
+                  onError={handleLogoError}
+                />
+              ) : (
+                <div className="logo-placeholder">
+                  <FiImage size={24} />
+                  <span>{userData.entreprise ? userData.entreprise.charAt(0) : 
+                         userData.username ? userData.username.charAt(0) : 
+                         userData.nom ? userData.nom.charAt(0) : 'B'}</span>
+                </div>
+              )}
             </div>
             <div className="sidebar-user-info">
-              <h4>{userData.entreprise || userData.username }</h4>
+              <h4>{userData.entreprise || userData.username || userData.nom || 'Business'}</h4>
+              <p>{userData.email || ''}</p>
             </div>
           </div>
           
@@ -151,7 +162,7 @@ const DashEntr = ({ setIsAuthenticated }) => {
             <button 
               className="mobile-menu-button" 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >
               {mobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
             </button>
@@ -168,7 +179,7 @@ const DashEntr = ({ setIsAuthenticated }) => {
                   onClick={() => handleNavigation('/dash-entr')}
                 >
                   <FiHome className="icon" /> 
-                  <span>Accueil</span>
+                  <span>Home</span>
                 </li>
                 <li 
                   className={location.pathname === '/dash-entr/dashb_entre' ? 'active' : ''} 
@@ -182,48 +193,46 @@ const DashEntr = ({ setIsAuthenticated }) => {
                   onClick={() => handleNavigation('/dash-entr/devis')}
                 >
                   <FiFileText className="icon" /> 
-                  <span>Devis</span>
+                  <span>Quotes</span>
                 </li>
                 <li 
                   className={location.pathname.includes('/dash-entr/calendrier') ? 'active' : ''} 
                   onClick={() => handleNavigation('/dash-entr/calendriers')}
                 >
                   <FiCalendar className="icon" /> 
-                  <span>Calendrier</span>
+                  <span>Calendar</span>
                 </li>
                 <li 
                   className={location.pathname.includes('/dash-entr/factures') ? 'active' : ''} 
                   onClick={() => handleNavigation('/dash-entr/factures')}
                 >
                   <FiFileText className="icon" /> 
-                  <span>Factures</span>
+                  <span>Invoices</span>
                 </li>
-                {/* Ajout du profil */}
                 <li 
                   className={location.pathname.includes('/dash-entr/profile') ? 'active' : ''} 
                   onClick={() => handleNavigation('/dash-entr/profile')}
                 >
                   <FiUser className="icon" /> 
-                  <span>Profil</span>
+                  <span>Profile</span>
                 </li>
                 <li 
                   className={location.pathname.includes('/dash-entr/chatbot') ? 'active' : ''} 
                   onClick={() => handleNavigation('/dash-entr/chatbot')}
                 >
                   <FiMessageSquare className="icon" />
-                  <span>chatbot</span>
+                  <span>Chatbot</span>
                 </li>
               </ul>
             </div>
 
-            {/* Boutons en bas de la sidebar */}
             <div className="sidebar-footer">
               <button 
                 className="theme-toggle-btn sidebar-btn" 
                 onClick={toggleDarkMode}
               >
                 {darkMode ? <FiSun className="icon" /> : <FiMoon className="icon" />}
-                <span>{darkMode ? 'Mode Jour' : 'Mode Nuit'}</span>
+                <span>{darkMode ? 'Day Mode' : 'Night Mode'}</span>
               </button>
               
               <button 
@@ -238,7 +247,6 @@ const DashEntr = ({ setIsAuthenticated }) => {
         )}
       </div>
 
-      {/* Contenu principal (sans header) */}
       <div className="ai-main">
         <div className="ai-content">
           <Outlet context={{ userData }} />

@@ -28,7 +28,7 @@ const Profile = ({ handleLogout }) => {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        // Assurez-vous que tous les champs sont initialisés
+        // Make sure all fields are initialized
         const profileData = {
           ville: '',
           region: '',
@@ -43,8 +43,8 @@ const Profile = ({ handleLogout }) => {
           setImagePreview(response.data.image || response.data.logo);
         }
       } catch (err) {
-        console.error('Erreur:', err);
-        setError(err.response?.data?.message || 'Erreur de chargement du profil');
+        console.error('Error:', err);
+        setError(err.response?.data?.message || 'Error loading profile');
         
         if (err.response?.status === 401) {
           handleLogout();
@@ -84,7 +84,7 @@ const Profile = ({ handleLogout }) => {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       const formDataToSend = new FormData();
       
-      // Inclure tous les champs nécessaires
+      // Include all necessary fields
       const fieldsToSend = [
         'nom', 'name', 'lastname', 'email', 'password', 
         'adresse', 'ville', 'region', 'codePostal', 
@@ -108,7 +108,7 @@ const Profile = ({ handleLogout }) => {
         }
       });
       
-      // Mettre à jour le state avec la réponse
+      // Update state with response
       const updatedProfile = {
         ville: '',
         region: '',
@@ -128,8 +128,8 @@ const Profile = ({ handleLogout }) => {
       setTimeout(() => setShowSuccessAlert(false), 3000);
       
     } catch (err) {
-      console.error('Erreur:', err);
-      setError(err.response?.data?.message || 'Erreur lors de la mise à jour du profil');
+      console.error('Error:', err);
+      setError(err.response?.data?.message || 'Error updating profile');
       
       if (err.response?.status === 401) {
         handleLogout();
@@ -147,7 +147,7 @@ const Profile = ({ handleLogout }) => {
   if (loading) return (
     <div className="profile-loading">
       <div className="spinner"></div>
-      <p>Chargement de votre profil...</p>
+      <p>Loading your profile...</p>
     </div>
   );
 
@@ -156,14 +156,14 @@ const Profile = ({ handleLogout }) => {
       <div className="error-icon">⚠️</div>
       <p>{error}</p>
       <button onClick={() => window.location.reload()} className="retry-button">
-        Réessayer
+        Try again
       </button>
     </div>
   );
 
   if (!profile) return (
     <div className="profile-empty">
-      <p>Aucune donnée de profil disponible</p>
+      <p>No profile data available</p>
     </div>
   );
 
@@ -171,14 +171,14 @@ const Profile = ({ handleLogout }) => {
     <div className="profile-container">
       {showSuccessAlert && (
         <div className="success-alert">
-          <span>✓</span> Vos modifications ont bien été enregistrées !
+          <span>✓</span> Your changes have been saved successfully!
         </div>
       )}
 
       <div className="profile-header">
         <div className="profile-avatar-container">
           {imagePreview ? (
-            <img src={imagePreview} alt="Profil" className="profile-avatar" />
+            <img src={imagePreview} alt="Profile" className="profile-avatar" />
           ) : (
             <div className="default-avatar">
               {profile.role === 'comptable' 
@@ -197,7 +197,7 @@ const Profile = ({ handleLogout }) => {
                   onChange={handleImageChange}
                   style={{ display: 'none' }}
                 />
-                Changer la photo
+                Change photo
               </label>
             </div>
           )}
@@ -210,7 +210,7 @@ const Profile = ({ handleLogout }) => {
         </h1>
         
         <div className={`profile-role ${profile.role}`}>
-          {profile.role === 'comptable' ? 'Comptable' : 'Entreprise'}
+          {profile.role === 'comptable' ? 'Accountant' : 'Business'}
         </div>
       </div>
 
@@ -218,10 +218,10 @@ const Profile = ({ handleLogout }) => {
         {isEditing ? (
           <form onSubmit={handleSubmit} className="profile-form">
             <div className="form-section">
-              <h3>Informations personnelles</h3>
+              <h3>Personal Information</h3>
               <div className="form-grid">
                 <div className="form-group">
-                  <label>Prénom</label>
+                  <label>First Name</label>
                   <input
                     type="text"
                     name={profile.role === 'comptable' ? 'name' : 'nom'}
@@ -232,7 +232,7 @@ const Profile = ({ handleLogout }) => {
                 </div>
                 
                 <div className="form-group">
-                  <label>Nom</label>
+                  <label>Last Name</label>
                   {profile.role === 'comptable' ? (
                     <input
                       type="text"
@@ -273,11 +273,11 @@ const Profile = ({ handleLogout }) => {
                 </div>
                 
                 <div className="form-group">
-                  <label>Mot de passe</label>
+                  <label>Password</label>
                   <input
                     type="password"
                     name="password"
-                    placeholder="Nouveau mot de passe"
+                    placeholder="New password"
                     onChange={handleInputChange}
                     className="form-control"
                   />
@@ -286,10 +286,10 @@ const Profile = ({ handleLogout }) => {
             </div>
 
             <div className="form-section">
-              <h3>Coordonnées</h3>
+              <h3>Contact Information</h3>
               <div className="form-grid">
                 <div className="form-group full-width">
-                  <label>Adresse</label>
+                  <label>Address</label>
                   <input
                     type="text"
                     name="adresse"
@@ -300,7 +300,7 @@ const Profile = ({ handleLogout }) => {
                 </div>
                 
                 <div className="form-group">
-                  <label>Ville</label>
+                  <label>City</label>
                   <input
                     type="text"
                     name="ville"
@@ -311,7 +311,7 @@ const Profile = ({ handleLogout }) => {
                 </div>
                 
                 <div className="form-group">
-                  <label>Région</label>
+                  <label>Region</label>
                   <input
                     type="text"
                     name="region"
@@ -322,7 +322,7 @@ const Profile = ({ handleLogout }) => {
                 </div>
                 
                 <div className="form-group">
-                  <label>Code postal</label>
+                  <label>Postal Code</label>
                   <input
                     type="text"
                     name="codePostal"
@@ -336,7 +336,7 @@ const Profile = ({ handleLogout }) => {
 
             {profile.role === 'entreprise' && profile.comptable && (
               <div className="comptable-section">
-                <h3>Comptable associé</h3>
+                <h3>Associated Accountant</h3>
                 <div className="comptable-card">
                   <div className="comptable-avatar">
                     {profile.comptable.name?.[0]}{profile.comptable.lastname?.[0]}
@@ -359,29 +359,29 @@ const Profile = ({ handleLogout }) => {
                 }}
                 disabled={isSaving}
               >
-                Annuler
+                Cancel
               </button>
               <button 
                 type="submit" 
                 className={`save-button ${isSaving ? 'loading' : ''}`}
                 disabled={isSaving}
               >
-                {isSaving ? '' : 'Enregistrer les modifications'}
+                {isSaving ? '' : 'Save Changes'}
               </button>
             </div>
           </form>
         ) : (
           <div className="profile-details">
             <div className="details-section">
-              <h3>Informations personnelles</h3>
+              <h3>Personal Information</h3>
               <div className="details-grid">
                 <div className="detail-item">
-                  <label>Prénom</label>
+                  <label>First Name</label>
                   <p>{profile.role === 'comptable' ? profile.name : profile.nom?.split(' ')[0]}</p>
                 </div>
                 
                 <div className="detail-item">
-                  <label>Nom</label>
+                  <label>Last Name</label>
                   <p>{profile.role === 'comptable' ? profile.lastname : profile.nom?.split(' ')[1] || '-'}</p>
                 </div>
                 
@@ -391,40 +391,45 @@ const Profile = ({ handleLogout }) => {
                 </div>
                 
                 <div className="detail-item">
-                  <label>Mot de passe</label>
+                  <label>Password</label>
                   <p>••••••••</p>
                 </div>
               </div>
             </div>
 
             <div className="details-section">
-              <h3>Coordonnées</h3>
+              <h3>Contact Information</h3>
               <div className="details-grid">
                 <div className="detail-item full-width">
-                  <label>Adresse</label>
-                  <p>{profile.adresse || 'Non spécifiée'}</p>
+                  <label>Address</label>
+                  <p>{profile.adresse || 'Not specified'}</p>
                 </div>
                 
                 <div className="detail-item">
-                  <label>Ville</label>
+                  <label>City</label>
                   <p>{profile.ville || '-'}</p>
                 </div>
                 
                 <div className="detail-item">
-                  <label>Région</label>
+                  <label>Region</label>
                   <p>{profile.region || '-'}</p>
                 </div>
                 
                 <div className="detail-item">
-                  <label>Code postal</label>
+                  <label>Postal Code</label>
                   <p>{profile.codePostal || '-'}</p>
+                </div>
+
+                <div className="detail-item">
+                  <label>Phone</label>
+                  <p>{profile.telephone || '-'}</p>
                 </div>
               </div>
             </div>
 
             {profile.role === 'entreprise' && profile.comptable && (
               <div className="comptable-section">
-                <h3>Comptable associé</h3>
+                <h3>Associated Accountant</h3>
                 <div className="comptable-card">
                   <div className="comptable-avatar">
                     {profile.comptable.name?.[0]}{profile.comptable.lastname?.[0]}
@@ -439,7 +444,7 @@ const Profile = ({ handleLogout }) => {
 
             <div className="profile-actions">
               <button onClick={() => setIsEditing(true)} className="edit-button">
-                Modifier le profil
+                Edit Profile
               </button>
             </div>
           </div>

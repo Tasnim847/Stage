@@ -23,7 +23,7 @@ function Home() {
   const [chatMessages, setChatMessages] = useState([
     {
       id: 1,
-      text: "Bonjour ! Je suis l'assistant virtuel FacturaPro. Comment puis-je vous aider aujourd'hui ?",
+      text: "Hello! I'm the FacturaPro virtual assistant. How can I help you today?",
       sender: 'bot',
       timestamp: new Date()
     }
@@ -38,14 +38,14 @@ function Home() {
   const chatContainerRef = useRef(null);
   const navigate = useNavigate();
 
-  // Images pour le carrousel
+  // Images for carousel
   const carouselImages = [
     'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=1500&q=80',
     'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1500&q=80',
     'https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1500&q=80'
   ];
 
-  // Fonctions API pour communiquer avec le backend
+  // API functions to communicate with backend
   const registerAPI = async (userData) => {
     try {
       const res = await fetch('http://localhost:5000/api/auth/register', {
@@ -59,14 +59,14 @@ function Home() {
       if (!res.ok) {
         if (data.errors && Array.isArray(data.errors)) {
           const errorMessages = data.errors.join(', ');
-          throw new Error(`Erreur de validation: ${errorMessages}`);
+          throw new Error(`Validation error: ${errorMessages}`);
         }
-        throw new Error(data.message || 'Échec de l\'inscription');
+        throw new Error(data.message || 'Registration failed');
       }
       
       return data;
     } catch (err) {
-      console.error('Erreur d\'inscription:', err);
+      console.error('Registration error:', err);
       throw err;
     }
   };
@@ -81,18 +81,18 @@ function Home() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `Erreur ${response.status}`);
+        throw new Error(errorData.message || `Error ${response.status}`);
       }
 
       const data = await response.json();
       
       if (!data.token || !data.user) {
-        throw new Error('Réponse du serveur invalide');
+        throw new Error('Invalid server response');
       }
 
       return data;
     } catch (error) {
-      console.error('Erreur de connexion:', error);
+      console.error('Login error:', error);
       throw error;
     }
   };
@@ -107,18 +107,18 @@ function Home() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `Erreur ${response.status}`);
+        throw new Error(errorData.message || `Error ${response.status}`);
       }
 
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Erreur de réinitialisation:', error);
+      console.error('Reset error:', error);
       throw error;
     }
   };
 
-  // Gestion du défilement fluide
+  // Smooth scrolling management
   useEffect(() => {
     const sections = document.querySelectorAll('.fullpage-section');
     
@@ -168,7 +168,7 @@ function Home() {
     };
   }, []);
 
-  // Rotation automatique des images du carrousel
+  // Automatic carousel image rotation
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => 
@@ -179,14 +179,14 @@ function Home() {
     return () => clearInterval(interval);
   }, [carouselImages.length]);
 
-  // Scroll automatique vers le bas du chat
+  // Auto-scroll to bottom of chat
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [chatMessages]);
 
-  // Vérifier la correspondance des mots de passe
+  // Check password match
   useEffect(() => {
     if ((isForgotPassword || !isLogin) && formData.password && formData.confirmPassword) {
       setPasswordMatch(formData.password === formData.confirmPassword);
@@ -195,7 +195,7 @@ function Home() {
     }
   }, [formData.password, formData.confirmPassword, isLogin, isForgotPassword]);
 
-  // Calculer la force du mot de passe
+  // Calculate password strength
   useEffect(() => {
     if ((!isLogin || isForgotPassword) && formData.password) {
       const strength = calculatePasswordStrength(formData.password);
@@ -217,16 +217,16 @@ function Home() {
     switch (strength) {
       case 0:
       case 1:
-        text = 'Faible';
+        text = 'Weak';
         break;
       case 2:
-        text = 'Moyen';
+        text = 'Medium';
         break;
       case 3:
-        text = 'Fort';
+        text = 'Strong';
         break;
       case 4:
-        text = 'Très fort';
+        text = 'Very strong';
         break;
       default:
         text = '';
@@ -238,29 +238,29 @@ function Home() {
   const validateFormData = (data) => {
     const errors = [];
     
-    // Validation de l'email
+    // Email validation
     if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-      errors.push('Format email invalide');
+      errors.push('Invalid email format');
     }
     
-    // Validation du mot de passe
+    // Password validation
     if (!data.password || data.password.length < 6) {
-      errors.push('Le mot de passe doit contenir au moins 6 caractères');
+      errors.push('Password must contain at least 6 characters');
     }
     
-    // Validation du nom
+    // Name validation
     if (!data.name || data.name.trim().length < 2) {
-      errors.push('Le nom doit contenir au moins 2 caractères');
+      errors.push('Name must contain at least 2 characters');
     }
     
-    // Validation du prénom
+    // Lastname validation
     if (!data.lastname || data.lastname.trim().length < 2) {
-      errors.push('Le prénom doit contenir au moins 2 caractères');
+      errors.push('Last name must contain at least 2 characters');
     }
     
-    // Validation du username
+    // Username validation
     if (!data.username || data.username.trim().length < 3) {
-      errors.push('Le nom d\'utilisateur doit contenir au moins 3 caractères');
+      errors.push('Username must contain at least 3 characters');
     }
     
     return errors;
@@ -285,11 +285,11 @@ function Home() {
     }
   };
 
-  // Fonction pour ouvrir/fermer AuthForm
+  // Function to open/close AuthForm
   const toggleAuthForm = () => {
     setShowAuthForm(!showAuthForm);
     setErrorMessage('');
-    // Réinitialiser le formulaire quand on ouvre/ferme
+    // Reset form when opening/closing
     if (!showAuthForm) {
       setFormData({
         email: '',
@@ -306,21 +306,21 @@ function Home() {
     }
   };
 
-  // Gestion des changements dans le formulaire
+  // Handle form changes
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-    setErrorMessage(''); // Effacer les erreurs quand l'utilisateur tape
+    setErrorMessage(''); // Clear errors when user types
 
-    // Afficher le champ de confirmation quand on commence à taper le mot de passe
+    // Show confirmation field when starting to type password
     if (name === 'password' && value.length > 0 && (isForgotPassword || !isLogin)) {
       setShowConfirmPassword(true);
     }
 
-    // Générer automatiquement le username à partir du nom
+    // Automatically generate username from name
     if (name === 'name' && value && !isLogin && !isForgotPassword && !formData.username) {
       setFormData(prev => ({
         ...prev,
@@ -335,7 +335,7 @@ function Home() {
     }
   };
 
-  // Soumission du formulaire
+  // Form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -343,29 +343,29 @@ function Home() {
 
     try {
       if (isForgotPassword) {
-        // Validation pour la réinitialisation
+        // Validation for reset
         if (!formData.email || !formData.password || !formData.confirmPassword) {
-          throw new Error('Veuillez remplir tous les champs');
+          throw new Error('Please fill all fields');
         }
 
         if (formData.password !== formData.confirmPassword) {
-          throw new Error('Les mots de passe ne correspondent pas');
+          throw new Error('Passwords do not match');
         }
 
         if (formData.password.length < 6) {
-          throw new Error('Le mot de passe doit contenir au moins 6 caractères');
+          throw new Error('Password must contain at least 6 characters');
         }
 
-        // Réinitialisation du mot de passe
+        // Password reset
         const response = await resetPasswordAPI({
           email: formData.email.trim(),
           newPassword: formData.password,
           confirmPassword: formData.confirmPassword
         });
 
-        setErrorMessage('Mot de passe réinitialisé avec succès!');
+        setErrorMessage('Password reset successfully!');
         
-        // Revenir à la connexion après un délai
+        // Return to login after delay
         setTimeout(() => {
           setIsForgotPassword(false);
           setIsLogin(true);
@@ -382,18 +382,18 @@ function Home() {
         }, 2000);
         
       } else if (isLogin) {
-        // Validation pour la connexion
+        // Validation for login
         if (!formData.email || !formData.password) {
-          throw new Error('Veuillez remplir tous les champs');
+          throw new Error('Please fill all fields');
         }
 
-        // Connexion
+        // Login
         const response = await loginAPI({
           email: formData.email.trim(),
           password: formData.password
         });
       
-        // Stocker les données d'authentification
+        // Store authentication data
         const storage = formData.rememberMe ? localStorage : sessionStorage;
         storage.setItem('authToken', response.token);
         storage.setItem('userData', JSON.stringify(response.user));
@@ -410,20 +410,20 @@ function Home() {
         }, 100);
       
       } else {
-        // Validation pour l'inscription
+        // Validation for registration
         if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword || !formData.username) {
-          throw new Error('Veuillez remplir tous les champs obligatoires');
+          throw new Error('Please fill all required fields');
         }
 
         if (formData.password.length < 6) {
-          throw new Error('Le mot de passe doit contenir au moins 6 caractères');
+          throw new Error('Password must contain at least 6 characters');
         }
 
         if (formData.password !== formData.confirmPassword) {
-          throw new Error('Les mots de passe ne correspondent pas');
+          throw new Error('Passwords do not match');
         }
 
-        // Validation supplémentaire côté client
+        // Additional client-side validation
         const validationErrors = validateFormData({
           username: formData.username,
           email: formData.email.trim(),
@@ -436,7 +436,7 @@ function Home() {
           throw new Error(validationErrors.join(', '));
         }
 
-        // Préparer les données pour l'envoi
+        // Prepare data for sending
         const userData = {
           username: formData.username,
           email: formData.email.trim(),
@@ -445,12 +445,12 @@ function Home() {
           lastname: formData.lastname || formData.name
         };
 
-        console.log('Données envoyées au backend:', userData);
+        console.log('Data sent to backend:', userData);
 
-        // Inscription
+        // Registration
         const response = await registerAPI(userData);
       
-        // Stocker les données d'authentification
+        // Store authentication data
         const storage = formData.rememberMe ? localStorage : sessionStorage;
         storage.setItem('authToken', response.token);
         storage.setItem('userData', JSON.stringify(response.user));
@@ -468,21 +468,21 @@ function Home() {
       }
     
     } catch (error) {
-      console.error('Erreur d\'authentification:', error);
-      setErrorMessage(error.message || 'Une erreur est survenue');
+      console.error('Authentication error:', error);
+      setErrorMessage(error.message || 'An error occurred');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Basculer entre connexion et inscription
+  // Toggle between login and registration
   const toggleAuthMode = () => {
     setIsLogin(!isLogin);
     setIsForgotPassword(false);
     setErrorMessage('');
-    // Réinitialiser les données du formulaire
+    // Reset form data
     setFormData({
-      email: formData.email, // Garder l'email
+      email: formData.email, // Keep email
       password: '',
       confirmPassword: '',
       name: '',
@@ -493,15 +493,15 @@ function Home() {
     setShowConfirmPassword(false);
   };
 
-  // Fonction pour basculer vers le mode "mot de passe oublié"
+  // Function to switch to "forgot password" mode
   const handleForgotPassword = (e) => {
-    if (e) e.preventDefault(); // Empêche le comportement par défaut du lien
+    if (e) e.preventDefault(); // Prevent default link behavior
     setIsForgotPassword(true);
     setIsLogin(false);
     setErrorMessage('');
-    setShowConfirmPassword(false); // Réinitialiser l'état de visibilité
+    setShowConfirmPassword(false); // Reset visibility state
     setFormData({
-      email: formData.email, // Garder l'email
+      email: formData.email, // Keep email
       password: '',
       confirmPassword: '',
       name: '',
@@ -511,13 +511,13 @@ function Home() {
     });
   };
 
-  // Fonction pour revenir à la connexion
+  // Function to return to login
   const backToLogin = () => {
     setIsForgotPassword(false);
     setIsLogin(true);
     setErrorMessage('');
     setFormData({
-      email: formData.email, // Garder l'email
+      email: formData.email, // Keep email
       password: '',
       confirmPassword: '',
       name: '',
@@ -527,7 +527,7 @@ function Home() {
     });
   };
 
-  // Fonctions pour le chatbot
+  // Functions for chatbot
   const toggleChatbot = () => {
     setShowChatbot(!showChatbot);
   };
@@ -536,7 +536,7 @@ function Home() {
     e.preventDefault();
     if (!userMessage.trim()) return;
 
-    // Ajouter le message de l'utilisateur
+    // Add user message
     const newUserMessage = {
       id: Date.now(),
       text: userMessage,
@@ -547,7 +547,7 @@ function Home() {
     setChatMessages([...chatMessages, newUserMessage]);
     setUserMessage('');
 
-    // Simuler une réponse du bot après un délai
+    // Simulate bot response after delay
     setTimeout(() => {
       const botResponse = generateBotResponse(userMessage);
       const newBotMessage = {
@@ -563,31 +563,31 @@ function Home() {
   const generateBotResponse = (message) => {
     const lowerMessage = message.toLowerCase();
     
-    if (lowerMessage.includes('bonjour') || lowerMessage.includes('salut') || lowerMessage.includes('hello')) {
-      return "Bonjour ! Je suis l'assistant FacturaPro. Comment puis-je vous aider aujourd'hui ?";
-    } else if (lowerMessage.includes('rejoindre') || lowerMessage.includes('inscrire') || 
-               lowerMessage.includes('compte') || lowerMessage.includes('s\'inscrire') ||
-               lowerMessage.includes('inscription') || lowerMessage.includes('comment faire')) {
-      return "Je peux vous aider à rejoindre notre plateforme ! Dites-moi, êtes-vous :\n\n1. 🧮 Un comptable qui souhaite gérer plusieurs clients\n2. 🏢 Une entreprise qui veut utiliser nos services de facturation\n\nRépondez par 'comptable' or 'entreprise' pour que je puise vous guider au mieux.";
-    } else if (lowerMessage.includes('comptable')) {
-      return "Parfait ! En tant que comptable, voici comment procéder :\n\n1. Cliquez sur 'Connexion' en haut à droite\n2. Choisissez 'Créer un compte'\n3. Remplissez le formulaire avec vos informations professionnelles\n4. Une fois inscrit, vous pourrez inviter vos clients entreprises à rejoindre la plateforme\n\nVous pourrez ensuite gérer tous vos clients depuis un tableau de bord unique !";
-    } else if (lowerMessage.includes('entreprise')) {
-      return "Excellent ! En tant qu'entreprise, voici comment rejoindre FacturaPro :\n\n1. Demandez à votre comptable de créer un compte sur notre plateforme\n2. Votre comptable vous ajoutera ensuite à son espace client\n3. Vous recevrez un email d'invitation avec vos identifiants\n4. Connectez-vous et commencez à créer devis et factures !\n\nSi vous n'avez pas de comptable, vous pouvez aussi créer un compte directement et gérer votre facturation en autonomie.";
-    } else if (lowerMessage.includes('facture') || lowerMessage.includes('devis')) {
-      return "FacturaPro vous permet de créer des devis et factures professionnels en quelques clics. Souhaitez-vous en savoir plus sur cette fonctionnalité ?";
-    } else if (lowerMessage.includes('aide') || lowerMessage.includes('support') || lowerMessage.includes('problème')) {
-      return "Notre équipe de support est disponible du lundi au vendredi de 9h à 18h au 01 23 45 67 89. Vous pouvez aussi consulter notre centre d'aide en ligne pour des guides détaillés ou envoyer un email à support@facturapro.fr.";
-    } else if (lowerMessage.includes('merci')) {
-      return "Avec plaisir ! N'hésitez pas si vous avez d'autres questions. Je suis là pour vous aider à simplifier votre facturation ! 😊";
+    if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('bonjour')) {
+      return "Hello! I'm the FacturaPro assistant. How can I help you today?";
+    } else if (lowerMessage.includes('join') || lowerMessage.includes('register') || 
+               lowerMessage.includes('account') || lowerMessage.includes('sign up') ||
+               lowerMessage.includes('registration') || lowerMessage.includes('how to')) {
+      return "I can help you join our platform! Tell me, are you:\n\n1. 🧮 An accountant who wants to manage multiple clients\n2. 🏢 A business that wants to use our invoicing services\n\nReply with 'accountant' or 'business' so I can guide you best.";
+    } else if (lowerMessage.includes('accountant')) {
+      return "Perfect! As an accountant, here's how to proceed:\n\n1. Click on 'Login' at the top right\n2. Choose 'Create an account'\n3. Fill out the form with your professional information\n4. Once registered, you can invite your business clients to join the platform\n\nYou'll then be able to manage all your clients from a single dashboard!";
+    } else if (lowerMessage.includes('business')) {
+      return "Excellent! As a business, here's how to join FacturaPro:\n\n1. Ask your accountant to create an account on our platform\n2. Your accountant will then add you to their client space\n3. You'll receive an invitation email with your credentials\n4. Log in and start creating quotes and invoices!\n\nIf you don't have an accountant, you can also create an account directly and manage your invoicing independently.";
+    } else if (lowerMessage.includes('invoice') || lowerMessage.includes('quote')) {
+      return "FacturaPro allows you to create professional quotes and invoices in just a few clicks. Would you like to know more about this feature?";
+    } else if (lowerMessage.includes('help') || lowerMessage.includes('support') || lowerMessage.includes('problem')) {
+      return "Our support team is available Monday to Friday from 9am to 6pm at 01 23 45 67 89. You can also check our online help center for detailed guides or send an email to support@facturapro.fr.";
+    } else if (lowerMessage.includes('thank')) {
+      return "You're welcome! Don't hesitate if you have other questions. I'm here to help you simplify your invoicing! 😊";
     } else {
-      return "Je comprends que vous mentionnez : '" + message + "'.\n\nPourriez-vous reformuler votre question ? Je peux vous aider avec :\n• L'inscription sur la plateforme\n• La création de devis/factures\n• Nos tarifs et abonnements\n• Le support technique\n\nDites-moi simplement comment je peux vous aider !";
+      return "I understand you're mentioning: '" + message + "'.\n\nCould you rephrase your question? I can help you with:\n• Registration on the platform\n• Creating quotes/invoices\n• Our pricing and subscriptions\n• Technical support\n\nJust tell me how I can help you!";
     }
   };
 
   const quickSuggestions = [
-    { text: "Comment rejoindre la plateforme?", emoji: "🚀" },
-    { text: "Je suis comptable", emoji: "🧮" },
-    { text: "Je suis une entreprise", emoji: "🏢" }
+    { text: "How to join the platform?", emoji: "🚀" },
+    { text: "I'm an accountant", emoji: "🧮" },
+    { text: "I'm a business", emoji: "🏢" }
   ];
 
   const handleSuggestionClick = (suggestion) => {
@@ -597,32 +597,31 @@ function Home() {
   return (
     <div className="facturapro-app">
       
-      {/* Navigation fixe */}
+      {/* Fixed navigation */}
       <div className="navbar-container">
         <nav className="navbar">
           <div className="logo">FacturaPro</div>
           <div className="nav-links">
-            <button onClick={() => scrollToSection('home')}>Accueil</button>
-            <button onClick={() => scrollToSection('features')}>Fonctionnalités</button>
-            <button onClick={() => scrollToSection('tools')}>Outils</button>
-            <button onClick={() => scrollToSection('objectives')}>Objectifs</button>
-            <button onClick={() => scrollToSection('about')}>À propos</button>
-            <button onClick={() => scrollToSection('advantages')}>Avantages</button>
-            <button onClick={() => scrollToSection('contact')}>Contact</button>
+            <button onClick={() => scrollToSection('home')}>Home</button>
+            <button onClick={() => scrollToSection('features')}>Features</button>
+            <button onClick={() => scrollToSection('tools')}>Tools</button>
+            <button onClick={() => scrollToSection('objectives')}>Objectives</button>
+            <button onClick={() => scrollToSection('about')}>About</button>
+            <button onClick={() => scrollToSection('advantages')}>Advantages</button>
           </div>
-          <button onClick={toggleAuthForm} className="login-btn">Connexion</button>
+          <button onClick={toggleAuthForm} className="login-btn">Login</button>
         </nav>
       </div>
 
-      {/* Modale pour AuthForm */}
+      {/* Modal for AuthForm */}
       {showAuthForm && (
         <div className="auth-modal">
           <div className="auth-modal-content">
-            <button className="close-modal" onClick={toggleAuthForm} aria-label="Fermer la fenêtre de connexion">
+            <button className="close-modal" onClick={toggleAuthForm} aria-label="Close login window">
               <span className="close-icon">×</span>
             </button>
 
-            {/* Intelligence Artificielle - Assistant Virtuel */}
+            {/* Artificial Intelligence - Virtual Assistant */}
             <div className="ai-assistant">
               <div className="ai-header">
                 <div className="ai-avatar">
@@ -630,18 +629,18 @@ function Home() {
                   <div className="ai-status"></div>
                 </div>
                 <div className="ai-info">
-                  <h4>Assistant FacturaPro</h4>
-                  <p>En ligne • Prêt à vous aider</p>
+                  <h4>FacturaPro Assistant</h4>
+                  <p>Online • Ready to help</p>
                 </div>
               </div>
             
               <div className="ai-message">
                 <p>
                   {isForgotPassword 
-                    ? "Je vous assiste pour réinitialiser votre mot de passe en toute sécurité."
+                    ? "I'm assisting you to reset your password securely."
                     : isLogin 
-                      ? "Bonjour ! Je détecte que vous souhaitez accéder à votre compte. Laissez-moi vous guider."
-                      : "Bienvenue ! Je vous assiste pour créer votre compte et optimiser votre expérience de facturation."
+                      ? "Hello! I detect that you want to access your account. Let me guide you."
+                      : "Welcome! I'm assisting you to create your account and optimize your invoicing experience."
                   }
                 </p>
               </div>
@@ -649,43 +648,43 @@ function Home() {
               <div className="ai-suggestions">
                 {!isForgotPassword && isLogin && (
                   <div className="suggestion-chip" onClick={handleForgotPassword}>
-                    <span>💡 Mot de passe oublié ?</span>
+                    <span>💡 Forgot password?</span>
                   </div>
                 )}
                 {!isForgotPassword && (
                   <div className="suggestion-chip" onClick={toggleAuthMode}>
-                    <span>🚀 {isLogin ? 'Créer un compte' : 'Se connecter'}</span>
+                    <span>🚀 {isLogin ? 'Create an account' : 'Login'}</span>
                   </div>
                 )}
-                <div className="suggestion-chip" onClick={() => console.log('Sécurité')}>
-                  <span>🔐 Sécurité renforcée</span>
+                <div className="suggestion-chip" onClick={() => console.log('Security')}>
+                  <span>🔐 Enhanced security</span>
                 </div>
               </div>
             </div>
 
-            {/* Formulaire d'authentification */}
+            {/* Authentication form */}
             <form className="auth-form" onSubmit={handleSubmit}>
               <h2>
-                {isForgotPassword ? 'Réinitialisation du mot de passe' : 
-                 isLogin ? 'Connexion' : 'Inscription'}
+                {isForgotPassword ? 'Password Reset' : 
+                 isLogin ? 'Login' : 'Registration'}
               </h2>
               
               {errorMessage && (
-                <div className="error-message" style={{color: errorMessage.includes('succès') ? 'green' : 'red', marginBottom: '15px'}}>
+                <div className="error-message" style={{color: errorMessage.includes('success') ? 'green' : 'red', marginBottom: '15px'}}>
                   {errorMessage}
                 </div>
               )}
               
               {isForgotPassword && (
                 <div className="forgot-password-info">
-                  <p>Entrez votre email et votre nouveau mot de passe.</p>
+                  <p>Enter your email and your new password.</p>
                 </div>
               )}
               
               {!isLogin && !isForgotPassword && (
                 <>
                   <div className="form-group">
-                    <label htmlFor="name">Nom complet *</label>
+                    <label htmlFor="name">Full Name *</label>
                     <input
                       type="text"
                       id="name"
@@ -693,12 +692,12 @@ function Home() {
                       value={formData.name}
                       onChange={handleInputChange}
                       required
-                      placeholder="Votre nom complet"
+                      placeholder="Your full name"
                     />
                   </div>
                   
                   <div className="form-group">
-                    <label htmlFor="lastname">Nom de famille *</label>
+                    <label htmlFor="lastname">Last Name *</label>
                     <input
                       type="text"
                       id="lastname"
@@ -706,12 +705,12 @@ function Home() {
                       value={formData.lastname}
                       onChange={handleInputChange}
                       required
-                      placeholder="Votre nom de famille"
+                      placeholder="Your last name"
                     />
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="username">Nom d'utilisateur *</label>
+                    <label htmlFor="username">Username *</label>
                     <input
                       type="text"
                       id="username"
@@ -719,7 +718,7 @@ function Home() {
                       value={formData.username}
                       onChange={handleInputChange}
                       required
-                      placeholder="Choisissez un nom d'utilisateur"
+                      placeholder="Choose a username"
                     />
                   </div>
                 </>
@@ -734,14 +733,14 @@ function Home() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  placeholder="votre@email.com"
+                  placeholder="your@email.com"
                 />
               </div>
               
-              {/* Champ de mot de passe - Toujours affiché avec le label approprié */}
+              {/* Password field - Always displayed with appropriate label */}
               <div className="form-group">
                 <label htmlFor="password">
-                  {isForgotPassword ? 'Nouveau mot de passe *' : 'Mot de passe *'}
+                  {isForgotPassword ? 'New Password *' : 'Password *'}
                 </label>
                 <input
                   type="password"
@@ -752,8 +751,8 @@ function Home() {
                   onFocus={handlePasswordFocus}
                   required
                   placeholder={
-                    isForgotPassword ? 'Votre nouveau mot de passe' : 
-                    isLogin ? 'Votre mot de passe' : 'Minimum 6 caractères'
+                    isForgotPassword ? 'Your new password' : 
+                    isLogin ? 'Your password' : 'Minimum 6 characters'
                   }
                 />
                 {!isLogin && formData.password && (
@@ -770,12 +769,12 @@ function Home() {
                 )}
               </div>
               
-              {/* Champ de confirmation de mot de passe */}
+              {/* Password confirmation field */}
               {(isForgotPassword || !isLogin) && (
                 <div className={`confirm-password-container ${showConfirmPassword ? 'visible' : ''}`}>
                   <div className="form-group">
                     <label htmlFor="confirmPassword">
-                      {isForgotPassword ? 'Confirmer le nouveau mot de passe *' : 'Confirmer le mot de passe *'}
+                      {isForgotPassword ? 'Confirm New Password *' : 'Confirm Password *'}
                     </label>
                     <input
                       type="password"
@@ -784,17 +783,17 @@ function Home() {
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
                       required
-                      placeholder={isForgotPassword ? 'Confirmez votre nouveau mot de passe' : 'Confirmez votre mot de passe'}
+                      placeholder={isForgotPassword ? 'Confirm your new password' : 'Confirm your password'}
                       className={!passwordMatch ? 'invalid' : ''}
                     />
                     {formData.confirmPassword && !passwordMatch && (
                       <div className="input-feedback">
-                        Les mots de passe ne correspondent pas
+                        Passwords do not match
                       </div>
                     )}
                     {formData.confirmPassword && passwordMatch && (
                       <div className="input-success">
-                        ✓ Les mots de passe correspondent
+                        ✓ Passwords match
                       </div>
                     )}
                   </div>
@@ -811,10 +810,10 @@ function Home() {
                       checked={formData.rememberMe}
                       onChange={handleInputChange}
                     />
-                    <label htmlFor="rememberMe">Se souvenir de moi</label>
+                    <label htmlFor="rememberMe">Remember me</label>
                   </div>
                   <a href="#forgot-password" className="forgot-password" onClick={handleForgotPassword}>
-                    Mot de passe oublié?
+                    Forgot password?
                   </a>
                 </div>
               )}
@@ -825,26 +824,26 @@ function Home() {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <span>Chargement...</span>
+                  <span>Loading...</span>
                 ) : (
-                  isForgotPassword ? 'Réinitialiser le mot de passe' :
-                  isLogin ? 'Se connecter' : 'Créer un compte'
+                  isForgotPassword ? 'Reset Password' :
+                  isLogin ? 'Login' : 'Create Account'
                 )}
               </button>
               
               <div className="auth-switch">
                 {isForgotPassword ? (
                   <p>
-                    Retour à la{' '}
+                    Back to{' '}
                     <span onClick={backToLogin} className="auth-switch-link">
-                      connexion
+                      login
                     </span>
                   </p>
                 ) : (
                   <p>
-                    {isLogin ? 'Pas encore de compte? ' : 'Déjà un compte? '}
+                    {isLogin ? 'No account yet? ' : 'Already have an account? '}
                     <span onClick={toggleAuthMode} className="auth-switch-link">
-                      {isLogin ? 'Inscrivez-vous' : 'Connectez-vous'}
+                      {isLogin ? 'Sign up' : 'Login'}
                     </span>
                   </p>
                 )}
@@ -854,15 +853,15 @@ function Home() {
             <div className="trust-badges">
               <div className="trust-item">
                 <span className="trust-icon">🔒</span>
-                <span>Chiffrement AES-256</span>
+                <span>AES-256 Encryption</span>
               </div>
               <div className="trust-item">
                 <span className="trust-icon">🤖</span>
-                <span>IA de détection de fraude</span>
+                <span>AI Fraud Detection</span>
               </div>
               <div className="trust-item">
                 <span className="trust-icon">✅</span>
-                <span>Certifié RGPD</span>
+                <span>GDPR Certified</span>
               </div>
             </div>
           </div>
@@ -871,9 +870,9 @@ function Home() {
         </div>
       )}
 
-      {/* Contenu principal */}
+      {/* Main content */}
       <main className="scroll-container">
-        {/* Section Hero avec carrousel d'images */}
+        {/* Hero section with image carousel */}
         <section id="home" className="fullpage-section hero-section">
           <div className="carousel-container">
             {carouselImages.map((image, index) => (
@@ -888,143 +887,140 @@ function Home() {
           
           <div className="hero-content-container">
             <div className="hero-text-content">
-              <h1 className="main-title">Facturation Simplifiée</h1>
-              <h2 className="sub-title">Succès Accéléré</h2>
+              <h1 className="main-title">Simplified Invoicing</h1>
+              <h2 className="sub-title">Accelerated Success</h2>
               <p className="hero-description">
-                Dites adieu aux maux de tête de la facturation.<br />
-                Créez des devis et factures pro en un clin d'œil.
+                Say goodbye to invoicing headaches.<br />
+                Create professional quotes and invoices in a blink.
               </p>
               
               <div className="cta-section">
                 <button className="primary-cta" onClick={toggleAuthForm}>
-                  Commencer
+                  Get Started
                 </button>
-                <p className="cta-subtext">Votre partenaire pour une gestion commerciale sans tracas</p>
+                <p className="cta-subtext">Your partner for hassle-free business management</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Section Fonctionnalités */}
+        {/* Features section */}
         <section id="features" className="fullpage-section features-section">
           <div className="section-container">
-            <h2>Fonctionnalités <span className="highlight">Intelligentes</span></h2>
+            <h2>Smart <span className="highlight">Features</span></h2>
             <p className="section-description">
-              Découvrez comment notre application révolutionne votre gestion financière avec l'IA
+              Discover how our application revolutionizes your financial management with AI
             </p>
             
             <div className="features-grid">
               <div className="feature-card">
                 <div className="feature-icon">📊</div>
-                <h3>Devis Professionnels</h3>
-                <p>Générez des devis élégants et personnalisés en quelques clics seulement.</p>
+                <h3>Professional Quotes</h3>
+                <p>Generate elegant and personalized quotes in just a few clicks.</p>
               </div>
               
               <div className="feature-card">
                 <div className="feature-icon">🧾</div>
-                <h3>Facturation Automatisée</h3>
-                <p>Transformez vos devis en factures et suivez les paiements automatiquement.</p>
+                <h3>Automated Invoicing</h3>
+                <p>Transform your quotes into invoices and track payments automatically.</p>
               </div>
               
               <div className="feature-card">
                 <div className="feature-icon">🤖</div>
-                <h3>Assistant IA</h3>
-                <p>Notre intelligence artificielle vous suggère les meilleures pratiques de facturation.</p>
+                <h3>AI Assistant</h3>
+                <p>Our artificial intelligence suggests best invoicing practices.</p>
               </div>
               
               <div className="feature-card">
                 <div className="feature-icon">📈</div>
-                <h3>Analyses Avancées</h3>
-                <p>Visualisez vos performances financières avec des tableaux de bord intuitifs.</p>
+                <h3>Advanced Analytics</h3>
+                <p>Visualize your financial performance with intuitive dashboards.</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Section Outils */}
+        {/* Tools section */}
         <section id="tools" className="fullpage-section tools-section">
           <div className="section-container">
-            <h2>Vos <span className="highlight">Outils</span></h2>
-            <p className="section-subtitle">Vos Factures, Vos Règles</p>
+            <h2>Your <span className="highlight">Tools</span></h2>
+            <p className="section-subtitle">Your Invoices, Your Rules</p>
             
             <div className="tools-grid">
               <div className="tool-card">
                 <div className="tool-icon">📝</div>
-                <h3>Devis<br /><span className="tool-action">Créer</span></h3>
-                <p>Transformez vos idées en propositions commerciales percutantes en un clin d'œil.</p>
-                <button className="tool-button" onClick={toggleAuthForm}>Commencer</button>
+                <h3>Quotes<br /><span className="tool-action">Create</span></h3>
+                <p>Transform your ideas into compelling business proposals in a blink.</p>
               </div>
               
               <div className="tool-card">
                 <div className="tool-icon">🧾</div>
-                <h3>Factures<br /><span className="tool-action">Générer</span></h3>
-                <p>Convertissez vos devis en factures professionnelles sans effort, pour un flux de trésorerie optimisé.</p>
-                <button className="tool-button" onClick={toggleAuthForm}>Commencer</button>
+                <h3>Invoices<br /><span className="tool-action">Generate</span></h3>
+                <p>Convert your quotes into professional invoices effortlessly, for optimized cash flow.</p>
               </div>
               
               <div className="tool-card">
                 <div className="tool-icon">👤</div>
-                <h3>Profil<br /><span className="tool-action">Gérer</span></h3>
-                <p>Personnalisez votre espace et gérez vos informations d'entreprise avec une aisance déconcertante.</p>
-                <button className="tool-button" onClick={toggleAuthForm}>Commencer</button>
+                <h3>Profile<br /><span className="tool-action">Manage</span></h3>
+                <p>Customize your space and manage your business information with ease.</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Section Objectifs */}
+        {/* Objectives section */}
         <section id="objectives" className="fullpage-section objectives-section">
           <div className="section-container">
-            <h2>Objectifs</h2>
+            <h2>Objectives</h2>
             <p className="section-description">
-              Notre mission : rendre la génération de devis et factures un jeu d'enfant, 
-              faciliter la conversion, et offrir une gestion multi-entreprises avec un tableau de bord intuitif.
+              Our mission: make generating quotes and invoices child's play, 
+              facilitate conversion, and offer multi-business management with an intuitive dashboard.
             </p>
             
             <div className="magic-strip">
               <div className="magic-strip-content">
                 <div className="magic-item">
                   <span className="magic-icon">✨</span>
-                  <span className="magic-text">Devis Magiques</span>
+                  <span className="magic-text">Magic Quotes</span>
                 </div>
                 <div className="magic-item">
                   <span className="magic-icon">⚡</span>
-                  <span className="magic-text">Factures Instantanées</span>
+                  <span className="magic-text">Instant Invoices</span>
                 </div>
                 <div className="magic-item">
                   <span className="magic-icon">🏢</span>
-                  <span className="magic-text">Gestion Multi-entreprises</span>
+                  <span className="magic-text">Multi-business Management</span>
                 </div>
                 <div className="magic-item">
                   <span className="magic-icon">📊</span>
-                  <span className="magic-text">Tableau de Bord Intuitif</span>
+                  <span className="magic-text">Intuitive Dashboard</span>
                 </div>
                 <div className="magic-item">
                   <span className="magic-icon">🔄</span>
-                  <span className="magic-text">Conversion Facile</span>
+                  <span className="magic-text">Easy Conversion</span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Section À propos */}
+        {/* About section */}
         <section id="about" className="fullpage-section about-section">
           <div className="section-container">
             <div className="about-content">
               <div className="about-text">
-                <h2>Notre Vision : <span className="highlight">La Facturation Réinventée</span></h2>
+                <h2>Our Vision: <span className="highlight">Invoicing Reinvented</span></h2>
                 <p>
-                  L'Application Web de Facturation est votre nouvel assistant personnel pour la gestion commerciale. 
-                  Créez des devis percutants, transformez-les en factures impeccables, gérez votre profil et les détails 
-                  de votre entreprise. Conçue pour les indépendants et les PME, elle rend la facturation aussi simple qu'un café.
+                  The Web Invoicing Application is your new personal assistant for business management. 
+                  Create impactful quotes, transform them into impeccable invoices, manage your profile and 
+                  business details. Designed for freelancers and SMEs, it makes invoicing as simple as coffee.
                 </p>
                 
                 <div className="stats-container">
                   {[
-                    { value: '100%', label: 'Sécurisé' },
-                    { value: '5min', label: 'Configuration' },
-                    { value: '24/7', label: 'Disponible' }
+                    { value: '100%', label: 'Secure' },
+                    { value: '5min', label: 'Setup' },
+                    { value: '24/7', label: 'Available' }
                   ].map((stat, index) => (
                     <div key={index} className="stat-item">
                       <div className="stat-number">{stat.value}</div>
@@ -1037,21 +1033,21 @@ function Home() {
               <div className="about-visual">
                 <div className="floating-card">
                   <div className="card-header">
-                    <h4>Facture Pro Format</h4>
+                    <h4>Pro Invoice Format</h4>
                     <span>№ INV-2023-0582</span>
                   </div>
                   <div className="card-content">
                     <div className="invoice-line">
-                      <span>Design de site web</span>
-                      <span>1 200,00 €</span>
+                      <span>Website design</span>
+                      <span>1,200.00 TND</span>
                     </div>
                     <div className="invoice-line">
-                      <span>Développement frontend</span>
-                      <span>2 400,00 €</span>
+                      <span>Frontend development</span>
+                      <span>2,400.00 TND</span>
                     </div>
                     <div className="invoice-total">
                       <span>TOTAL TTC</span>
-                      <span>3 600,00 €</span>
+                      <span>3,600.00 TND</span>
                     </div>
                   </div>
                 </div>
@@ -1060,71 +1056,71 @@ function Home() {
           </div>
         </section>
 
-        {/* Section Avantages */}
+        {/* Advantages section */}
         <section id="advantages" className="fullpage-section advantages-section">
           <div className="section-container">
             <div className="advantages-header">
-              <h2>Pourquoi choisir <span className="highlight">FacturaPro</span> ?</h2>
+              <h2>Why choose <span className="highlight">FacturaPro</span> ?</h2>
               <p className="section-description">
-                Découvrez tous les avantages qui rendent notre solution de facturation incontournable
+                Discover all the advantages that make our invoicing solution essential
               </p>
             </div>
             
             <div className="advantages-grid">
               <div className="advantage-card">
                 <div className="advantage-icon">🚀</div>
-                <h3>Gain de temps exceptionnel</h3>
-                <p>Réduisez de 70% le temps passé sur la création de devis et factures grâce à nos modèles intelligents.</p>
+                <h3>Exceptional time saving</h3>
+                <p>Reduce by 70% the time spent on creating quotes and invoices thanks to our smart templates.</p>
                 <div className="advantage-stats">
                   <span className="stat-value">70% </span>
-                  <span className="stat-label"> de temps économisé</span>
+                  <span className="stat-label"> time saved</span>
                 </div>
               </div>
               
               <div className="advantage-card">
                 <div className="advantage-icon">💰</div>
-                <h3>Économies garanties</h3>
-                <p>Fini les erreurs coûteuses. Notre système détecte automatiquement les incohérences et omissions.</p>
+                <h3>Guaranteed savings</h3>
+                <p>No more costly errors. Our system automatically detects inconsistencies and omissions.</p>
                 <div className="advantage-stats">
                   <span className="stat-value">45% </span>
-                  <span className="stat-label"> d'erreurs en moins</span>
+                  <span className="stat-label"> fewer errors</span>
                 </div>
               </div>
               
               <div className="advantage-card">
                 <div className="advantage-icon">📈</div>
-                <h3>Croissance accélérée</h3>
-                <p>Facturez plus rapidement, encaissez plus tôt et améliorez votre trésorerie avec notre suivi intelligent.</p>
+                <h3>Accelerated growth</h3>
+                <p>Invoice faster, collect earlier and improve your cash flow with our smart tracking.</p>
                 <div className="advantage-stats">
                   <span className="stat-value">2x </span>
-                  <span className="stat-label"> plus rapide</span>
+                  <span className="stat-label"> faster</span>
                 </div>
               </div>
               
               <div className="advantage-card">
                 <div className="advantage-icon">🌐</div>
-                <h3>Accessibilité totale</h3>
-                <p>Accédez à vos documents depuis n'importe quel appareil, à tout moment, même hors connexion.</p>
+                <h3>Total accessibility</h3>
+                <p>Access your documents from any device, anytime, even offline.</p>
                 <div className="advantage-stats">
                   <span className="stat-value">100% </span>
-                  <span className ="stat-label"> disponible</span>
+                  <span className="stat-label"> available</span>
                 </div>
               </div>
               
               <div className="advantage-card">
                 <div className="advantage-icon">🔒</div>
-                <h3>Sécurité renforcée</h3>
-                <p>Vos données sont cryptées et sauvegardées automatiquement avec la technologie de pointe.</p>
+                <h3>Enhanced security</h3>
+                <p>Your data is encrypted and automatically backed up with cutting-edge technology.</p>
                 <div className="advantage-stats">
                   <span className="stat-value">100% </span>
-                  <span className="stat-label"> sécurisé</span>
+                  <span className="stat-label"> secure</span>
                 </div>
               </div>
               
               <div className="advantage-card">
                 <div className="advantage-icon">🤝</div>
-                <h3>Support réactif</h3>
-                <p>Notre équipe est là pour vous aider à chaque étape avec un support personnalisé et rapide.</p>
+                <h3>Reactive support</h3>
+                <p>Our team is here to help you at every step with personalized and fast support.</p>
                 <div className="advantage-stats">
                   <span className="stat-value">24/7 </span>
                   <span className="stat-label"> support</span>
@@ -1133,53 +1129,16 @@ function Home() {
             </div>
             
             <div className="advantages-cta">
-              <h3>Prêt à révolutionner votre facturation ?</h3>
-              <button className="cta-button" onClick={toggleAuthForm}>Essayer gratuitement</button>
+              <h3>Ready to revolutionize your invoicing?</h3>
+              <button className="cta-button" onClick={toggleAuthForm}>Try for free</button>
             </div>
           </div>
         </section>
 
-        {/* Section Contact */}
-        <section id="contact" className="fullpage-section contact-section">
-          <div className="section-container">
-            <h2>Contactez-nous</h2>
-            <p className="section-description">Prêt à simplifier votre facturation ?</p>
-            
-            <div className="contact-content">
-              <form className="contact-form">
-                <div className="form-group">
-                  <input type="text" placeholder="Votre nom" required />
-                </div>
-                <div className="form-group">
-                  <input type="email" placeholder="Votre email" required />
-                </div>
-                <div className="form-group">
-                  <textarea placeholder="Votre message" rows="5" required></textarea>
-                </div>
-                <button type="submit" className="cta-button">Envoyer le message</button>
-              </form>
-              
-              <div className="contact-info">
-                <h3>Informations de contact</h3>
-                <div className="contact-item">
-                  <span className="contact-icon">📧</span>
-                  <span>contact@facturapro.fr</span>
-                </div>
-                <div className="contact-item">
-                  <span className="contact-icon">📱</span>
-                  <span>+33 1 23 45 67 89</span>
-                </div>
-                <div className="contact-item">
-                  <span className="contact-icon">📍</span>
-                  <span>Tunis, Tunis</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        
       </main>
 
-      {/* Chatbot fixe en bas à droite */}
+      {/* Fixed chatbot at bottom right */}
       <div className={`chatbot-container ${showChatbot ? 'open' : ''}`}>
         {showChatbot ? (
           <div className="chatbot-window">
@@ -1187,8 +1146,8 @@ function Home() {
               <div className="chatbot-info">
                 <div className="chatbot-avatar">🤖</div>
                 <div>
-                  <h4>Assistant FacturaPro</h4>
-                  <p>En ligne • Prêt à vous aider</p>
+                  <h4>FacturaPro Assistant</h4>
+                  <p>Online • Ready to help</p>
                 </div>
               </div>
               <button className="chatbot-close" onClick={toggleChatbot}>
@@ -1214,7 +1173,7 @@ function Home() {
             ))}
           </div>
       
-          {/* Suggestions rapides */}
+          {/* Quick suggestions */}
           <div className="chatbot-suggestions">
             {quickSuggestions.map((suggestion, index) => (
               <button
@@ -1231,7 +1190,7 @@ function Home() {
           <form className="chatbot-input" onSubmit={handleMessageSubmit}>
             <input
               type="text"
-              placeholder="Tapez votre message..."
+              placeholder="Type your message..."
               value={userMessage}
               onChange={(e) => setUserMessage(e.target.value)}
             />

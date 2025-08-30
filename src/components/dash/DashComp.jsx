@@ -34,7 +34,7 @@ const DashComp = ({ setIsAuthenticated }) => {
   const profileDropdownRef = useRef(null);
   const notificationsDropdownRef = useRef(null);
 
-  // Gestion du thème sombre
+  // Dark theme management
   useEffect(() => {
     if (darkMode) {
       document.documentElement.setAttribute('data-theme', 'dark');
@@ -43,7 +43,7 @@ const DashComp = ({ setIsAuthenticated }) => {
     }
   }, [darkMode]);
 
-  // Gestion du redimensionnement et fermeture des menus en desktop
+  // Resize management and menu closing on desktop
   useEffect(() => {
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
@@ -52,7 +52,7 @@ const DashComp = ({ setIsAuthenticated }) => {
       }
     };
 
-    // Fermeture des menus en cliquant à l'extérieur
+    // Close menus when clicking outside
     const handleClickOutside = (event) => {
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target) && 
           !event.target.closest('.user-mini-profile-container')) {
@@ -89,15 +89,15 @@ const DashComp = ({ setIsAuthenticated }) => {
       
       window.location.href = '/';
     } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
+      console.error('Error during logout:', error);
       window.location.href = '/';
     }
   };
 
   const notifications = [
-    { id: 1, text: "Nouvelle réclamation reçue", time: "10 min ago", read: false },
-    { id: 2, text: "Facture payée", time: "1h ago", read: true },
-    { id: 3, text: "Mise à jour du système", time: "2h ago", read: true }
+    { id: 1, text: "New claim received", time: "10 min ago", read: false },
+    { id: 2, text: "Invoice paid", time: "1h ago", read: true },
+    { id: 3, text: "System update", time: "2h ago", read: true }
   ];
 
   const handleNavigation = (path) => {
@@ -110,7 +110,7 @@ const DashComp = ({ setIsAuthenticated }) => {
   };
 
   const markAllAsRead = () => {
-    // Ici vous pourriez mettre à jour l'état des notifications
+    // Here you could update notification status
     setShowNotifications(false);
   };
 
@@ -121,11 +121,11 @@ const DashComp = ({ setIsAuthenticated }) => {
       {/* Sidebar */}
       <div className="ai-sidebar" ref={sidebarRef}>
         <div className="sidebar-header">
-          {/* Profil Comptable en haut */}
+          {/* Accountant Profile at top */}
           <div className="sidebar-profile">
             <div className="sidebar-avatar">
               <img 
-                src={userData?.avatar || defaultAvatar} 
+                src={userData?.image || defaultAvatar} 
                 onError={(e) => {
                   e.target.onerror = null; 
                   e.target.src = defaultAvatar;
@@ -138,7 +138,7 @@ const DashComp = ({ setIsAuthenticated }) => {
             <button 
               className="mobile-menu-button" 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >
               {mobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
             </button>
@@ -155,7 +155,7 @@ const DashComp = ({ setIsAuthenticated }) => {
                   onClick={() => handleNavigation('/dash-comp')}
                 >
                   <FiHome className="icon" /> 
-                  <span>Accueil</span>
+                  <span>Home</span>
                 </li>
                 <li 
                   className={location.pathname === '/dash-comp/dashb_comp' ? 'active' : ''} 
@@ -169,7 +169,7 @@ const DashComp = ({ setIsAuthenticated }) => {
                   onClick={() => handleNavigation('/dash-comp/entreprises')}
                 >
                   <FiBriefcase className="icon" /> 
-                  <span>Entreprises</span>
+                  <span>Businesses</span>
                 </li>
                 <li 
                   className={location.pathname.includes('/dash-comp/notification') ? 'active' : ''} 
@@ -183,27 +183,27 @@ const DashComp = ({ setIsAuthenticated }) => {
                   onClick={() => handleNavigation('/dash-comp/factures')}
                 >
                   <FiFileText className="icon" /> 
-                  <span>Factures</span>
+                  <span>Invoices</span>
                 </li>
-                {/* Ajout du profil */}
+                {/* Profile addition */}
                 <li 
                   className={location.pathname.includes('/dash-comp/profile') ? 'active' : ''} 
                   onClick={() => handleNavigation('/dash-comp/profile')}
                 >
                   <FiUser className="icon" /> 
-                  <span>Profil</span>
+                  <span>Profile</span>
                 </li>
               </ul>
             </div>
 
-            {/* Boutons en bas de la sidebar */}
+            {/* Buttons at bottom of sidebar */}
             <div className="sidebar-footer">
               <button 
                 className="theme-toggle-btn sidebar-btn" 
                 onClick={toggleDarkMode}
               >
                 {darkMode ? <FiSun className="icon" /> : <FiMoon className="icon" />}
-                <span>{darkMode ? 'Mode Jour' : 'Mode Nuit'}</span>
+                <span>{darkMode ? 'Day Mode' : 'Night Mode'}</span>
               </button>
               
               <button 
@@ -218,7 +218,7 @@ const DashComp = ({ setIsAuthenticated }) => {
         )}
       </div>
 
-      {/* Contenu principal (sans header) */}
+      {/* Main content (without header) */}
       <div className="ai-main">
         <div className="ai-content">
           <Outlet context={{ userData }} />

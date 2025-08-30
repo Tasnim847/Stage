@@ -11,175 +11,174 @@ const Calendar = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Fonction pour récupérer le token correctement
+  // Function to get token correctly
   const getToken = () => {
     try {
-      // Essayer plusieurs clés possibles pour le token
+      // Try multiple possible keys for token
       const tokenKeys = ['token', 'authToken', 'jwtToken', 'userToken'];
       
       for (const key of tokenKeys) {
         const token = localStorage.getItem(key);
-        if (token && token.length > 100) { // Un token JWT valide est long
-          console.log('Token trouvé avec la clé:', key);
+        if (token && token.length > 100) { // A valid JWT token is long
+          console.log('Token found with key:', key);
           return token;
         }
       }
       
-      // Vérifier aussi sessionStorage
+      // Also check sessionStorage
       for (const key of tokenKeys) {
         const token = sessionStorage.getItem(key);
         if (token && token.length > 100) {
-          console.log('Token trouvé dans sessionStorage avec la clé:', key);
+          console.log('Token found in sessionStorage with key:', key);
           return token;
         }
       }
       
       return null;
     } catch (err) {
-      console.error('Erreur lors de la récupération du token:', err);
+      console.error('Error retrieving token:', err);
       return null;
     }
   };
 
-  // Récupérer les devis depuis le backend
-  // Récupérer les devis depuis le backend
-useEffect(() => {
-  const fetchDevis = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      const token = getToken();
-      
-      if (!token) {
-        setError('Token non trouvé. Veuillez vous reconnecter.');
+  // Get quotes from backend
+  useEffect(() => {
+    const fetchDevis = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        
+        const token = getToken();
+        
+        if (!token) {
+          setError('Token not found. Please reconnect.');
+          setLoading(false);
+          loadMockData();
+          return;
+        }
+
+        const response = await axios.get('http://localhost:5000/api/devis', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        });
+        
+        // Check response format
+        if (response.data && response.data.success && Array.isArray(response.data.data)) {
+          console.log('Quotes received:', response.data.data);
+          setDevis(response.data.data);
+          createDevisEvents(response.data.data);
+        } else {
+          setError('Invalid data format received from server');
+          console.error('Unexpected response:', response.data);
+          loadMockData();
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Complete error when retrieving quotes:', error);
+        
+        // Specific error handling
+        if (error.response?.status === 403) {
+          setError('Unauthorized access. You must be a business.');
+        } else if (error.response?.status === 404) {
+          setError('No business found for your account.');
+        } else if (error.code === 'ECONNABORTED') {
+          setError('Server connection timeout.');
+        } else if (error.response?.data?.message) {
+          setError(`Server error: ${error.response.data.message}`);
+        } else {
+          setError('Server connection error. Displaying demo data.');
+        }
+        
         setLoading(false);
         loadMockData();
-        return;
       }
+    };
 
-      const response = await axios.get('http://localhost:5000/api/devis', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
+    // Function to load mock data
+    const loadMockData = () => {
+      const mockDevis = [
+        {
+          id: 1,
+          numero: "DEV-2024-001",
+          date_validite: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          client_name: "Test Client",
+          montant_ttc: 1200.00,
+          statut: "brouillon",
+          lignesDevis: []
         },
-        timeout: 10000
+        {
+          id: 2,
+          numero: "DEV-2024-002", 
+          date_validite: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          client_name: "Important Client",
+          montant_ttc: 3500.00,
+          statut: "signé",
+          lignesDevis: []
+        }
+      ];
+      
+      setDevis(mockDevis);
+      createDevisEvents(mockDevis);
+    };
+
+    // Function to create quote events
+    const createDevisEvents = (devisData) => {
+      const devisEvents = {};
+      devisData.forEach(devis => {
+        if (devis.date_validite) {
+          try {
+            const dateKey = new Date(devis.date_validite).toDateString();
+            if (!devisEvents[dateKey]) {
+              devisEvents[dateKey] = [];
+            }
+            
+            devisEvents[dateKey].push({
+              id: `devis-${devis.id}`,
+              title: `Quote: ${devis.numero}`,
+              time: '23:59',
+              type: 'devis',
+              statut: devis.statut,
+              client: devis.client_name,
+              montant: devis.montant_ttc
+            });
+          } catch (dateError) {
+            console.error('Date format error for quote:', devis.id, dateError);
+          }
+        }
       });
       
-      // Vérifier le format de réponse
-      if (response.data && response.data.success && Array.isArray(response.data.data)) {
-        console.log('Devis reçus:', response.data.data);
-        setDevis(response.data.data);
-        createDevisEvents(response.data.data);
-      } else {
-        setError('Format de données invalide reçu du serveur');
-        console.error('Réponse inattendue:', response.data);
-        loadMockData();
-      }
-      
-      setLoading(false);
-    } catch (error) {
-      console.error('Erreur complète lors de la récupération des devis:', error);
-      
-      // Gestion spécifique des erreurs
-      if (error.response?.status === 403) {
-        setError('Accès non autorisé. Vous devez être une entreprise.');
-      } else if (error.response?.status === 404) {
-        setError('Aucune entreprise trouvée pour votre compte.');
-      } else if (error.code === 'ECONNABORTED') {
-        setError('Timeout de connexion au serveur.');
-      } else if (error.response?.data?.message) {
-        setError(`Erreur serveur: ${error.response.data.message}`);
-      } else {
-        setError('Erreur de connexion au serveur. Affichage des données de démonstration.');
-      }
-      
-      setLoading(false);
-      loadMockData();
-    }
-  };
+      setEvents(devisEvents);
+    };
 
-  // Fonction pour charger des données mockées
-  const loadMockData = () => {
-    const mockDevis = [
-      {
-        id: 1,
-        numero: "DEV-2024-001",
-        date_validite: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        client_name: "Client Test",
-        montant_ttc: 1200.00,
-        statut: "brouillon",
-        lignesDevis: []
-      },
-      {
-        id: 2,
-        numero: "DEV-2024-002", 
-        date_validite: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        client_name: "Client Important",
-        montant_ttc: 3500.00,
-        statut: "signé",
-        lignesDevis: []
-      }
-    ];
-    
-    setDevis(mockDevis);
-    createDevisEvents(mockDevis);
-  };
+    fetchDevis();
+  }, []);
 
-  // Fonction pour créer les événements des devis
-  const createDevisEvents = (devisData) => {
-    const devisEvents = {};
-    devisData.forEach(devis => {
-      if (devis.date_validite) {
-        try {
-          const dateKey = new Date(devis.date_validite).toDateString();
-          if (!devisEvents[dateKey]) {
-            devisEvents[dateKey] = [];
-          }
-          
-          devisEvents[dateKey].push({
-            id: `devis-${devis.id}`,
-            title: `Devis: ${devis.numero}`,
-            time: '23:59',
-            type: 'devis',
-            statut: devis.statut,
-            client: devis.client_name,
-            montant: devis.montant_ttc
-          });
-        } catch (dateError) {
-          console.error('Erreur de format de date pour le devis:', devis.id, dateError);
-        }
-      }
-    });
-    
-    setEvents(devisEvents);
-  };
-
-  fetchDevis();
-}, []);
-
-  // Génération de suggestions IA (simulées)
+  // Generate AI suggestions (simulated)
   useEffect(() => {
     const suggestions = [
-      "Réunion d'équipe à 10h00",
-      "Déjeuner avec client à 12h30",
-      "Préparer le rapport trimestriel",
-      "Appel avec le département technique",
-      "Revue des objectifs du mois"
+      "Team meeting at 10:00",
+      "Lunch with client at 12:30",
+      "Prepare quarterly report",
+      "Call with technical department",
+      "Review monthly goals"
     ];
     
-    // Simulation de l'IA qui apprend des habitudes
+    // Simulation of AI learning from habits
     const now = new Date();
     if (now.getHours() >= 9 && now.getHours() < 12) {
-      suggestions.unshift("Planifier les tâches de la journée");
+      suggestions.unshift("Plan daily tasks");
     } else if (now.getHours() >= 15 && now.getHours() < 18) {
-      suggestions.unshift("Préparer le plan pour demain");
+      suggestions.unshift("Prepare plan for tomorrow");
     }
     
     setAiSuggestions(suggestions);
   }, []);
 
-  // Fonctions pour naviguer dans le calendrier
+  // Functions to navigate calendar
   const goToPreviousMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   };
@@ -193,12 +192,12 @@ useEffect(() => {
     setSelectedDate(new Date());
   };
 
-  // Obtenir les événements pour une date spécifique
+  // Get events for specific date
   const getEventsForDate = (date) => {
     return events[date.toDateString()] || [];
   };
 
-  // Générer les jours du mois
+  // Generate days of month
   const getDaysInMonth = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -211,7 +210,7 @@ useEffect(() => {
     
     const days = [];
     
-    // Jours du mois précédent
+    // Days of previous month
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = 0; i < startDay; i++) {
       days.push({
@@ -221,7 +220,7 @@ useEffect(() => {
     }
     days.reverse();
     
-    // Jours du mois actuel
+    // Days of current month
     for (let i = 1; i <= daysInMonth; i++) {
       const date = new Date(year, month, i);
       days.push({
@@ -232,7 +231,7 @@ useEffect(() => {
       });
     }
     
-    // Jours du mois suivant
+    // Days of next month
     const daysNeeded = 42 - days.length;
     for (let i = 1; i <= daysNeeded; i++) {
       days.push({
@@ -245,17 +244,17 @@ useEffect(() => {
   };
 
   const days = getDaysInMonth();
-  const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
-  const dayNames = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  // Filtrer les devis pour la date sélectionnée
+  // Filter quotes for selected date
   const getDevisForSelectedDate = () => {
     return devis.filter(devis => {
       if (!devis.date_validite) return false;
       try {
         return new Date(devis.date_validite).toDateString() === selectedDate.toDateString();
       } catch (error) {
-        console.error('Erreur de date:', error);
+        console.error('Date error:', error);
         return false;
       }
     });
@@ -264,7 +263,7 @@ useEffect(() => {
   if (loading) {
     return (
       <div className="calendar-compact">
-        <div className="loading">Chargement des devis...</div>
+        <div className="loading">Loading quotes...</div>
       </div>
     );
   }
@@ -272,7 +271,7 @@ useEffect(() => {
   return (
     <div className="calendar-compact">
       <div className="calendar-header">
-        <h1>Calendrier </h1>
+        <h1>Calendar</h1>
         {error && <div className="error-banner">{error}</div>}
       </div>
       
@@ -284,7 +283,7 @@ useEffect(() => {
               <h2>{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</h2>
               <button onClick={goToNextMonth} className="nav-btn">&gt;</button>
             </div>
-            <button onClick={goToToday} className="today-btn">Aujourd'hui</button>
+            <button onClick={goToToday} className="today-btn">Today</button>
           </div>
           
           <div className="calendar-grid">
@@ -307,13 +306,13 @@ useEffect(() => {
                     <div 
                       key={event.id} 
                       className={`event-preview ${event.statut === 'brouillon' ? 'draft' : event.statut === 'signé' ? 'signed' : 'pending'}`}
-                      title={`${event.client} - ${event.montant} DT`}
+                      title={`${event.client} - ${event.montant} TND`}
                     >
                       {event.title}
                     </div>
                   ))}
                   {devisEvents.length > 2 && (
-                    <div className="more-events">+{devisEvents.length - 2} devis</div>
+                    <div className="more-events">+{devisEvents.length - 2} quotes</div>
                   )}
                 </div>
               );
@@ -323,19 +322,19 @@ useEffect(() => {
         
         <div className="calendar-right-panel">
           <div className="selected-date-section">
-            <h3>{selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</h3>
+            <h3>{selectedDate.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</h3>
             
             <div className="devis-list">
-              <h4>Échéances de devis</h4>
+              <h4>Quote Deadlines</h4>
               {getDevisForSelectedDate().length === 0 ? (
-                <p className="no-events">Aucune échéance de devis</p>
+                <p className="no-events">No quote deadlines</p>
               ) : (
                 getDevisForSelectedDate().map(devis => (
                   <div key={devis.id} className={`devis-item ${devis.statut}`}>
                     <div className="devis-info">
                       <span className="devis-numero">{devis.numero}</span>
                       <span className="devis-client">{devis.client_name}</span>
-                      <span className="devis-montant">{devis.montant_ttc} DT TTC</span>
+                      <span className="devis-montant">{devis.montant_ttc} TND TTC</span>
                     </div>
                     <div className={`devis-statut ${devis.statut}`}>
                       {devis.statut}
