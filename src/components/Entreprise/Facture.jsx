@@ -5,7 +5,7 @@ import {
   FiFileText, FiPlusCircle, FiRefreshCw, FiChevronLeft, FiChevronRight, 
   FiX, FiDownload, FiPrinter, FiEdit, FiClock, FiDollarSign, FiUser, 
   FiCalendar, FiCheckCircle, FiAlertCircle, FiInfo, FiChevronUp,
-  FiEye, FiDownloadCloud
+  FiEye, FiDownloadCloud, FiSearch, FiTrash2
 } from 'react-icons/fi';
 import './Entreprise.css';
 
@@ -13,19 +13,23 @@ const Facture = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [factures, setFactures] = useState([]);
+  const [filteredFactures, setFilteredFactures] = useState([]);
   const [selectedFacture, setSelectedFacture] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
-    itemsPerPage: 9,
+    itemsPerPage: 6,
     totalItems: 0
   });
   const [aiInsights, setAiInsights] = useState([]);
   const [visibleSections, setVisibleSections] = useState([]);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [factureToDelete, setFactureToDelete] = useState(null);
   const modalBodyRef = useRef(null);
 
   // Get context
@@ -43,7 +47,7 @@ const Facture = () => {
 
   const { userData } = context;
 
-  const fetchFactures = async (page = 1) => {
+  const fetchFactures = async (page = 1, limit = 6, clientFilter = '') => {
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (!token) {
@@ -54,24 +58,32 @@ const Facture = () => {
       setLoading(true);
       setError(null);
       
-      const response = await axios.get('/api/factures', {
-        params: {
-          page: page,
-          limit: pagination.itemsPerPage
-        },
+      // Construire l'URL avec les paramètres
+      let url = `/api/factures?page=${page}&limit=${limit}`;
+      if (clientFilter) {
+        url += `&client=${encodeURIComponent(clientFilter)}`;
+      }
+
+      const response = await axios.get(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
         }
       });
       
       if (response.data?.success) {
-        setFactures(response.data.data.factures);
-        setPagination({
-          currentPage: page,
-          totalPages: response.data.data.pagination.totalPages,
-          itemsPerPage: response.data.data.pagination.itemsPerPage,
-          totalItems: response.data.data.pagination.totalItems
-        });
+        const facturesData = response.data.data.factures;
+        const paginationData = response.data.data.pagination;
+        
+        setFactures(facturesData);
+        setFilteredFactures(facturesData);
+        
+        // Mettre à jour la pagination avec les données du serveur
+        setPagination(prev => ({
+          ...prev,
+          currentPage: paginationData.currentPage,
+          totalPages: paginationData.totalPages,
+          totalItems: paginationData.totalItems
+        }));
       } else {
         throw new Error(response.data?.message || "Invalid data received from server");
       }
@@ -87,6 +99,26 @@ const Facture = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fonction de recherche
+  const handleSearchSubmit = async (e) => {
+    e.preventDefault();
+    await fetchFactures(1, pagination.itemsPerPage, searchTerm);
+  };
+
+  // Gérer les changements de recherche
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    // Réinitialiser la recherche si le champ est vide
+    if (!e.target.value.trim()) {
+      fetchFactures(1, pagination.itemsPerPage);
+    }
+  };
+
+  // Modifier la fonction de changement de page
+  const handlePageChange = (page) => {
+    fetchFactures(page, pagination.itemsPerPage, searchTerm);
   };
 
   const fetchFactureDetails = async (factureId) => {
@@ -117,6 +149,61 @@ const Facture = () => {
       console.error('Error:', err);
       setError(err.response?.data?.message || err.message || "Error loading invoice details");
     }
+  };
+
+  // Fonction pour supprimer une facture
+  const deleteFacture = async (factureId) => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      if (!token) {
+        navigate('/');
+        return;
+      }
+
+      setLoading(true);
+      
+      const response = await axios.delete(`/api/factures/${factureId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+
+      if (response.data?.success) {
+        // Rafraîchir la liste des factures
+        await fetchFactures(pagination.currentPage, pagination.itemsPerPage, searchTerm);
+        
+        // Fermer les modales si ouvertes
+        setShowDeleteConfirm(false);
+        setFactureToDelete(null);
+        
+        if (showDetails && selectedFacture?.id === factureId) {
+          closeDetails();
+        }
+        
+        // Afficher un message de succès
+        setError(null);
+        alert('Facture supprimée avec succès');
+      } else {
+        throw new Error(response.data?.message || "Erreur lors de la suppression");
+      }
+    } catch (err) {
+      console.error('Error deleting invoice:', err);
+      setError(err.response?.data?.message || err.message || "Error deleting invoice");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fonction pour confirmer la suppression
+  const confirmDelete = (facture) => {
+    setFactureToDelete(facture);
+    setShowDeleteConfirm(true);
+  };
+
+  // Fonction pour annuler la suppression
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setFactureToDelete(null);
   };
 
   const downloadFacturePDF = async (factureId) => {
@@ -439,6 +526,7 @@ const Facture = () => {
           .total-row {
             font-weight: bold;
             background-color: #f8f9fa;
+            font-size: 16px;
           }
           .text-right {
             text-align: right;
@@ -539,8 +627,8 @@ const Facture = () => {
                 <tr>
                   <th>Description</th>
                   <th>Quantity</th>
-                  <th>Unit price HT</th>
-                  <th>Total HT</th>
+                  <th>Unit price HT  </th>
+                  <th>Total HT  </th>
                 </tr>
               </thead>
               <tbody>
@@ -556,29 +644,27 @@ const Facture = () => {
                   `;
                 }).join('') : '<tr><td colspan="4">No items</td></tr>'}
               </tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td colspan="3" style="text-align: right; font-weight: bold;">Total HT:  </td>
+                  <td>${formatCurrency(montantHT)}</td>
+                </tr>
+                <tr class="total-row">
+                  <td colspan="3" style="text-align: right; font-weight: bold;">VAT:   </td>
+                  <td>${formatCurrency(montantTVA)}</td>
+                </tr>
+                <tr class="total-row">
+                  <td colspan="3" style="text-align: right; font-weight: bold;">Total TTC:  </td>
+                  <td>${formatCurrency(montantTTC)}</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
           
-          <div class="amounts-grid">
-            <div class="amount-item">
-              <div class="amount-label">Total HT:</div>
-              <div>${formatCurrency(montantHT)}</div>
-            </div>
-            
-            <div class="amount-item">
-              <div class="amount-label">VAT:</div>
-              <div>${formatCurrency(montantTVA)}</div>
-            </div>
-            
-            <div class="amount-item total">
-              <div class="amount-label">Total TTC:</div>
-              <div>${formatCurrency(montantTTC)}</div>
-            </div>
-            
-            <div class="amount-item">
-              <div class="amount-label">Status:</div>
-              <div>${facture.statut_paiement || 'Unknown'}</div>
-            </div>
+          <div class="section">
+            <div class="section-title">Payment Status</div>
+            <p><strong>Status:</strong> ${facture.statut_paiement || 'Unknown'}</p>
+            ${facture.date_paiement ? `<p><strong>Payment date:</strong> ${formatDate(facture.date_paiement)}</p>` : ''}
           </div>
           
           ${facture.date_echeance ? `
@@ -714,7 +800,7 @@ const Facture = () => {
   }, [showDetails]);
 
   useEffect(() => {
-    fetchFactures();
+    fetchFactures(1, 6);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
@@ -753,7 +839,7 @@ const Facture = () => {
 
   const getStatusIcon = (status) => {
     if (!status) return <FiInfo />;
-    /*
+    
     switch (status.toLowerCase()) {
       case 'payé':
       case 'payee':
@@ -767,7 +853,7 @@ const Facture = () => {
         return <FiEdit />;
       default:
         return <FiInfo />;
-    }*/
+    }
   };
 
   const closeDetails = () => {
@@ -811,7 +897,7 @@ const Facture = () => {
           <p>Error: {error}</p>
           <button 
             className={`btn-retry ${darkMode ? 'dark' : ''}`}
-            onClick={() => fetchFactures()}
+            onClick={() => fetchFactures(1, 6)}
           >
             <FiRefreshCw /> Try again
           </button>
@@ -826,32 +912,41 @@ const Facture = () => {
         <h2>Invoice Management</h2>
       
         <div className={`facture-filters ${darkMode ? 'dark' : ''}`}>
-          <div className="search-box">
-            <input 
-              type="text" 
-              placeholder="Search by client, number..." 
-              className={darkMode ? 'dark' : ''}
-            />
-            <button className={`btn-search ${darkMode ? 'dark' : ''}`}>Search</button>
-          </div>
-          <div className="filter-options">
-            <select className={darkMode ? 'dark' : ''}>
-              <option value="">All statuses</option>
-              <option value="payé">Paid</option>
-              <option value="impayé">Unpaid</option>
-              <option value="partiel">Partial payment</option>
-              <option value="brouillon">Draft</option>
-            </select>
-          </div>
+          <form className="search-box" onSubmit={handleSearchSubmit}>
+            <div className="search-input-wrapper">
+              <FiSearch className="search-icon" />
+              <input 
+                type="text" 
+                placeholder="Search by client, invoice number..." 
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className={darkMode ? 'dark' : ''}
+              />
+            </div>
+            <button type="submit" className={`btn-search ${darkMode ? 'dark' : ''}`}>
+              Search
+            </button>
+          </form>
         </div>
       </div>
 
-      {factures.length === 0 ? (
+      {filteredFactures.length === 0 ? (
         <div className={`no-data ${darkMode ? 'dark' : ''}`}>
-          <p>No invoices found</p>
+          <p>{searchTerm ? 'No invoices found for your search' : 'No invoices found'}</p>
+          {searchTerm && (
+            <button 
+              className={`btn-clear-search ${darkMode ? 'dark' : 'light'}`}
+              onClick={() => {
+                setSearchTerm('');
+                fetchFactures(1, 6);
+              }}
+            >
+              Clear search
+            </button>
+          )}
           <button 
-            className={`btn-refresh ${darkMode ? 'dark' : ''}`}
-            onClick={() => fetchFactures()}
+            className={`btn-refresh ${darkMode ? 'dark' : 'light'}`}
+            onClick={() => fetchFactures(1, 6)}
           >
             <FiRefreshCw /> Refresh
           </button>
@@ -859,7 +954,7 @@ const Facture = () => {
       ) : (
         <>
           <div className="facture-grid">
-            {factures.map(facture => (
+            {filteredFactures.map(facture => (
               <div key={facture.id} className={`facture-card ${darkMode ? 'dark' : ''}`}>
                 <div className="card-header">
                   <div className="card-title-section">
@@ -909,17 +1004,28 @@ const Facture = () => {
                   >
                     <FiDownloadCloud className="icon" />
                   </button>
+                  <button
+                    className={`btn-icon btn-delete ${darkMode ? 'dark' : ''}`}
+                    onClick={() => confirmDelete(facture)}
+                    title="Delete invoice"
+                  >
+                    <FiTrash2 className="icon" />
+                  </button>
                 </div>
               </div>
             ))}
           </div>
 
           <div className={`pagination-container ${darkMode ? 'dark' : ''}`}>
+            <div className="pagination-info">
+              Showing {filteredFactures.length} of {pagination.totalItems} invoices
+              {searchTerm && ` for "${searchTerm}"`}
+            </div>
             <div className="pagination-controls">
               <button
                 className={`btn-pagination ${darkMode ? 'dark' : ''}`}
                 disabled={pagination.currentPage === 1}
-                onClick={() => fetchFactures(pagination.currentPage - 1)}
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
                 aria-label="Previous page"
               >
                 <FiChevronLeft />
@@ -942,7 +1048,7 @@ const Facture = () => {
                     <button
                       key={pageNum}
                       className={`btn-page ${pagination.currentPage === pageNum ? 'active' : ''} ${darkMode ? 'dark' : ''}`}
-                      onClick={() => fetchFactures(pageNum)}
+                      onClick={() => handlePageChange(pageNum)}
                     >
                       {pageNum}
                     </button>
@@ -953,7 +1059,7 @@ const Facture = () => {
               <button
                 className={`btn-pagination ${darkMode ? 'dark' : ''}`}
                 disabled={pagination.currentPage === pagination.totalPages}
-                onClick={() => fetchFactures(pagination.currentPage + 1)}
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
                 aria-label="Next page"
               >
                 <FiChevronRight />
@@ -961,6 +1067,52 @@ const Facture = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Modal de confirmation de suppression */}
+      {showDeleteConfirm && factureToDelete && (
+        <div className={`modal-overlay ${darkMode ? 'dark' : ''}`}>
+          <div className={`modal-content delete-confirm ${darkMode ? 'dark' : ''}`}>
+            <div className="modal-header">
+              <h3>Confirm Deletion</h3>
+              <button className="modal-close" onClick={cancelDelete}>
+                <FiX />
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="delete-warning">
+                <FiAlertCircle className="warning-icon" />
+                <p>Are you sure you want to delete invoice <strong>{factureToDelete.numero || factureToDelete.id}</strong>?</p>
+                <p className="warning-text">This action cannot be undone. All associated data will be permanently deleted.</p>
+                
+                <div className="invoice-info">
+                  <p><strong>Client:</strong> {factureToDelete.client_name || 'Unknown'}</p>
+                  <p><strong>Amount:</strong> {formatCurrency(factureToDelete.montant_ttc || factureToDelete.totals?.montantTTC)}</p>
+                  <p><strong>Status:</strong> <span className={getStatusClass(factureToDelete.statut_paiement)}>
+                    {factureToDelete.statut_paiement || 'Unknown'}
+                  </span></p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-actions">
+              <button 
+                className={`btn-cancel ${darkMode ? 'dark' : ''}`}
+                onClick={cancelDelete}
+              >
+                Cancel
+              </button>
+              <button 
+                className={`btn-delete-confirm ${darkMode ? 'dark' : ''}`}
+                onClick={() => deleteFacture(factureToDelete.id)}
+                disabled={loading}
+              >
+                {loading ? 'Deleting...' : 'Delete Invoice'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showDetails && selectedFacture && (
@@ -1099,7 +1251,6 @@ const Facture = () => {
                       <div className="amount-value">{formatCurrency(selectedFacture.montant_ttc || selectedFacture.totals?.montantTTC)}</div>
                     </div>
                     
-                    
                     <div className="amount-item">
                       <div className="amount-label">Remaining to pay</div>
                       <div className="amount-value remaining">
@@ -1229,7 +1380,7 @@ const Facture = () => {
               </div>
             </div>
             
-            {/* Action buttons in modal */}
+             {/* Action buttons in modal */}
             <div className="modal-actions">
               <button 
                 className={`btn-download-pdf ${darkMode ? 'dark' : ''}`}
@@ -1239,6 +1390,12 @@ const Facture = () => {
               </button>
               <button className={`btn-print ${darkMode ? 'dark' : ''}`}>
                 <FiPrinter /> Print
+              </button>
+              <button 
+                className={`btn-delete ${darkMode ? 'dark' : ''}`}
+                onClick={() => confirmDelete(selectedFacture)}
+              >
+                <FiTrash2 /> Delete
               </button>
             </div>
           </div>

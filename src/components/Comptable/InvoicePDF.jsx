@@ -41,8 +41,6 @@ const InvoicePDF = ({ facture, entreprise, onDownloadComplete }) => {
           <div style="flex: 1;">
             <h3 style="color: #2c3e50; margin-bottom: 15px; font-size: 16px; text-transform: uppercase; letter-spacing: 1px;">Bill to:</h3>
             <p style="margin: 8px 0; font-weight: 600;">${facture.client_name || 'Client Name'}</p>
-            ${facture.client_address ? `<p style="margin: 8px 0;">${facture.client_address}</p>` : ''}
-            ${facture.client_email ? `<p style="margin: 8px 0;">${facture.client_email}</p>` : ''}
           </div>
           
           <div style="flex: 1; text-align: right;">

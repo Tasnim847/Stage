@@ -179,41 +179,10 @@ const Factures = () => {
             <FiSearch className="search-icon" />
             <input
               type="text"
-              placeholder="Search by client, number or status..."
+              placeholder="Search by client or number..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-          </div>
-        </div>
-      </div>
-
-      {/* Statistics */}
-      <div className="stats-container">
-        <div className="stat-card total">
-          <div className="stat-icon">
-            <FiFileText />
-          </div>
-          <div className="stat-content">
-            <span className="stat-label">Total</span>
-            <span className="stat-value">{stats.total}</span>
-          </div>
-        </div>
-        <div className="stat-card payees">
-          <div className="stat-icon">
-            <FiFileText />
-          </div>
-          <div className="stat-content">
-            <span className="stat-label">Paid</span>
-            <span className="stat-value">{stats.payees}</span>
-          </div>
-        </div>
-        <div className="stat-card impayees">
-          <div className="stat-icon">
-            <FiFileText />
-          </div>
-          <div className="stat-content">
-            <span className="stat-label">Unpaid</span>
-            <span className="stat-value">{stats.impayees}</span>
           </div>
         </div>
       </div>
@@ -237,7 +206,6 @@ const Factures = () => {
                   <th>Client</th>
                   <th>Date</th>
                   <th>Amount</th>
-                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -246,7 +214,7 @@ const Factures = () => {
                   currentItems.map((facture) => (
                     <tr key={facture.id}>
                       <td>
-                        <strong>#{facture.numero || facture.id}</strong>
+                        <strong>{facture.numero || facture.id}</strong>
                       </td>
                       <td>
                         <div className="client-cell">
@@ -258,7 +226,6 @@ const Factures = () => {
                       </td>
                       <td>{formatDate(facture.date_emission)}</td>
                       <td className="amount-cell">{formatCurrency(facture.montant_ttc)}</td>
-                      <td>{getStatusBadge(facture.statut_paiement)}</td>
                       <td className="actions">
                         <button className="action-btn view" title="View">
                           <FiEye />

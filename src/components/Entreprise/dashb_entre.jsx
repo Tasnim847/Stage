@@ -18,11 +18,8 @@ const DashboardEntreprise = () => {
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
     const userData = JSON.parse(localStorage.getItem('userData') || sessionStorage.getItem('userData') || '{}');
     
-    const entrepriseId = userData.entrepriseId || userData.entrepriseID || userData.id_entreprise || userData.id;
-    
     return {
       token,
-      entrepriseId,
       userRole: userData.role
     };
   };
@@ -32,37 +29,46 @@ const DashboardEntreprise = () => {
     
     if (!data || !data.stats) return insights;
     
-    const { stats, recent, analytics } = data;
+    const { stats, recent } = data;
     
-    const acceptanceRate = stats.devis > 0 ? (stats.devisAcceptes / stats.devis) * 100 : 0;
-    if (acceptanceRate < 30) {
-      insights.push({
-        type: 'warning',
-        title: 'Low acceptance rate',
-        message: `Your quote acceptance rate is ${acceptanceRate.toFixed(1)}%. Consider reviewing your pricing or communication strategies.`,
-        icon: '📉'
-      });
-    } else if (acceptanceRate > 70) {
-      insights.push({
-        type: 'success',
-        title: 'Excellent performance',
-        message: `Congratulations! Your quote acceptance rate is ${acceptanceRate.toFixed(1)}%, which is excellent.`,
-        icon: '🚀'
-      });
+    // Check if properties exist before doing calculations
+    const devisTotal = stats.devis || 0;
+    const devisAcceptes = stats.devisAcceptes || 0;
+    
+    const acceptanceRate = devisTotal > 0 ? (devisAcceptes / devisTotal) * 100 : 0;
+    
+    if (acceptanceRate < 30 && devisTotal > 0) {
+        insights.push({
+            type: 'warning',
+            title: 'Low acceptance rate',
+            message: `Your quote acceptance rate is ${acceptanceRate.toFixed(1)}%. Consider reviewing your pricing or communication strategies.`,
+            icon: '📉'
+        });
+    } else if (acceptanceRate > 70 && devisTotal > 0) {
+        insights.push({
+            type: 'success',
+            title: 'Excellent performance',
+            message: `Congratulations! Your quote acceptance rate is ${acceptanceRate.toFixed(1)}%, which is excellent.`,
+            icon: '🚀'
+        });
     }
     
+    // Check for unpaid invoices
     if (recent.factures && recent.factures.length > 0) {
-      const unpaidInvoices = recent.factures.filter(f => f.statut_paiement === 'unpaid' || f.statut_paiement === 'overdue');
+      const unpaidInvoices = recent.factures.filter(f => 
+        f.statut_paiement === 'impayé' || f.statut_paiement === 'en_retard'
+      );
       if (unpaidInvoices.length > 3) {
         insights.push({
           type: 'warning',
           title: 'Pending invoices',
-          message: `You have ${unpaidInvoices.length} invoices awaiting payment. Consider implementing a reminder system.`,
+          message: `You have ${unpaidInvoices.length} invoices awaiting payment. Consider setting up a reminder system.`,
           icon: '⏰'
         });
       }
     }
     
+    // Check for draft quotes
     if (stats.devisBrouillon > 5) {
       insights.push({
         type: 'info',
@@ -72,121 +78,89 @@ const DashboardEntreprise = () => {
       });
     }
     
-    const currentMonth = new Date().getMonth();
-    if (currentMonth >= 10 || currentMonth <= 1) {
-      insights.push({
-        type: 'info',
-        title: 'Seasonal opportunity',
-        message: 'We are approaching the holiday season. Consider special offers to boost your sales.',
-        icon: '🎄'
-      });
-    }
-
-    if (analytics && analytics.revenueTrend) {
-      const lastMonthRevenue = analytics.revenueTrend[analytics.revenueTrend.length - 1]?.revenue || 0;
-      const previousMonthRevenue = analytics.revenueTrend[analytics.revenueTrend.length - 2]?.revenue || 0;
-      
-      if (lastMonthRevenue < previousMonthRevenue) {
-        insights.push({
-          type: 'warning',
-          title: 'Revenue decline',
-          message: `Your revenue decreased by ${((previousMonthRevenue - lastMonthRevenue) / previousMonthRevenue * 100).toFixed(1)}% compared to last month.`,
-          icon: '📉'
-        });
-      } else if (lastMonthRevenue > previousMonthRevenue) {
-        insights.push({
-          type: 'success',
-          title: 'Revenue growth',
-          message: `Your revenue increased by ${((lastMonthRevenue - previousMonthRevenue) / previousMonthRevenue * 100).toFixed(1)}% compared to last month.`,
-          icon: '📈'
-        });
-      }
-    }
-    
     return insights;
   };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-        const { token, userRole } = getAuthData();
+      const { token, userRole } = getAuthData();
+      
+      if (!token) {
+        window.location.href = '/';
+        return;
+      }
+
+      if (userRole !== 'entreprise') {
+        setError('Access reserved for business accounts. Your role: ' + userRole);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/dashboard/entreprise?range=${timeRange}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include'
+        });
+
+        if (response.status === 403) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'You do not have permission to access this business');
+        }
+
+        if (response.status === 401) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('userData');
+          sessionStorage.removeItem('authToken');
+          sessionStorage.removeItem('userData');
+          window.location.href = '/';
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
         
-        if (!token) {
-            window.location.href = '/';
-            return;
+        if (data.success) {
+          console.log('Data received:', data.data);
+          setDashboardData(data.data);
+          setAiInsights(generateAiInsights(data.data));
+        } else {
+          setError(data.message || 'Unknown server error');
         }
-
-        if (userRole !== 'entreprise') {
-            setError('Access restricted to business accounts. Your role: ' + userRole);
-            setLoading(false);
-            return;
-        }
-
-        try {
-            const response = await fetch(`http://localhost:5000/api/dashboard/entreprise?range=${timeRange}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include'
-            });
-
-            if (response.status === 403) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'You do not have permission to access this business');
-            }
-
-            if (response.status === 401) {
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('userData');
-                sessionStorage.removeItem('authToken');
-                sessionStorage.removeItem('userData');
-                window.location.href = '/';
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error(`Server error: ${response.status} ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            
-            if (data.success) {
-                setDashboardData(data.data);
-                setAiInsights(generateAiInsights(data.data));
-            } else {
-                setError(data.message || 'Unknown server error');
-            }
-        } catch (err) {
-            console.error('Detailed error:', err);
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
+      } catch (err) {
+        console.error('Detailed error:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchDashboardData();
   }, [timeRange]);
 
   const formatNumber = (num) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('fr-FR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(num || 0);
   };
 
   const formatInteger = (num) => {
-    return new Intl.NumberFormat('en-US').format(num || 0);
+    return new Intl.NumberFormat('fr-FR').format(num || 0);
   };
 
   const devisStatusData = dashboardData ? [
     { name: 'Accepted', value: dashboardData.stats.devisAcceptes, color: '#10b981' },
     { name: 'Rejected', value: dashboardData.stats.devisRefuses, color: '#ef4444' },
-    { name: 'Pending', value: dashboardData.stats.devis - dashboardData.stats.devisAcceptes - dashboardData.stats.devisRefuses, color: '#f59e0b' },
+    { name: 'Pending', value: dashboardData.stats.devisEnAttente, color: '#f59e0b' },
     { name: 'Drafts', value: dashboardData.stats.devisBrouillon, color: '#6b7280' }
   ] : [];
-
-  const revenueData = dashboardData?.analytics?.revenueTrend || [];
 
   const invoiceStatusData = dashboardData ? [
     { name: 'Paid', value: dashboardData.stats.facturesPayees || 0, color: '#10b981' },
@@ -200,23 +174,11 @@ const DashboardEntreprise = () => {
     return (
       <div className="modal-overlay" onClick={() => setShowAiModal(false)}>
         <div className="modal-content ai-enhanced" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header">
-            <div className="modal-title-section">
-              <div className="modal-title-icon">🤖</div>
-              <div>
-                <h3>Artificial Intelligence Insights</h3>
-                <p className="modal-subtitle">Analyses and recommendations based on your data</p>
-              </div>
-            </div>
-            <button className="modal-close" onClick={() => setShowAiModal(false)}>×</button>
-          </div>
+          
           
           <div className="modal-body">
             <div className="ai-insights-section">
-              <div className="ai-header">
-                <div className="ai-icon">AI</div>
-                <h4>Personalized recommendations</h4>
-              </div>
+              
               
               <div className="insights-grid">
                 {aiInsights.length > 0 ? (
@@ -244,7 +206,7 @@ const DashboardEntreprise = () => {
             <div className="detail-section">
               <div className="section-header">
                 <div className="section-icon">📊</div>
-                <h4>How these insights are generated</h4>
+                <h4>How these analyses are generated</h4>
               </div>
               <p>Our artificial intelligence analyzes your data in real time to identify trends, opportunities, and areas for improvement. These recommendations will evolve as you use the platform.</p>
             </div>
@@ -298,7 +260,7 @@ const DashboardEntreprise = () => {
 
         <div className="stat-card revenue">
           <div className="stat-icon">💰</div>
-          <div className="stat-value">{formatNumber(dashboardData?.stats.chiffreAffaire || 0)} TND</div>
+          <div className="stat-value">{formatNumber(dashboardData?.stats.totalTTC || 0)} TND</div>
           <div className="stat-label">Revenue</div>
         </div>
       </div>
@@ -318,7 +280,7 @@ const DashboardEntreprise = () => {
                   <div className="item-main">
                     <span className="item-title">Invoice #{facture.numero}</span>
                     <span className="item-date">
-                      {new Date(facture.date_emission).toLocaleDateString('en-US')}
+                      {new Date(facture.date_emission).toLocaleDateString('fr-FR')}
                     </span>
                   </div>
                   <div className="item-details">
@@ -349,13 +311,13 @@ const DashboardEntreprise = () => {
                   <div className="item-main">
                     <span className="item-title">Quote #{devis.numero}</span>
                     <span className="item-date">
-                      {new Date(devis.date_creation).toLocaleDateString('en-US')}
+                      {new Date(devis.date_creation).toLocaleDateString('fr-FR')}
                     </span>
                   </div>
                   <div className="item-details">
                     <span className="item-amount">{formatNumber(devis.montant_ttc)} TND</span>
-                    <span className={`item-status status-${devis.status}`}>
-                      {devis.status}
+                    <span className={`item-status status-${devis.statut}`}>
+                      {devis.statut}
                     </span>
                   </div>
                 </div>
@@ -371,8 +333,41 @@ const DashboardEntreprise = () => {
 
   const AnalyticsTab = () => {
     const acceptanceRate = dashboardData?.stats.devis > 0 ? 
-      ((dashboardData.stats.devisAcceptes / dashboardData.stats.devis) * 100).toFixed(1) : 0;
+        ((dashboardData.stats.devisAcceptes / dashboardData.stats.devis) * 100).toFixed(1) : 0;
     
+    // Use weekly data from API
+    const weeklyInvoiceData = dashboardData?.analytics?.weeklyInvoices || [];
+    
+    // Calculate weekly total
+    const weeklyTotal = weeklyInvoiceData.reduce((total, day) => total + day.count, 0);
+
+    // Function to format day names in French
+    const formatDayName = (dayName) => {
+      const dayMap = {
+        'Monday': 'Lundi',
+        'Tuesday': 'Mardi',
+        'Wednesday': 'Mercredi',
+        'Thursday': 'Jeudi',
+        'Friday': 'Vendredi',
+        'Saturday': 'Samedi',
+        'Sunday': 'Dimanche'
+      };
+      
+      // If day name is already in French, return as is
+      if (Object.values(dayMap).includes(dayName)) {
+        return dayName;
+      }
+      
+      // Otherwise, convert from English to French
+      return dayMap[dayName] || dayName;
+    };
+
+    // Prepare data for chart with formatted day names
+    const formattedWeeklyData = weeklyInvoiceData.map(day => ({
+      ...day,
+      dayName: formatDayName(day.dayName)
+    }));
+
     return (
       <div className="analytics-container">
         <div className="charts-container">
@@ -413,7 +408,7 @@ const DashboardEntreprise = () => {
                     </div>
                   ) : (
                     <div className="status danger">
-                      <span>✗ Needs improvement</span>
+                      <span>✗ Needs improvements</span>
                     </div>
                   )}
                 </div>
@@ -446,44 +441,58 @@ const DashboardEntreprise = () => {
           </div>
 
           <div className="chart-card">
-            <h3>Revenue evolution</h3>
-            <div className="chart-wrapper">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
-                  <YAxis tickFormatter={(value) => formatNumber(value)} />
-                  <Tooltip formatter={(value) => [formatNumber(value), 'Revenue (TND)']} />
-                  <Legend />
-                  <Bar dataKey="revenue" name="Revenue (TND)" fill="#44745c" />
-                </BarChart>
-              </ResponsiveContainer>
+            <h3>Invoices processed this week</h3>
+            <div className="stats-summary">
+              <div className="stat-badge">
+                <span className="stat-label">Weekly total</span>
+                <span className="stat-value">{formatInteger(weeklyTotal)}</span>
+              </div>
+              <div className="stat-badge">
+                <span className="stat-label">Days with invoices</span>
+                <span className="stat-value">
+                  {weeklyInvoiceData.filter(day => day.count > 0).length}
+                </span>
+              </div>
             </div>
+            <div className="chart-wrapper">
+              {formattedWeeklyData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={formattedWeeklyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis />
+                    <YAxis />
+                    <Tooltip 
+                      formatter={(value) => [value, 'Invoices']}
+                      labelFormatter={(value, payload) => {
+                        if (payload && payload.length > 0) {
+                          return new Date(payload[0].payload.day).toLocaleDateString('fr-FR', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          });
+                        }
+                        return value;
+                      }}
+                    />
+                    <Legend />
+                    <Bar 
+                      dataKey="count" 
+                      name="Processed invoices" 
+                      fill="#44745c" 
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="no-data-message">
+                  <p>No invoice data available this week</p>
+                </div>
+              )}
+            </div>
+            
           </div>
 
-          <div className="chart-card">
-            <h3>Invoice status</h3>
-            <div className="chart-wrapper">
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={invoiceStatusData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {invoiceStatusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => formatInteger(value)} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          
         </div>
       </div>
     );
@@ -525,7 +534,6 @@ const DashboardEntreprise = () => {
       <div className="dashboard-header">
         <div className="header-top">
           <h1>Dashboard</h1>
-          
         </div>
         
         <div className="dashboard-nav">
@@ -545,21 +553,6 @@ const DashboardEntreprise = () => {
           </ul>
         </div>
       </div>
-
-      {aiInsights.length > 0 && (
-        <div className="ai-insights-bar">
-          <div className="ai-insights-preview">
-            <div className="ai-preview-icon">🤖</div>
-            <div className="ai-preview-content">
-              <h4>AI Recommendation</h4>
-              <p>{aiInsights[0].message}</p>
-            </div>
-            <button className="btn-view-insights" onClick={() => setShowAiModal(true)}>
-              View all insights
-            </button>
-          </div>
-        </div>
-      )}
 
       {activeTab === 'overview' ? <OverviewTab /> : <AnalyticsTab />}
 

@@ -4947,3 +4947,372 @@ tr:hover {
     justify-content: space-between;
   }
 }
+
+/* Styles pour la section des factures traitées cette semaine */
+.stats-summary {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  justify-content: center;
+}
+
+.stat-badge {
+  background: var(--gray-100);
+  padding: 1rem;
+  border-radius: var(--border-radius-sm);
+  text-align: center;
+  min-width: 120px;
+  box-shadow: var(--box-shadow);
+}
+
+[data-theme="dark"] .stat-badge {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.stat-badge .stat-label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .stat-badge .stat-label {
+  color: var(--dark-text-light);
+}
+
+.stat-badge .stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+[data-theme="dark"] .stat-badge .stat-value {
+  color: var(--primary-light);
+}
+
+/* Styles pour le message d'absence de données */
+.no-data-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  color: var(--gray-500);
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+}
+
+[data-theme="dark"] .no-data-message {
+  color: var(--dark-text-light);
+}
+
+/* Styles responsifs pour la section des factures */
+@media (max-width: 768px) {
+  .stats-summary {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .stat-badge {
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  .chart-wrapper {
+    height: 250px;
+  }
+}
+
+/* Styles spécifiques pour le graphique des factures hebdomadaires */
+.weekly-invoices-chart {
+  margin-top: 1rem;
+}
+
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.legend-label {
+  color: var(--gray-700);
+}
+
+[data-theme="dark"] .legend-label {
+  color: var(--dark-text-light);
+}
+
+/* Animation pour le chargement des graphiques */
+.chart-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+}
+
+.chart-loading::after {
+  content: '';
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--light-gray);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Styles pour les tooltips personnalisés */
+.custom-tooltip {
+  background: white;
+  border: 1px solid var(--light-gray);
+  padding: 1rem;
+  border-radius: var(--border-radius-sm);
+  box-shadow: var(--box-shadow);
+}
+
+[data-theme="dark"] .custom-tooltip {
+  background: var(--dark-card-bg);
+  border-color: var(--dark-border);
+  color: var(--dark-text);
+}
+
+.tooltip-label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--dark);
+}
+
+[data-theme="dark"] .tooltip-label {
+  color: var(--dark-text);
+}
+
+.tooltip-value {
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+[data-theme="dark"] .tooltip-value {
+  color: var(--primary-light);
+}
+
+/* Styles pour la légende des jours avec factures */
+.week-days-legend {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #44745c;
+}
+
+.week-days-legend h4 {
+  margin: 0 0 12px 0;
+  color: #2d4a3e;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.days-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.day-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.day-name {
+  font-weight: 500;
+  color: #2d4a3e;
+}
+
+.day-count {
+  color: #44745c;
+  font-weight: 600;
+}
+
+.no-invoices-message {
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  padding: 10px;
+}
+
+/* Styles pour la recherche */
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+}
+
+.search-input-wrapper input {
+  padding-left: 40px;
+  width: 100%;
+}
+
+.facture-filters form {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.btn-clear-search {
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 0 10px;
+}
+
+.dark .btn-clear-search {
+  background: #333;
+  border-color: #555;
+  color: #fff;
+}
+
+.pagination-info {
+  margin-bottom: 10px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.dark .pagination-info {
+  color: #aaa;
+}
+
+
+
+
+
+
+
+/* Styles pour les boutons de suppression */
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.3s;
+}
+
+.btn-delete:hover {
+  background-color: #c82333;
+}
+
+.btn-delete:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.btn-delete-confirm {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-delete-confirm:hover {
+  background-color: #c82333;
+}
+
+.btn-cancel {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: background-color 0.3s;
+}
+
+.btn-cancel:hover {
+  background-color: #5a6268;
+}
+
+/* Modal de confirmation de suppression */
+.delete-confirm {
+  max-width: 500px;
+}
+
+.delete-warning {
+  text-align: center;
+  padding: 20px;
+}
+
+.warning-icon {
+  font-size: 48px;
+  color: #dc3545;
+  margin-bottom: 15px;
+}
+
+.warning-text {
+  color: #dc3545;
+  font-weight: bold;
+  margin: 15px 0;
+}
+
+.invoice-info {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  margin: 15px 0;
+  text-align: left;
+}
+
+.invoice-info p {
+  margin: 5px 0;
+}
+
+/* Bouton de suppression dans les cartes */
+.btn-icon.btn-delete {
+  background-color: transparent;
+  color: #dc3545;
+  border: 1px solid #dc3545;
+}
+
+.btn-icon.btn-delete:hover {
+  background-color: #dc3545;
+  color: white;
+}
