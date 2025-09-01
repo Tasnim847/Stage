@@ -5,7 +5,8 @@ import {
     generateFromDevis,
     updateFacture,
     generateFacturePdf,
-    getFacturesByComptable
+    getFacturesByComptable,
+    deleteFacture
 } from '../controllers/factureController.js';
 import { protect, checkRole } from '../middleware/auth.js';
 
@@ -18,7 +19,8 @@ router.route('/')
 
 router.route('/:id')
     .get(protect, checkRole(['entreprise', 'comptable']), getFactureById)
-    .put(protect, checkRole(['entreprise']), updateFacture);
+    .put(protect, checkRole(['entreprise']), updateFacture)
+    .delete(protect, checkRole(['entreprise']), deleteFacture);
 
 router.route('/:id/pdf')
     .get(protect, checkRole(['entreprise', 'comptable']), generateFacturePdf);

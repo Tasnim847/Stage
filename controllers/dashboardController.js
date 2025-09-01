@@ -1,12 +1,11 @@
 import Entreprise from '../models/Entreprise.js';
 import Facture from "../models/Facture.js";
 import Devis from "../models/Devis.js";
-import  sequelize  from '../config/database.js'; // ← AJOUT IMPORTANT
-
+import sequelize from '../config/database.js';
+import { Op } from 'sequelize'; // ← AJOUT IMPORTANT
 
 export const getComptableDashboard = async (req, res) => {
     try {
-
         if (!req.comptableId) {
             return res.status(403).json({
                 success: false,
@@ -18,6 +17,7 @@ export const getComptableDashboard = async (req, res) => {
             where: { comptableId: req.comptableId },
             attributes: ['id', 'nom', 'logo']
         });
+
         const factures = await Facture.findAll({
             where: { comptable_id: req.comptableId },
             include: [{
@@ -63,7 +63,6 @@ export const getComptableDashboard = async (req, res) => {
     }
 };
 
-// controllers/dashboardController.js - Version corrigée
 export const getEntrepriseDashboard = async (req, res) => {
     try {
         // Récupérer l'ID de l'utilisateur connecté
@@ -104,6 +103,51 @@ export const getEntrepriseDashboard = async (req, res) => {
             group: ['statut'],
             raw: true
         });
+
+        // Récupérer les données des factures de cette semaine
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay()); // Début de semaine (dimanche)
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        const endOfWeek = new Date(now);
+        endOfWeek.setDate(now.getDate() + (6 - now.getDay())); // Fin de semaine (samedi)
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        const weeklyInvoices = await Facture.findAll({
+            where: {
+                entreprise_id: entrepriseId,
+                date_emission: {
+                    [Op.between]: [startOfWeek, endOfWeek] // ← CORRECTION ICI: Op au lieu de sequelize.Op
+                }
+            },
+            attributes: [
+                [sequelize.fn('DATE', sequelize.col('date_emission')), 'day'],
+                [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+            ],
+            group: [sequelize.fn('DATE', sequelize.col('date_emission'))],
+            order: [[sequelize.fn('DATE', sequelize.col('date_emission')), 'ASC']],
+            raw: true
+        });
+
+        // Créer un tableau complet pour tous les jours de la semaine
+        const daysOfWeek = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+        const formattedWeeklyInvoices = [];
+
+        // Remplir avec les 7 jours de la semaine
+        for (let i = 0; i < 7; i++) {
+            const currentDate = new Date(startOfWeek);
+            currentDate.setDate(startOfWeek.getDate() + i);
+            const dateString = currentDate.toISOString().split('T')[0];
+
+            const dayData = weeklyInvoices.find(item => item.day === dateString);
+
+            formattedWeeklyInvoices.push({
+                day: dateString,
+                dayName: daysOfWeek[i],
+                count: dayData ? parseInt(dayData.count || 0) : 0
+            });
+        }
 
         // Formater les statistiques des devis
         const statsDevis = {
@@ -170,6 +214,9 @@ export const getEntrepriseDashboard = async (req, res) => {
                 recent: {
                     factures: recentFactures,
                     devis: recentDevis
+                },
+                analytics: {
+                    weeklyInvoices: formattedWeeklyInvoices
                 }
             }
         });

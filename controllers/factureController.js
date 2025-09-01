@@ -825,6 +825,69 @@ export const getFacturesByComptable = async (req, res) => {
     }
 };
 
+export const deleteFacture = async (req, res) => {
+    try {
+        // 1. Vérifier que l'utilisateur a une entreprise
+        const entreprise = await Entreprise.findOne({
+            where: { userId: req.user.id },
+            attributes: ['id']
+        });
+
+        if (!entreprise) {
+            return res.status(403).json({
+                success: false,
+                message: 'Accès non autorisé'
+            });
+        }
+
+        // 2. Vérifier que la facture existe et appartient à l'entreprise
+        const facture = await Facture.findOne({
+            where: {
+                id: req.params.id,
+                entreprise_id: entreprise.id
+            }
+        });
+
+        if (!facture) {
+            return res.status(404).json({
+                success: false,
+                message: 'Facture non trouvée ou accès non autorisé'
+            });
+        }
+
+        // 3. Supprimer dans une transaction
+        const transaction = await sequelize.transaction();
+        try {
+            // Supprimer d'abord les lignes de facture
+            await LigneFacture.destroy({
+                where: { facture_id: facture.id },
+                transaction
+            });
+
+            // Supprimer la facture
+            await facture.destroy({ transaction });
+
+            await transaction.commit();
+
+            res.json({
+                success: true,
+                message: 'Facture supprimée avec succès'
+            });
+
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
+
+    } catch (error) {
+        console.error('Erreur suppression facture:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la suppression de la facture',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
 
 export default {
     getFacturesByEntreprise,
@@ -832,5 +895,6 @@ export default {
     generateFromDevis,
     updateFacture,
     generateFacturePdf,
-    getFacturesByComptable
+    getFacturesByComptable,
+    deleteFacture
 };
