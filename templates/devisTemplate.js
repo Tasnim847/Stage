@@ -6,8 +6,14 @@ export const devisTemplate = ({ entreprise, devis }) => {
         }) + ' DT';
     };
 
+    // Calcul du total HT à partir des lignes du devis
+    const montantHT = devis.lignes.reduce((total, ligne) => {
+        const prixUnitaire = parseFloat(ligne.prix_unitaire_ht || 0);
+        const quantite = parseFloat(ligne.quantite || 1);
+        return total + (prixUnitaire * quantite);
+    }, 0);
+
     // Calculs corrigés
-    const montantHT = parseFloat(devis.montant_ht || 0);
     const montantRemise = devis.remise > 0 ? (montantHT * devis.remise / 100) : 0;
     const montantApresRemise = montantHT - montantRemise;
     const montantTVA = montantApresRemise * (devis.tva / 100);
@@ -20,6 +26,7 @@ export const devisTemplate = ({ entreprise, devis }) => {
   <meta charset="UTF-8">
   <title>Devis ${devis.numero || 'N°0000'}</title>
   <style>
+    /* Votre CSS reste inchangé */
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
       line-height: 1.6;
@@ -211,14 +218,19 @@ export const devisTemplate = ({ entreprise, devis }) => {
       </tr>
     </thead>
     <tbody>
-      ${devis.lignes.map(ligne => `
+      ${devis.lignes.map(ligne => {
+        const prixUnitaire = parseFloat(ligne.prix_unitaire_ht || 0);
+        const quantite = parseFloat(ligne.quantite || 1);
+        const totalLigne = prixUnitaire * quantite;
+
+        return `
         <tr>
           <td>${ligne.description || 'Non spécifié'}</td>
-          <td>${formatMontant(ligne.prix_unitaire_ht)}</td>
-          <td>${ligne.quantite || 1} ${ligne.unite || 'unité'}</td>
-          <td>${formatMontant((parseFloat(ligne.prix_unitaire_ht || 0) * parseFloat(ligne.quantite || 1)))}</td>
+          <td>${formatMontant(prixUnitaire)}</td>
+          <td>${quantite} ${ligne.unite || 'unité'}</td>
+          <td>${formatMontant(totalLigne)}</td>
         </tr>
-      `).join('')}
+      `}).join('')}
     </tbody>
   </table>
 
@@ -262,7 +274,7 @@ export const devisTemplate = ({ entreprise, devis }) => {
 
   <div class="signature-area">
     <div>
-      <p>Fait à ${entreprise.ville || 'Ville non spécifiée'}, le ${new Date(devis.date_creation).toLocaleDateString('fr-FR')}</p>
+      <p>Fait le ${new Date(devis.date_creation).toLocaleDateString('fr-FR')}</p>
     </div>
     <div class="signature-line">
       Signature
