@@ -227,24 +227,17 @@ export const generateFromDevis = async (req, res) => {
     try {
         const { devis_id } = req.body;
 
-        // 1. Vérification de l'entreprise liée à l'utilisateur connecté
+        // Vérification de l'entreprise
         const entreprise = await Entreprise.findOne({
             where: { userId: req.user.id },
-            attributes: ['id', 'comptableId', 'nom']
+            attributes: ['id', 'comptableId', 'nom', 'adresse', 'telephone', 'email', 'numeroIdentificationFiscale']
         });
 
         if (!entreprise) {
             return res.status(403).json({ success: false, message: 'Accès non autorisé' });
         }
 
-        if (!entreprise.comptableId) {
-            return res.status(400).json({
-                success: false,
-                message: 'Aucun comptable associé à cette entreprise'
-            });
-        }
-
-        // 2. Récupération du devis accepté avec ses lignes
+        // Récupération du devis avec toutes ses lignes
         const devis = await Devis.findOne({
             where: {
                 id: devis_id,
@@ -264,59 +257,93 @@ export const generateFromDevis = async (req, res) => {
             });
         }
 
-        // 3. Calcul du montant HT total du devis
+        // Calcul précis des montants
         const montantHT = devis.lignesDevis.reduce((sum, ligne) =>
             sum + (parseFloat(ligne.prix_unitaire_ht || 0) * parseFloat(ligne.quantite || 0)), 0);
 
-        const montantTTC = montantHT * 1.2; // TVA 20% par défaut
+        const remiseMontant = montantHT * (parseFloat(devis.remise || 0) / 100);
+        const montantApresRemise = montantHT - remiseMontant;
+        const montantTVA = montantApresRemise * (parseFloat(devis.tva || 20) / 100);
+        const montantTTC = montantApresRemise + montantTVA;
 
-        // 4. Création de la facture dans une transaction
+        // Génération du numéro de facture
+        const lastFacture = await Facture.findOne({
+            where: { entreprise_id: entreprise.id },
+            order: [['createdAt', 'DESC']],
+            attributes: ['numero']
+        });
+
+        let factureNumber = 1;
+        if (lastFacture && lastFacture.numero) {
+            const match = lastFacture.numero.match(/FAC-(\d+)/);
+            if (match && match[1]) {
+                factureNumber = parseInt(match[1]) + 1;
+            }
+        }
+
+        const numeroFacture = `FAC-${factureNumber.toString().padStart(4, '0')}`;
+
+        // Création de la facture dans une transaction
         const transaction = await sequelize.transaction();
         try {
-            // Création de la facture
             const facture = await Facture.create({
-                numero: `FAC-${Date.now()}`,
+                numero: numeroFacture,
                 date_emission: new Date(),
                 statut_paiement: 'brouillon',
                 client_name: devis.client_name,
-                montant_ht: montantHT,
-                montant_ttc: montantTTC,
+                montant_ht: parseFloat(montantHT.toFixed(2)),
+                montant_ttc: parseFloat(montantTTC.toFixed(2)),
+                remise: parseFloat(devis.remise || 0),
+                tva: parseFloat(devis.tva || 20),
                 entreprise_id: entreprise.id,
                 comptable_id: entreprise.comptableId,
-                devis_id: devis.id
+                devis_id: devis.id,
+                mode_paiement: null,
+                date_paiement: null
             }, { transaction });
 
-            // Copie des lignes de devis vers les lignes de facture
+            // Copie de toutes les lignes du devis
             const lignesFacture = devis.lignesDevis.map(ligne => ({
                 description: ligne.description,
-                prix_unitaire_ht: ligne.prix_unitaire_ht,
-                quantite: ligne.quantite,
-                unite: ligne.unite,
+                prix_unitaire_ht: parseFloat(ligne.prix_unitaire_ht || 0),
+                quantite: parseFloat(ligne.quantite || 0),
+                unite: ligne.unite || 'unité',
                 facture_id: facture.id
             }));
 
             await LigneFacture.bulkCreate(lignesFacture, { transaction });
 
-            // Création de la notification
-            await createNotification(
-                entreprise.comptableId,
-                `Nouvelle facture générée par ${entreprise.nom}`,
-                'NEW_FACTURE',
-                facture.id
-            );
+            // Mise à jour du statut du devis
+            await devis.update({ statut: 'facturé' }, { transaction });
 
-            // Commit transaction
             await transaction.commit();
 
-            // Réponse avec la facture créée
-            return res.json({
+            // Récupération de la facture complète pour la réponse
+            const factureComplete = await Facture.findByPk(facture.id, {
+                include: [{
+                    model: LigneFacture,
+                    as: 'lignesFacture'
+                }]
+            });
+
+            return res.status(201).json({
                 success: true,
-                data: facture,
+                data: {
+                    ...factureComplete.get({ plain: true }),
+                    montants: {
+                        ht: montantHT,
+                        remise: remiseMontant,
+                        apres_remise: montantApresRemise,
+                        tva: montantTVA,
+                        ttc: montantTTC
+                    }
+                },
                 message: 'Facture générée avec succès'
             });
 
         } catch (error) {
             await transaction.rollback();
+            console.error('Erreur transaction génération facture:', error);
             throw error;
         }
 

@@ -32,6 +32,14 @@ const Facture = sequelize.define('Facture', {
         type: DataTypes.ENUM('brouillon', 'payé', 'impayé'),
         defaultValue: 'brouillon',
     },
+    remise: {
+        type: DataTypes.DECIMAL(10, 2),
+        defaultValue: 0.00,
+    },
+    tva: {
+        type: DataTypes.DECIMAL(5, 2),
+        defaultValue: 20.00,
+    },
     mode_paiement: {
         type: DataTypes.STRING,
         allowNull: true,

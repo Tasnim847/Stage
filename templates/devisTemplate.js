@@ -3,13 +3,15 @@ export const devisTemplate = ({ entreprise, devis }) => {
         return parseFloat(montant || 0).toLocaleString('fr-FR', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
-        }) + ' €';
+        }) + ' DT';
     };
 
+    // Calculs corrigés
     const montantHT = parseFloat(devis.montant_ht || 0);
     const montantRemise = devis.remise > 0 ? (montantHT * devis.remise / 100) : 0;
-    const montantTVA = parseFloat(devis.montant_ttc || 0) - montantHT;
-    const montantTTC = parseFloat(devis.montant_ttc || 0);
+    const montantApresRemise = montantHT - montantRemise;
+    const montantTVA = montantApresRemise * (devis.tva / 100);
+    const montantTTC = montantApresRemise + montantTVA;
 
     return `
 <!DOCTYPE html>
@@ -231,6 +233,11 @@ export const devisTemplate = ({ entreprise, devis }) => {
       <span class="total-label">Remise (${devis.remise}%) :</span>
       <span>-${formatMontant(montantRemise)}</span>
     </div>
+    
+    <div class="total-row">
+      <span class="total-label">Total après remise :</span>
+      <span>${formatMontant(montantApresRemise)}</span>
+    </div>
     ` : ''}
     
     <div class="total-row">
@@ -247,7 +254,6 @@ export const devisTemplate = ({ entreprise, devis }) => {
   <div class="payment-terms">
     <h3>Conditions de paiement</h3>
     <p>Paiement par virement bancaire dans les 30 jours</p>
-    ${entreprise.iban ? `<p>IBAN: ${entreprise.iban}</p>` : '<p>IBAN: Non spécifié</p>'}
   </div>
 
   <div class="validity">
