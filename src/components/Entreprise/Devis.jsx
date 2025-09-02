@@ -481,7 +481,7 @@ const Devis = () => {
       if (devis.statut !== 'accepté') {
         setAlert({
           show: true,
-          message: 'Only quotes with "accepted" status can be converted to invoice',
+          message: 'Seuls les devis avec le statut "accepté" peuvent être convertis en facture',
           type: 'error'
         });
         return;
@@ -490,15 +490,15 @@ const Devis = () => {
       if (!devis.client_name) {
         setAlert({
           show: true,
-          message: 'The quote must have an associated client before generating an invoice',
+          message: 'Le devis doit avoir un client associé avant de générer une facture',
           type: 'error'
         });
         return;
       }
 
-      const isConfirmed = window.confirm(`Convert quote ${devis.numero} to invoice?`);
+      const isConfirmed = window.confirm(`Convertir le devis ${devis.numero} en facture ?`);
       if (!isConfirmed) return;
-      
+    
       const token = getToken();
       const response = await axios.post(
         'http://localhost:5000/api/factures', 
@@ -509,32 +509,12 @@ const Devis = () => {
       if (response.data.success) {
         setAlert({
           show: true,
-          message: (
-            <div className="ai-success-message">
-              <div className="ai-icon">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor"/>
-                </svg>
-              </div>
-              <div className="ai-content">
-                <h4>Invoice generated successfully</h4>
-                <p>Invoice {response.data.data.numero} has been created from quote {devis.numero}.</p>
-                <p>We recommend:</p>
-                <ul>
-                  <li>Checking invoice details</li>
-                  <li>Sending a confirmation email to the client</li>
-                  <li>Scheduling a reminder for payment follow-up</li>
-                </ul>
-              </div>
-            </div>
-          ),
+          message: `Facture ${response.data.data.numero} générée avec succès à partir du devis ${devis.numero}`,
           type: 'success'
         });
-        
-        // Actualiser la liste des devis sans rediriger
+      
+        // Actualiser la liste des devis
         await fetchDevis();
-        
-        // La redirection vers /factures a été supprimée
       }
     } catch (error) {
       setAlert({

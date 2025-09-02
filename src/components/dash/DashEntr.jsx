@@ -33,7 +33,6 @@ const DashEntr = ({ setIsAuthenticated }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [darkMode, setDarkMode] = useState(false);
-  const [logoError, setLogoError] = useState(false);
 
   const profileDropdownRef = useRef(null);
   const notificationsDropdownRef = useRef(null);
@@ -125,8 +124,8 @@ const DashEntr = ({ setIsAuthenticated }) => {
     setShowNotifications(false);
   };
 
-  const handleLogoError = () => {
-    setLogoError(true);
+  const handleLogoError = (e) => {
+    e.target.src = defaultAvatar; // Utiliser l'avatar par défaut en cas d'erreur
   };
 
   return (
@@ -137,19 +136,17 @@ const DashEntr = ({ setIsAuthenticated }) => {
           {/* Business Profile at top */}
           <div className="sidebar-profile">
             <div className="sidebar-avatar">
-              {userData?.logo && !logoError ? (
+              {userData?.logo ? (
                 <img 
                   src={userData.logo} 
                   alt={`Logo of ${userData.entreprise || userData.username || userData.nom || 'Business'}`}
                   onError={handleLogoError}
                 />
               ) : (
-                <div className="logo-placeholder">
-                  <FiImage size={24} />
-                  <span>{userData.entreprise ? userData.entreprise.charAt(0) : 
-                         userData.username ? userData.username.charAt(0) : 
-                         userData.nom ? userData.nom.charAt(0) : 'B'}</span>
-                </div>
+                <img 
+                  src={defaultAvatar} 
+                  alt="Default avatar"
+                />
               )}
             </div>
             <div className="sidebar-user-info">

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import { FiEdit2, FiTrash2, FiLoader, FiPlus, FiSearch, FiDownload, FiEye, FiFileText, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiLoader, FiPlus, FiSearch, FiDownload, FiEye, FiFileText, FiChevronLeft, FiChevronRight, FiX } from 'react-icons/fi';
 import InvoicePDF from './InvoicePDF';
 import './comptable.css';
 
@@ -20,6 +20,10 @@ const Factures = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8); // 8 rows per page
 
+  // State for PDF viewer popup
+  const [selectedFacture, setSelectedFacture] = useState(null);
+  const [showPdfPopup, setShowPdfPopup] = useState(false);
+
   // Token handling
   const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
   let role = null;
@@ -32,6 +36,21 @@ const Factures = () => {
       role = null;
     }
   }
+
+  // In the Factures component, add a state to track when PDF is ready
+  const [pdfReady, setPdfReady] = useState(false);
+
+  useEffect(() => {
+    if (showPdfPopup) {
+      // Small delay to ensure the DOM is updated
+      const timer = setTimeout(() => {
+        setPdfReady(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else {
+      setPdfReady(false);
+    }
+  }, [showPdfPopup]);
 
   useEffect(() => {
     if (!token || !role) {
@@ -100,6 +119,18 @@ const Factures = () => {
 
     fetchFactures();
   }, [token, role]);
+
+  // Function to open PDF popup
+  const openPdfPopup = (facture) => {
+    setSelectedFacture(facture);
+    setShowPdfPopup(true);
+  };
+
+  // Function to close PDF popup
+  const closePdfPopup = () => {
+    setShowPdfPopup(false);
+    setSelectedFacture(null);
+  };
 
   const filteredFactures = factures.filter(facture =>
     facture.client_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -227,7 +258,11 @@ const Factures = () => {
                       <td>{formatDate(facture.date_emission)}</td>
                       <td className="amount-cell">{formatCurrency(facture.montant_ttc)}</td>
                       <td className="actions">
-                        <button className="action-btn view" title="View">
+                        <button 
+                          className="action-btn view" 
+                          title="View"
+                          onClick={() => openPdfPopup(facture)}
+                        >
                           <FiEye />
                         </button>
                         <InvoicePDF 
@@ -288,6 +323,30 @@ const Factures = () => {
               >
                 <FiChevronRight />
               </button>
+            </div>
+          )}
+
+          {/* PDF Popup */}
+          {showPdfPopup && selectedFacture && (
+            <div className="pdf-popup-overlay">
+              <div className="pdf-popup-container">
+                <div className="pdf-popup-header">
+                  <h2>Invoice Preview: {selectedFacture.numero || selectedFacture.id}</h2>
+                  <button className="close-btn" onClick={closePdfPopup}>
+                    <FiX size={24} />
+                  </button>
+                </div>
+                <div className="pdf-popup-content">
+                  <div className="invoice-pdf-container">
+                    <InvoicePDF 
+                      facture={selectedFacture} 
+                      entreprise={entreprise} 
+                      onDownloadComplete={() => console.log('Téléchargement terminé')}
+                      displayMode="preview"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </>

@@ -707,6 +707,18 @@ const Facture = () => {
     };
   };
 
+  // Fonction utilitaire pour calculer le montant final après remise
+  const calculateFinalAmount = (facture) => {
+    const montantTTC = facture.montant_ttc || facture.totals?.montantTTC || 0;
+    const remise = facture.remise || 0; // Ceci est un pourcentage (ex: 10 pour 10%)
+  
+    // Calculer le montant de la remise en valeur
+    const montantRemise = montantTTC * (remise / 100);
+  
+    // S'assurer que le montant final n'est pas négatif
+    return Math.max(0, montantTTC - montantRemise);
+  };
+
   const generateAiInsights = (facture) => {
     const insights = [];
     
@@ -984,7 +996,13 @@ const Facture = () => {
                     <FiDollarSign className="amount-icon" />
                     <div>
                       <small>Amount TTC</small>
-                      <p>{formatCurrency(facture.montant_ttc || facture.totals?.montantTTC)}</p>
+                      <p>{formatCurrency(calculateFinalAmount(facture))}</p>
+                      {facture.remise > 0 && (
+                        <small className="discount-text">
+                          <s>{formatCurrency(facture.montant_ttc || facture.totals?.montantTTC || 0)}</s>
+                          <span className="discount-badge">-{facture.remise}%</span>
+                        </small>
+                      )}
                     </div>
                   </div>
                 </div>

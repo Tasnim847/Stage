@@ -168,17 +168,33 @@ const DashboardEntreprise = () => {
     { name: 'Overdue', value: dashboardData.stats.facturesEnRetard || 0, color: '#f59e0b' }
   ] : [];
 
+  // Préparer les données pour le graphique hebdomadaire
+  const weeklyInvoiceData = dashboardData?.analytics?.weeklyInvoices || [];
+  const weeklyTotal = weeklyInvoiceData.reduce((sum, day) => sum + (day.count || 0), 0);
+  
+  const formattedWeeklyData = weeklyInvoiceData.map(day => ({
+    name: day.dayName,
+    count: day.count || 0,
+    day: day.day
+  }));
+
   const AiInsightsModal = () => {
     if (!showAiModal) return null;
     
     return (
       <div className="modal-overlay" onClick={() => setShowAiModal(false)}>
         <div className="modal-content ai-enhanced" onClick={(e) => e.stopPropagation()}>
-          
+          <div className="modal-header">
+            <h2>AI-Powered Insights</h2>
+            <button className="close-btn" onClick={() => setShowAiModal(false)}>×</button>
+          </div>
           
           <div className="modal-body">
             <div className="ai-insights-section">
-              
+              <div className="section-header">
+                <div className="section-icon">🤖</div>
+                <h3>Smart Recommendations</h3>
+              </div>
               
               <div className="insights-grid">
                 {aiInsights.length > 0 ? (
@@ -335,84 +351,140 @@ const DashboardEntreprise = () => {
     const acceptanceRate = dashboardData?.stats.devis > 0 ? 
         ((dashboardData.stats.devisAcceptes / dashboardData.stats.devis) * 100).toFixed(1) : 0;
     
-    // Use weekly data from API
-    const weeklyInvoiceData = dashboardData?.analytics?.weeklyInvoices || [];
+    // Calculer le taux de facturation (factures générées / devis acceptés)
+    const billingRate = dashboardData?.stats.devisAcceptes > 0 ? 
+        ((dashboardData.stats.facturesFromDevis / dashboardData.stats.devisAcceptes) * 100).toFixed(1) : 0;
     
-    // Calculate weekly total
-    const weeklyTotal = weeklyInvoiceData.reduce((total, day) => total + day.count, 0);
-
-    // Function to format day names in French
-    const formatDayName = (dayName) => {
-      const dayMap = {
-        'Monday': 'Lundi',
-        'Tuesday': 'Mardi',
-        'Wednesday': 'Mercredi',
-        'Thursday': 'Jeudi',
-        'Friday': 'Vendredi',
-        'Saturday': 'Samedi',
-        'Sunday': 'Dimanche'
-      };
-      
-      // If day name is already in French, return as is
-      if (Object.values(dayMap).includes(dayName)) {
-        return dayName;
+    // Préparer les données pour le graphique à deux niveaux
+    const quoteStatsData = [
+      { 
+        name: 'Devis acceptés non facturés', 
+        value: Math.max(0, dashboardData?.stats.devisAcceptes - dashboardData?.stats.facturesFromDevis || 0), 
+        color: '#10b981' 
+      },
+      { 
+        name: 'Factures générées', 
+        value: dashboardData?.stats.facturesFromDevis || 0, 
+        color: '#2563eb' 
+      },
+      { 
+        name: 'Devis refusés', 
+        value: dashboardData?.stats.devisRefuses || 0, 
+        color: '#ef4444' 
+      },
+      { 
+        name: 'En attente', 
+        value: dashboardData?.stats.devisEnAttente || 0, 
+        color: '#f59e0b' 
+      },
+      { 
+        name: 'Brouillons', 
+        value: dashboardData?.stats.devisBrouillon || 0, 
+        color: '#6b7280' 
       }
-      
-      // Otherwise, convert from English to French
-      return dayMap[dayName] || dayName;
-    };
-
-    // Prepare data for chart with formatted day names
-    const formattedWeeklyData = weeklyInvoiceData.map(day => ({
-      ...day,
-      dayName: formatDayName(day.dayName)
-    }));
+    ];
 
     return (
       <div className="analytics-container">
         <div className="charts-container">
           <div className="chart-card">
-            <h3>Quote acceptance rate</h3>
+            <h3>Quote acceptance & billing rate</h3>
             <div className="acceptance-rate-card">
-              <div className="circular-progress">
-                <div 
-                  className="progress-circle" 
-                  style={{ 
-                    background: `conic-gradient(#10b981 ${acceptanceRate * 3.6}deg, #e5e7eb 0deg)` 
-                  }}
-                >
-                  <div className="progress-inner">
-                    <span className="rate-value">{acceptanceRate}%</span>
+              <div className="double-circular-progress">
+                <div className="progress-outer">
+                  <div 
+                    className="progress-circle acceptance" 
+                    style={{ 
+                      background: `conic-gradient(#10b981 ${acceptanceRate * 3.6}deg, #e5e7eb 0deg)` 
+                    }}
+                  >
+                    <div className="progress-inner">
+                      <span className="rate-value">{acceptanceRate}%</span>
+                      <span className="rate-label">Acceptance</span>
+                    </div>
+                  </div>
+                  
+                  <div 
+                    className="progress-circle billing" 
+                    style={{ 
+                      background: `conic-gradient(#2563eb ${billingRate * 3.6}deg, transparent 0deg)` 
+                    }}
+                  >
+                    <div className="progress-inner">
+                      <span className="rate-value">{billingRate}%</span>
+                      <span className="rate-label">Billing</span>
+                    </div>
                   </div>
                 </div>
               </div>
               <div className="acceptance-info">
                 <div className="acceptance-stats">
                   <div className="stat-item">
+                    <span className="stat-label">Total quotes</span>
+                    <span className="stat-value">{dashboardData?.stats.devis || 0}</span>
+                  </div>
+                  <div className="stat-item">
                     <span className="stat-label">Accepted</span>
                     <span className="stat-value">{dashboardData?.stats.devisAcceptes || 0}</span>
                   </div>
                   <div className="stat-item">
-                    <span className="stat-label">Total quotes</span>
-                    <span className="stat-value">{dashboardData?.stats.devis || 0}</span>
+                    <span className="stat-label">Invoiced</span>
+                    <span className="stat-value">{dashboardData?.stats.facturesFromDevis || 0}</span>
                   </div>
                 </div>
                 <div className="performance-status">
                   {acceptanceRate >= 60 ? (
                     <div className="status success">
-                      <span>✓ Excellent performance</span>
+                      <span>✓ Excellent acceptance rate</span>
                     </div>
                   ) : acceptanceRate >= 40 ? (
                     <div className="status warning">
-                      <span>⚠️ Average performance</span>
+                      <span>⚠️ Average acceptance rate</span>
                     </div>
                   ) : (
                     <div className="status danger">
-                      <span>✗ Needs improvements</span>
+                      <span>✗ Low acceptance rate</span>
+                    </div>
+                  )}
+                  {billingRate >= 90 ? (
+                    <div className="status success">
+                      <span>✓ Excellent billing rate</span>
+                    </div>
+                  ) : billingRate >= 70 ? (
+                    <div className="status warning">
+                      <span>⚠️ Average billing rate</span>
+                    </div>
+                  ) : (
+                    <div className="status danger">
+                      <span>✗ Low billing rate</span>
                     </div>
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="chart-card">
+            <h3>Quote to invoice conversion</h3>
+            <div className="chart-wrapper">
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={quoteStatsData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {quoteStatsData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => formatInteger(value)} />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
@@ -489,10 +561,7 @@ const DashboardEntreprise = () => {
                 </div>
               )}
             </div>
-            
           </div>
-
-          
         </div>
       </div>
     );

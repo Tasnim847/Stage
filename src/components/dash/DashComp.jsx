@@ -29,6 +29,7 @@ const DashComp = ({ setIsAuthenticated }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [darkMode, setDarkMode] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   
   const sidebarRef = useRef(null);
   const profileDropdownRef = useRef(null);
@@ -75,6 +76,10 @@ const DashComp = ({ setIsAuthenticated }) => {
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
+  };
+
+  const handleAvatarError = () => {
+    setAvatarError(true);
   };
 
   const handleLogout = () => {
@@ -124,13 +129,24 @@ const DashComp = ({ setIsAuthenticated }) => {
           {/* Accountant Profile at top */}
           <div className="sidebar-profile">
             <div className="sidebar-avatar">
-              <img 
-                src={userData?.image || defaultAvatar} 
-                onError={(e) => {
-                  e.target.onerror = null; 
-                  e.target.src = defaultAvatar;
-                }}
-              />
+              {userData?.image && !avatarError ? (
+                <img 
+                  src={userData.image} 
+                  alt={`${userData.name || userData.username }`}
+                  onError={handleAvatarError}
+                />
+              ) : (
+                <div className="avatar-placeholder">
+                  <FiUser size={24} />
+                  <span>{userData.name ? userData.name.charAt(0) : 
+                         userData.username ? userData.username.charAt(0) : 
+                         userData.lastname ? userData.lastname.charAt(0) :''}</span>
+                </div>
+              )}
+            </div>
+            <div className="sidebar-user-info">
+              <h4>{userData.name || userData.username || 'Comptable'}</h4>
+              <p>{userData.email || ''}</p>
             </div>
           </div>
           

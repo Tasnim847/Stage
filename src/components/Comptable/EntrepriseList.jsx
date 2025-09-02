@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiEdit2, FiTrash2, FiPlus, FiLoader, FiSearch, FiExternalLink, FiX, FiUser, FiDollarSign } from 'react-icons/fi';
-import './comptable.css';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import './comptable.css';
 
 const EntrepriseList = () => {
   const [entreprises, setEntreprises] = useState([]);
@@ -24,7 +24,14 @@ const EntrepriseList = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedEntreprise, setSelectedEntreprise] = useState(null);
+  const [darkMode, setDarkMode] = useState(false);
   const navigate = useNavigate();
+
+  // Vérifier le thème au chargement
+  useEffect(() => {
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    setDarkMode(isDarkMode);
+  }, []);
 
   useEffect(() => {
     const fetchEntreprises = async () => {
@@ -269,10 +276,10 @@ const EntrepriseList = () => {
         alignItems: 'center', 
         justifyContent: 'center', 
         height: '100vh',
-        background: '#f8fafc'
+        background: darkMode ? '#484848' : '#f8fafc'
       }}>
         <FiLoader className="spinner" size={32} style={{ animation: 'spin 1s linear infinite', color: '#72ac8d' }} />
-        <p style={{ marginTop: '1rem', color: '#4a5568' }}>Loading...</p>
+        <p style={{ marginTop: '1rem', color: darkMode ? '#f8f9fa' : '#4a5568' }}>Loading...</p>
       </div>
     );
   }
@@ -285,12 +292,12 @@ const EntrepriseList = () => {
         alignItems: 'center', 
         justifyContent: 'center', 
         height: '100vh',
-        background: '#f8fafc',
+        background: darkMode ? '#484848' : '#f8fafc',
         padding: '2rem',
         textAlign: 'center'
       }}>
         <div style={{ 
-          background: 'white',
+          background: darkMode ? '#1e1e1e' : 'white',
           padding: '2rem',
           borderRadius: '12px',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
@@ -298,7 +305,7 @@ const EntrepriseList = () => {
           width: '100%'
         }}>
           <h3 style={{ color: '#f72585', marginBottom: '1rem' }}>Error</h3>
-          <p style={{ color: '#4a5568', marginBottom: '2rem' }}>{error}</p>
+          <p style={{ color: darkMode ? '#adb5bd' : '#4a5568', marginBottom: '2rem' }}>{error}</p>
           <button 
             onClick={() => {
               localStorage.clear();
@@ -315,9 +322,6 @@ const EntrepriseList = () => {
               fontSize: '0.95rem',
               fontWeight: '500',
               transition: 'all 0.3s',
-              ':hover': {
-                background: '#e5177b'
-              }
             }}
           >
             Log in again
@@ -332,8 +336,9 @@ const EntrepriseList = () => {
       maxWidth: '1400px', 
       margin: '0 auto',
       padding: '2rem 1rem',
-      background: '#f8fafc',
-      minHeight: '100vh'
+      background: darkMode ? '#484848' : '#f8fafc',
+      minHeight: '100vh',
+      color: darkMode ? '#f8f9fa' : '#212529'
     }}>
       <ToastContainer position="top-right" autoClose={5000} />
       
@@ -351,14 +356,14 @@ const EntrepriseList = () => {
             margin: 0, 
             fontSize: '1.8rem', 
             fontWeight: '600',
-            color: '#2d3748',
+            color: darkMode ? '#f8f9fa' : '#2d3748',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
           }}>
             <FiUser size={24} /> Business Management
           </h1>
-          <p style={{ margin: '0.25rem 0 0', color: '#718096', fontSize: '0.95rem' }}>
+          <p style={{ margin: '0.25rem 0 0', color: darkMode ? '#adb5bd' : '#718096', fontSize: '0.95rem' }}>
             {entreprises.length} business{entreprises.length !== 1 ? 'es' : ''} registered
           </p>
         </div>
@@ -387,10 +392,8 @@ const EntrepriseList = () => {
                 fontSize: '0.95rem',
                 transition: 'all 0.3s',
                 outline: 'none',
-                ':focus': {
-                  borderColor: '#72ac8d',
-                  boxShadow: '0 0 0 3px rgba(114, 172, 141, 0.1)'
-                }
+                backgroundColor: darkMode ? '#2d2d2d' : 'white',
+                color: darkMode ? '#f8f9fa' : '#212529',
               }}
             />
           </div>
@@ -410,105 +413,10 @@ const EntrepriseList = () => {
               fontSize: '0.95rem',
               fontWeight: '500',
               transition: 'all 0.3s',
-              ':hover': {
-                background: '#5d9979'
-              }
             }}
           >
             <FiPlus /> Add
           </button>
-        </div>
-      </div>
-
-      {/* Statistics */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '1.5rem',
-        marginBottom: '2rem'
-      }}>
-        <div style={{ 
-          background: 'linear-gradient(135deg, #72ac8d, #5d9979)',
-          color: 'white',
-          padding: '1.5rem',
-          borderRadius: '12px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-          textAlign: 'left',
-          height: '100%',
-          boxShadow: '0 4px 12px rgba(114, 172, 141, 0.2)'
-        }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.75rem',
-            marginBottom: '0.75rem'
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '8px',
-              background: 'rgba(255, 255, 255, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <FiUser size={20} />
-            </div>
-            <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>Total Businesses</span>
-          </div>
-          <p style={{ 
-            margin: 0, 
-            fontSize: '1.75rem', 
-            fontWeight: '700',
-            lineHeight: '1.2'
-          }}>
-            {entreprises.length}
-          </p>
-        </div>
-        
-        <div style={{ 
-          background: 'linear-gradient(135deg, #4c9f70, #3d8b63)',
-          color: 'white',
-          padding: '1.5rem',
-          borderRadius: '12px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-          textAlign: 'left',
-          height: '100%',
-          boxShadow: '0 4px 12px rgba(76, 159, 112, 0.2)'
-        }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.75rem',
-            marginBottom: '0.75rem'
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '8px',
-              background: 'rgba(255, 255, 255, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <FiDollarSign size={20} />
-            </div>
-            <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>Active Businesses</span>
-          </div>
-          <p style={{ 
-            margin: 0, 
-            fontSize: '1.75rem', 
-            fontWeight: '700',
-            lineHeight: '1.2'
-          }}>
-            {entreprises.filter(e => e.statut === 'active').length}
-          </p>
         </div>
       </div>
 
@@ -517,12 +425,13 @@ const EntrepriseList = () => {
         <div style={{ 
           textAlign: 'center', 
           padding: '3rem', 
-          background: 'white',
+          background: darkMode ? '#1e1e1e' : 'white',
           borderRadius: '12px',
-          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)'
+          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
+          color: darkMode ? '#f8f9fa' : '#212529'
         }}>
           <p style={{ 
-            color: '#718096', 
+            color: darkMode ? '#adb5bd' : '#718096', 
             marginBottom: '1.5rem',
             fontSize: '1.1rem'
           }}>
@@ -532,7 +441,7 @@ const EntrepriseList = () => {
             <button 
               onClick={() => setSearchTerm('')}
               style={{
-                background: 'white',
+                background: darkMode ? '#2d2d2d' : 'white',
                 border: '1px solid #e2e8f0',
                 padding: '0.75rem 1.5rem',
                 borderRadius: '8px',
@@ -540,10 +449,7 @@ const EntrepriseList = () => {
                 fontSize: '0.95rem',
                 fontWeight: '500',
                 transition: 'all 0.3s',
-                ':hover': {
-                  borderColor: '#72ac8d',
-                  color: '#72ac8d'
-                }
+                color: darkMode ? '#f8f9fa' : '#212529',
               }}
             >
               Clear search
@@ -565,9 +471,6 @@ const EntrepriseList = () => {
                 fontSize: '0.95rem',
                 fontWeight: '500',
                 transition: 'all 0.3s',
-                ':hover': {
-                  background: '#5d9979'
-                }
               }}
             >
               <FiPlus /> Add a business
@@ -584,16 +487,13 @@ const EntrepriseList = () => {
             <div 
               key={entreprise.id} 
               style={{ 
-                background: 'white',
+                background: darkMode ? '#1e1e1e' : 'white',
                 borderRadius: '12px',
                 boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
                 transition: 'all 0.3s ease',
                 overflow: 'hidden',
                 position: 'relative',
-                ':hover': {
-                  transform: 'translateY(-5px)',
-                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)'
-                }
+                color: darkMode ? '#f8f9fa' : '#212529'
             }}
             >
               <div style={{ 
@@ -627,7 +527,7 @@ const EntrepriseList = () => {
                   <div style={{ flex: 1 }}>
                     <h3 style={{ 
                       margin: '0 0 0.25rem', 
-                      color: '#2d3748',
+                      color: darkMode ? '#f8f9fa' : '#2d3748',
                       fontSize: '1.2rem',
                       fontWeight: '600'
                     }}>
@@ -635,8 +535,8 @@ const EntrepriseList = () => {
                     </h3>
                     <span style={{ 
                       fontSize: '0.8rem',
-                      color: '#718096',
-                      background: '#f7fafc',
+                      color: darkMode ? '#adb5bd' : '#718096',
+                      background: darkMode ? '#2d2d2d' : '#f7fafc',
                       padding: '0.25rem 0.5rem',
                       borderRadius: '4px',
                       display: 'inline-block'
@@ -661,10 +561,6 @@ const EntrepriseList = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         transition: 'all 0.3s',
-                        ':hover': {
-                          background: 'rgba(114, 172, 141, 0.1)',
-                          color: '#72ac8d'
-                        }
                       }}
                     >
                       <FiEdit2 />
@@ -685,10 +581,6 @@ const EntrepriseList = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         transition: 'all 0.3s',
-                        ':hover': {
-                          background: 'rgba(247, 37, 133, 0.1)',
-                          color: '#f72585'
-                        }
                       }}
                     >
                       <FiTrash2 />
@@ -705,7 +597,7 @@ const EntrepriseList = () => {
                   <div>
                     <span style={{ 
                       fontSize: '0.75rem',
-                      color: '#718096',
+                      color: darkMode ? '#adb5bd' : '#718096',
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
                       marginBottom: '0.25rem',
@@ -715,7 +607,7 @@ const EntrepriseList = () => {
                     </span>
                     <span style={{ 
                       fontSize: '0.95rem',
-                      color: '#4a5568',
+                      color: darkMode ? '#f8f9fa' : '#4a5568',
                       fontWeight: '500',
                       wordBreak: 'break-word'
                     }}>
@@ -726,7 +618,7 @@ const EntrepriseList = () => {
                   <div>
                     <span style={{ 
                       fontSize: '0.75rem',
-                      color: '#718096',
+                      color: darkMode ? '#adb5bd' : '#718096',
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
                       marginBottom: '0.25rem',
@@ -736,7 +628,7 @@ const EntrepriseList = () => {
                     </span>
                     <span style={{ 
                       fontSize: '0.95rem',
-                      color: '#4a5568',
+                      color: darkMode ? '#f8f9fa' : '#4a5568',
                       fontWeight: '500',
                       wordBreak: 'break-word'
                     }}>
@@ -747,7 +639,7 @@ const EntrepriseList = () => {
                   <div>
                     <span style={{ 
                       fontSize: '0.75rem',
-                      color: '#718096',
+                      color: darkMode ? '#adb5bd' : '#718096',
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
                       marginBottom: '0.25rem',
@@ -757,7 +649,7 @@ const EntrepriseList = () => {
                     </span>
                     <span style={{ 
                       fontSize: '0.95rem',
-                      color: '#4a5568',
+                      color: darkMode ? '#f8f9fa' : '#4a5568',
                       fontWeight: '500'
                     }}>
                       {entreprise.telephone || '-'}
@@ -767,7 +659,7 @@ const EntrepriseList = () => {
                   <div>
                     <span style={{ 
                       fontSize: '0.75rem',
-                      color: '#718096',
+                      color: darkMode ? '#adb5bd' : '#718096',
                       textTransform: 'uppercase',
                       letterSpacing: '0.5px',
                       marginBottom: '0.25rem',
@@ -796,11 +688,11 @@ const EntrepriseList = () => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                background: '#f8fafc'
+                background: darkMode ? '#2d2d2d' : '#f8fafc'
               }}>
                 <span style={{ 
                   fontSize: '0.8rem',
-                  color: '#718096'
+                  color: darkMode ? '#adb5bd' : '#718096'
                 }}>
                   Created: {new Date(entreprise.createdAt).toLocaleDateString('fr-FR', {
                     day: '2-digit',
@@ -824,9 +716,6 @@ const EntrepriseList = () => {
                     padding: '0.25rem 0.5rem',
                     borderRadius: '4px',
                     transition: 'all 0.3s',
-                    ':hover': {
-                      background: 'rgba(114, 172, 141, 0.1)'
-                    }
                   }}
                 >
                   <FiExternalLink /> Details
@@ -853,13 +742,14 @@ const EntrepriseList = () => {
           padding: '1rem'
         }} onClick={() => !isSubmitting && setShowAddModal(false)}>
           <div style={{
-            background: 'white',
+            background: darkMode ? '#1e1e1e' : 'white',
             borderRadius: '12px',
             width: '100%',
             maxWidth: '500px',
             maxHeight: '90vh',
             overflowY: 'auto',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+            color: darkMode ? '#f8f9fa' : '#212529'
           }} onClick={e => e.stopPropagation()}>
             <div style={{
               padding: '1.5rem',
@@ -868,7 +758,7 @@ const EntrepriseList = () => {
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600', color: '#2d3748' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600', color: darkMode ? '#f8f9fa' : '#2d3748' }}>
                 {editingEntreprise ? 'Edit Business' : 'New Business'}
               </h3>
               <button
@@ -881,9 +771,6 @@ const EntrepriseList = () => {
                   display: 'flex',
                   alignItems: 'center',
                   transition: 'all 0.3s',
-                  ':hover': {
-                    color: '#718096'
-                  }
                 }}
                 onClick={() => !isSubmitting && setShowAddModal(false)}
                 disabled={isSubmitting}
@@ -901,7 +788,7 @@ const EntrepriseList = () => {
                       marginBottom: '0.5rem',
                       fontSize: '0.875rem',
                       fontWeight: '500',
-                      color: '#4a5568'
+                      color: darkMode ? '#f8f9fa' : '#4a5568'
                     }}>
                       {field === 'motDePasse' ? 'Password' : 
                        field === 'numeroIdentificationFiscale' ? 'NIF' :
@@ -925,12 +812,8 @@ const EntrepriseList = () => {
                         fontSize: '0.95rem',
                         transition: 'all 0.3s',
                         outline: 'none',
-                        ':focus': {
-                          borderColor: formErrors[field] ? '#f56565' : '#72ac8d',
-                          boxShadow: formErrors[field] 
-                            ? '0 0 0 3px rgba(245, 101, 101, 0.1)' 
-                            : '0 0 0 3px rgba(114, 172, 141, 0.1)'
-                        }
+                        backgroundColor: darkMode ? '#2d2d2d' : 'white',
+                        color: darkMode ? '#f8f9fa' : '#212529',
                       }}
                       disabled={isSubmitting}
                       placeholder={
@@ -963,22 +846,15 @@ const EntrepriseList = () => {
               <button 
                 type="button" 
                 style={{
-                  background: 'white',
+                  background: darkMode ? '#2d2d2d' : 'white',
                   border: '1px solid #e2e8f0',
-                  color: '#4a5568',
+                  color: darkMode ? '#f8f9fa' : '#4a5568',
                   padding: '0.75rem 1.5rem',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '0.95rem',
                   fontWeight: '500',
                   transition: 'all 0.3s',
-                  ':hover': {
-                    borderColor: '#a0aec0'
-                  },
-                  ':disabled': {
-                    opacity: 0.7,
-                    cursor: 'not-allowed'
-                  }
                 }}
                 onClick={() => setShowAddModal(false)}
                 disabled={isSubmitting}
@@ -1000,13 +876,6 @@ const EntrepriseList = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  ':hover': {
-                    background: '#5d9979'
-                  },
-                  ':disabled': {
-                    background: '#a0aec0',
-                    cursor: 'not-allowed'
-                  }
                 }}
                 onClick={handleSubmit}
                 disabled={isSubmitting}
@@ -1039,13 +908,14 @@ const EntrepriseList = () => {
           padding: '1rem'
         }} onClick={() => setShowDetailModal(false)}>
           <div style={{
-            background: 'white',
+            background: darkMode ? '#1e1e1e' : 'white',
             borderRadius: '12px',
             width: '100%',
             maxWidth: '500px',
             maxHeight: '90vh',
             overflowY: 'auto',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+            color: darkMode ? '#f8f9fa' : '#212529'
           }} onClick={e => e.stopPropagation()}>
             <div style={{
               padding: '1.5rem',
@@ -1054,7 +924,7 @@ const EntrepriseList = () => {
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600', color: '#2d3748' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600', color: darkMode ? '#f8f9fa' : '#2d3748' }}>
                 Business Details
               </h3>
               <button
@@ -1067,9 +937,6 @@ const EntrepriseList = () => {
                   display: 'flex',
                   alignItems: 'center',
                   transition: 'all 0.3s',
-                  ':hover': {
-                    color: '#718096'
-                  }
                 }}
                 onClick={() => setShowDetailModal(false)}
               >
@@ -1103,15 +970,15 @@ const EntrepriseList = () => {
                   margin: '0 0 0.25rem', 
                   fontSize: '1.5rem',
                   fontWeight: '600',
-                  color: '#2d3748',
+                  color: darkMode ? '#f8f9fa' : '#2d3748',
                   textAlign: 'center'
                 }}>
                   {selectedEntreprise.nom}
                 </h4>
                 <span style={{ 
                   fontSize: '0.9rem',
-                  color: '#718096',
-                  background: '#f7fafc',
+                  color: darkMode ? '#adb5bd' : '#718096',
+                  background: darkMode ? '#2d2d2d' : '#f7fafc',
                   padding: '0.25rem 0.75rem',
                   borderRadius: '20px',
                   display: 'inline-block'
@@ -1128,7 +995,7 @@ const EntrepriseList = () => {
                 <div>
                   <span style={{ 
                     fontSize: '0.75rem',
-                    color: '#718096',
+                    color: darkMode ? '#adb5bd' : '#718096',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
                     marginBottom: '0.5rem',
@@ -1138,7 +1005,7 @@ const EntrepriseList = () => {
                   </span>
                   <span style={{ 
                     fontSize: '1rem',
-                    color: '#4a5568',
+                    color: darkMode ? '#f8f9fa' : '#4a5568',
                     fontWeight: '500',
                     wordBreak: 'break-word'
                   }}>
@@ -1149,7 +1016,7 @@ const EntrepriseList = () => {
                 <div>
                   <span style={{ 
                     fontSize: '0.75rem',
-                    color: '#718096',
+                    color: darkMode ? '#adb5bd' : '#718096',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
                     marginBottom: '0.5rem',
@@ -1159,7 +1026,7 @@ const EntrepriseList = () => {
                   </span>
                   <span style={{ 
                     fontSize: '1rem',
-                    color: '#4a5568',
+                    color: darkMode ? '#f8f9fa' : '#4a5568',
                     fontWeight: '500',
                     wordBreak: 'break-word'
                   }}>
@@ -1170,7 +1037,7 @@ const EntrepriseList = () => {
                 <div>
                   <span style={{ 
                     fontSize: '0.75rem',
-                    color: '#718096',
+                    color: darkMode ? '#adb5bd' : '#718096',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
                     marginBottom: '0.5rem',
