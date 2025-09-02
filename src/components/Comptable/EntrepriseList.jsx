@@ -39,7 +39,7 @@ const EntrepriseList = () => {
         const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
         
         if (!token) {
-          navigate('/login');
+          navigate('/');
           return;
         }
 
@@ -66,7 +66,7 @@ const EntrepriseList = () => {
         if (error.message.includes('authentication') || error.message.includes('token')) {
           localStorage.clear();
           sessionStorage.clear();
-          navigate('/login', { state: { error: 'Session expired. Please log in again.' } });
+          navigate('/', { state: { error: 'Session expired. Please log in again.' } });
         }
       } finally {
         setLoading(false);
@@ -135,7 +135,7 @@ const EntrepriseList = () => {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       if (!token) {
         toast.error('Session expired, please log in again');
-        navigate('/login');
+        navigate('/');
         return;
       }
 
@@ -310,7 +310,7 @@ const EntrepriseList = () => {
             onClick={() => {
               localStorage.clear();
               sessionStorage.clear();
-              navigate('/login');
+              navigate('/');
             }}
             style={{
               background: '#f72585',

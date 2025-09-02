@@ -21,8 +21,8 @@ const DashbComp = () => {
         const userData = JSON.parse(localStorage.getItem('userData') || sessionStorage.getItem('userData') || 'null');
         
         if (!token || !userData || userData.role !== 'comptable') {
-          console.warn('[DASHB_COMP] Redirecting to /login - Invalid authentication');
-          navigate('/login');
+          console.warn('[DASHB_COMP] Redirecting to /home - Invalid authentication');
+          navigate('/');
           return;
         }
 
@@ -53,7 +53,7 @@ const DashbComp = () => {
           localStorage.removeItem('userData');
           sessionStorage.removeItem('authToken');
           sessionStorage.removeItem('userData');
-          navigate('/login');
+          navigate('/');
         }
       } finally {
         setLoading(false);

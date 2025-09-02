@@ -94,7 +94,7 @@ const Facture = () => {
       if (err.response?.status === 401) {
         localStorage.removeItem('authToken');
         sessionStorage.removeItem('authToken');
-        navigate('/login');
+        navigate('/');
       }
     } finally {
       setLoading(false);

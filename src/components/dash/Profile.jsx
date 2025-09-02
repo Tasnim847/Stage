@@ -18,7 +18,7 @@ const Profile = ({ handleLogout }) => {
   useEffect(() => {
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
     if (!token) {
-      navigate('/login');
+      navigate('/');
       return;
     }
 
@@ -140,7 +140,7 @@ const Profile = ({ handleLogout }) => {
   };
 
   if (!localStorage.getItem('authToken') && !sessionStorage.getItem('authToken')) {
-    navigate('/login');
+    navigate('/');
     return null;
   }
 
