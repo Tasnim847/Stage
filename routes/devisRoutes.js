@@ -14,8 +14,6 @@ const router = Router();
 router.use(authenticateToken);
 
 router.get('/', (req, res, next) => {
-    console.log('Authorization header:', req.headers['authorization']);
-    console.log('User making request:', req.user);
     next();
 }, getDevisByEntreprise);
 

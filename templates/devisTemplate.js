@@ -205,7 +205,6 @@ export const devisTemplate = ({ entreprise, devis }) => {
   
   <div class="devis-meta">
     <div>Date : ${new Date(devis.date_creation).toLocaleDateString('fr-FR')}</div>
-    <div>Validité : ${devis.date_validite ? new Date(devis.date_validite).toLocaleDateString('fr-FR') : '30 jours'}</div>
   </div>
 
   <table>
@@ -266,10 +265,6 @@ export const devisTemplate = ({ entreprise, devis }) => {
   <div class="payment-terms">
     <h3>Conditions de paiement</h3>
     <p>Paiement par virement bancaire dans les 30 jours</p>
-  </div>
-
-  <div class="validity">
-    Ce devis est valable ${devis.date_validite ? `jusqu'au ${new Date(devis.date_validite).toLocaleDateString('fr-FR')}` : '30 jours'} à compter de sa date d'émission
   </div>
 
   <div class="signature-area">
