@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import AuthPage from './components/Auth/AuthPage';
-import Home from './components/Home/Home';
+import Home from './components/Home/Home.jsx';
 import DashComp from './components/dash/DashComp';
 import DashEntr from './components/dash/DashEntr';
 import EntrepriseList from './components/Comptable/EntrepriseList';
