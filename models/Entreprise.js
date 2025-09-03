@@ -21,7 +21,7 @@ const Entreprise = sequelize.define('Entreprise', {
         validate: {
             len: [8, 128]
         }
-        },
+    },
     adresse: {
         type: DataTypes.STRING,
         allowNull: false

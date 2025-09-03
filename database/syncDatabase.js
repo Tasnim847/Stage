@@ -22,6 +22,8 @@ export default async function syncDatabase() {
 
         // 3. Mode production - synchronisation sécurisée
         await sequelize.query('SET session_replication_role = replica;');
+        await sequelize.sync({ force: true });
+        await sequelize.query('SET session_replication_role = DEFAULT;');
 
         const models = [
             { model: User, tableName: 'users' },
