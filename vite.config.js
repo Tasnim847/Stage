@@ -1,3 +1,6 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -9,7 +12,7 @@ export default defineConfig({
     postcss: './postcss.config.cjs'
   },
   build: {
-    chunkSizeWarningLimit: 1000, // Augmente la limite d'avertissement
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
