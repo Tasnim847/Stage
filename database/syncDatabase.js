@@ -19,11 +19,14 @@ export default async function syncDatabase() {
             console.log('🔄 Base recréée (mode développement)');
             return;
         }
+        else {
+            // 🚀 Production: Safe sync without DROP or any superuser stuff
+            await sequelize.sync();
+            console.log('✅ Base synchronisée (mode production)');
+        }
 
         // 3. Mode production - synchronisation sécurisée
-
-        await sequelize.sync({ force: true });
-        await sequelize.query('SET session_replication_role = DEFAULT;');
+      //  await sequelize.query('SET session_replication_role = replica;');
 
         const models = [
             { model: User, tableName: 'users' },
