@@ -55,7 +55,7 @@ export default async function syncDatabase() {
         }
 
         // 5. Réactiver les contraintes
-        await sequelize.query('SET session_replication_role = default;');
+       // await sequelize.query('SET session_replication_role = default;');
         console.log('✅ Toutes les tables synchronisées avec succès');
 
     } catch (error) {
