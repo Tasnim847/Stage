@@ -14,15 +14,17 @@ export default async function syncDatabase() {
         // Les relations doivent être configurées une seule fois, idéalement dans server.js
 
         // 2. Mode développement - recréation complète
-        if (process.env.NODE_ENV === 'development') {
-            await sequelize.sync({ force: true });
-            console.log('🔄 Base recréée (mode développement)');
-            return;
-        }
-        else {
-            // 🚀 Production: Safe sync without DROP or any superuser stuff
-            await sequelize.sync();
-            console.log('✅ Base synchronisée (mode production)');
+        try {
+            if (process.env.NODE_ENV === 'development') {
+                await sequelize.sync({ force: true });
+                console.log('🔄 Base recréée (mode développement)');
+            } else {
+                await sequelize.sync();
+                console.log('✅ Base synchronisée (mode production)');
+            }
+        } catch (error) {
+            console.error('❌ Erreur de synchronisation:', error);
+            process.exit(1);
         }
 
         // 3. Mode production - synchronisation sécurisée
