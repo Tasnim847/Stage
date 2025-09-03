@@ -12,13 +12,15 @@ export default defineConfig({
     postcss: './postcss.config.cjs'
   },
   build: {
+    outDir: 'build',
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           charts: ['recharts'],
-          ui: ['@mui/material', '@mui/icons-material', 'antd']
+          ui: ['@mui/material', '@mui/icons-material', 'antd'],
+          pdf: ['jspdf', 'html2canvas'] 
         }
       }
     }
