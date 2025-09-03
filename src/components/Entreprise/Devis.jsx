@@ -147,7 +147,7 @@ const Devis = () => {
         return;
       }
 
-      const response = await axios.get('http://localhost:5000/api/devis', {
+      const response = await axios.get('https://stage-slk6.onrender.com/api/devis', {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -346,8 +346,8 @@ const Devis = () => {
     };
 
     const url = currentDevis 
-      ? `http://localhost:5000/api/devis/${currentDevis.id}` 
-      : 'http://localhost:5000/api/devis';
+      ? `https://stage-slk6.onrender.com/api/devis/${currentDevis.id}` 
+      : 'https://stage-slk6.onrender.com/api/devis';
       
     const method = currentDevis ? 'put' : 'post';
     
@@ -423,7 +423,7 @@ const Devis = () => {
     if (!window.confirm('Confirm deletion?')) return;
     try {
       const token = getToken();
-      await axios.delete(`http://localhost:5000/api/devis/${id}`, {
+      await axios.delete(`https://stage-slk6.onrender.com/api/devis/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       await fetchDevis();
@@ -459,7 +459,7 @@ const Devis = () => {
   const handleViewDevis = async (devis) => {
     try {
         const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-        const response = await axios.get(`http://localhost:5000/api/devis/${devis.id}/pdf`, {
+        const response = await axios.get(`https://stage-slk6.onrender.com/api/devis/${devis.id}/pdf`, {
             responseType: 'blob',
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -501,7 +501,7 @@ const Devis = () => {
     
       const token = getToken();
       const response = await axios.post(
-        'http://localhost:5000/api/factures', 
+        'https://stage-slk6.onrender.com/api/factures', 
         { devis_id: devis.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );

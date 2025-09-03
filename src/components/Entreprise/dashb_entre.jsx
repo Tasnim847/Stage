@@ -97,7 +97,7 @@ const DashboardEntreprise = () => {
       }
 
       try {
-        const response = await fetch(`http://localhost:5000/api/dashboard/entreprise?range=${timeRange}`, {
+        const response = await fetch(`https://stage-slk6.onrender.com/api/dashboard/entreprise?range=${timeRange}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,

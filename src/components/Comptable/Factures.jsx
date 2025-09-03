@@ -65,8 +65,8 @@ const Factures = () => {
         setError('');
 
         const endpoint = role === 'comptable'
-          ? 'http://localhost:5000/api/factures/comptable/mes-factures'
-          : 'http://localhost:5000/api/factures';
+          ? 'https://stage-slk6.onrender.com/api/factures/comptable/mes-factures'
+          : 'https://stage-slk6.onrender.com/api/factures';
 
         const response = await fetch(endpoint, {
           headers: {
@@ -87,7 +87,7 @@ const Factures = () => {
         // Récupérer les informations de l'entreprise si l'utilisateur est une entreprise
         if (role === 'entreprise') {
           try {
-            const entrepriseResponse = await fetch('http://localhost:5000/api/entreprise/mon-profil', {
+            const entrepriseResponse = await fetch('https://stage-slk6.onrender.com/api/entreprise/mon-profil', {
               headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json',

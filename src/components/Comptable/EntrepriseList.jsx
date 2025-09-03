@@ -43,7 +43,7 @@ const EntrepriseList = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:5000/api/entreprises/comptable', {
+        const response = await fetch('https://stage-slk6.onrender.com/api/entreprises/comptable', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -140,8 +140,8 @@ const EntrepriseList = () => {
       }
 
       const url = editingEntreprise 
-        ? `http://localhost:5000/api/entreprises/${editingEntreprise.id}`
-        : 'http://localhost:5000/api/entreprises';
+        ? `https://stage-slk6.onrender.com/api/entreprises/${editingEntreprise.id}`
+        : 'https://stage-slk6.onrender.com/api/entreprises';
 
       const method = editingEntreprise ? 'PUT' : 'POST';
 
@@ -231,7 +231,7 @@ const EntrepriseList = () => {
     
     try {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-      const response = await fetch(`http://localhost:5000/api/entreprises/${entrepriseId}`, {
+      const response = await fetch(`https://stage-slk6.onrender.com/api/entreprises/${entrepriseId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

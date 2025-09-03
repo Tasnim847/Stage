@@ -57,7 +57,7 @@ const Calendar = () => {
           return;
         }
 
-        const response = await axios.get('http://localhost:5000/api/devis', {
+        const response = await axios.get('https://stage-slk6.onrender.com/api/devis', {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'

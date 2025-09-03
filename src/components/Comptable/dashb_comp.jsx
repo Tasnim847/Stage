@@ -26,7 +26,7 @@ const DashbComp = () => {
           return;
         }
 
-        const response = await axios.get('http://localhost:5000/api/dashboard/comptable', {
+        const response = await axios.get('https://stage-slk6.onrender.com/api/dashboard/comptable', {
           headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -75,7 +75,7 @@ const DashbComp = () => {
       const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
       
       // Use the correct endpoint
-      const response = await axios.get(`http://localhost:5000/api/dashboard/comptable/entreprise/${encodeURIComponent(companyName)}`, {
+      const response = await axios.get(`https://stage-slk6.onrender.com/api/dashboard/comptable/entreprise/${encodeURIComponent(companyName)}`, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'

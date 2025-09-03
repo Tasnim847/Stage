@@ -41,7 +41,7 @@ function AuthForm({ onLogin }) {
 
   const registerAPI = async (userData) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/register', {
+      const res = await fetch('https://stage-slk6.onrender.com/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
@@ -57,7 +57,7 @@ function AuthForm({ onLogin }) {
 
   const loginAPI = async (credentials) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch('https://stage-slk6.onrender.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
@@ -83,7 +83,7 @@ function AuthForm({ onLogin }) {
 
   const resetPasswordAPI = async (email, password) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/reset-password', {
+      const res = await fetch('https://stage-slk6.onrender.com/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, newPassword: password }),
